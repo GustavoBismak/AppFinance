@@ -1,48 +1,68 @@
-// LocalStorage keys
 const KEYS = {
-    LANCAMENTOS: 'fin_lancamentos',
-    CONTAS: 'fin_contas',
-    CARTOES: 'fin_cartoes',
-    VEICULO: 'fin_veiculo',
-    INVESTIMENTOS: 'fin_investimentos',
-    METAS: 'fin_metas'
+    LANCAMENTOS: 'lancamentos',
+    CONTAS: 'contas',
+    CARTOES: 'cartoes',
+    VEICULO: 'veiculo',
+    INVESTIMENTOS: 'investimentos',
+    METAS: 'metas'
 };
 
 const Store = {
-    get: (key) => {
-        const data = localStorage.getItem(key);
-        return data ? JSON.parse(data) : null;
+    get: async (table) => {
+        if(!Auth.user) return [];
+        const { data, error } = await supabase.from(table).select('*').order('created_at', { ascending: false });
+        if(error) {
+            console.error(`Erro ao buscar ${table}:`, error);
+            return [];
+        }
+        return data;
     },
-    set: (key, data) => {
-        localStorage.setItem(key, JSON.stringify(data));
+    
+    insert: async (table, payload) => {
+        if(!Auth.user) return null;
+        payload.user_id = Auth.user.id;
+        
+        // Remove 'id' se existir para deixar o Postgres gerar
+        if(payload.id) delete payload.id;
+        
+        const { data, error } = await supabase.from(table).insert(payload).select().single();
+        if(error) {
+            console.error(`Erro ao inserir em ${table}:`, error);
+            return null;
+        }
+        return data;
     },
+    
+    update: async (table, id, payload) => {
+        if(!Auth.user) return false;
+        
+        // Remove campos que não devem ser atualizados
+        if(payload.id) delete payload.id;
+        if(payload.user_id) delete payload.user_id;
+        if(payload.created_at) delete payload.created_at;
+
+        const { error } = await supabase.from(table).update(payload).eq('id', id).eq('user_id', Auth.user.id);
+        if(error) {
+            console.error(`Erro ao atualizar em ${table}:`, error);
+            return false;
+        }
+        return true;
+    },
+    
+    delete: async (table, id) => {
+        if(!Auth.user) return false;
+        const { error } = await supabase.from(table).delete().eq('id', id).eq('user_id', Auth.user.id);
+        if(error) {
+            console.error(`Erro ao apagar de ${table}:`, error);
+            return false;
+        }
+        return true;
+    },
+    
     init: () => {
-        // Initialize mock data if empty
-        if (!Store.get(KEYS.LANCAMENTOS)) {
-            Store.set(KEYS.LANCAMENTOS, [
-                { id: 1, data: '2026-08-01', descricao: 'Salário', categoria: 'Renda', tipo: 'receita', valor: 8500, forma: 'Pix' },
-                { id: 2, data: '2026-08-03', descricao: 'Mercado', categoria: 'Alimentação', tipo: 'despesa', valor: 650.50, forma: 'Cartão de Crédito' },
-                { id: 3, data: '2026-08-05', descricao: 'Energia', categoria: 'Moradia', tipo: 'despesa', valor: 120.00, forma: 'Pix' }
-            ]);
-        }
-        
-        if (!Store.get(KEYS.CONTAS)) {
-            Store.set(KEYS.CONTAS, [
-                { id: 1, nome: 'Aluguel', valor: 2500, vencimento: '2026-08-10', pago: false, dataPagamento: '', obs: 'Direto com proprietário' },
-                { id: 2, nome: 'Internet', valor: 110, vencimento: '2026-08-05', pago: true, dataPagamento: '2026-08-05', obs: 'Fibra' },
-                { id: 3, nome: 'Condomínio', valor: 450, vencimento: '2026-08-01', pago: false, dataPagamento: '', obs: 'Atrasado' }
-            ]);
-        }
-        
-        if (!Store.get(KEYS.CARTOES)) {
-            Store.set(KEYS.CARTOES, [
-                { id: 1, nome: 'Nubank', limite: 10000, utilizado: 2450 },
-                { id: 2, nome: 'Banco Inter', limite: 5000, utilizado: 500 },
-                { id: 3, nome: 'XP Investimentos', limite: 15000, utilizado: 0 }
-            ]);
-        }
+        // Init was used for mock data in LocalStorage.
+        // We no longer inject mock data into Supabase automatically to avoid duplicates.
     }
 };
 
-// Initialize store on load
 Store.init();

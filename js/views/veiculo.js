@@ -1,14 +1,6 @@
 window.Views.veiculo = {
-    render: (container) => {
-        const veiculo = Store.get(KEYS.VEICULO) || [];
-        
-        // Mock data if empty for demo
-        if (veiculo.length === 0) {
-            veiculo.push({ id: 1, data: '2026-08-01', tipo: 'Combustível', valor: 250, obs: 'Tanque cheio' });
-            veiculo.push({ id: 2, data: '2026-08-03', tipo: 'Lavagem', valor: 60, obs: 'Completa' });
-            veiculo.push({ id: 3, data: '2026-07-15', tipo: 'Seguro', valor: 2500, obs: 'Anual' });
-            Store.set(KEYS.VEICULO, veiculo);
-        }
+    render: async (container) => {
+        const veiculo = await Store.get(KEYS.VEICULO) || [];
         
         let custoMensal = 0;
         let custoAnual = 0;
@@ -98,6 +90,7 @@ window.Views.veiculo = {
                                 <th>Tipo</th>
                                 <th>Observação</th>
                                 <th>Valor</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody id="veiculo-tbody">
@@ -110,9 +103,12 @@ window.Views.veiculo = {
         container.innerHTML = html;
         
         const tbody = document.getElementById('veiculo-tbody');
-        const sorted = [...veiculo].sort((a,b) => new Date(b.data) - new Date(a.data));
         
-        sorted.forEach(v => {
+        if (veiculo.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Nenhum registro encontrado.</td></tr>';
+        }
+        
+        veiculo.forEach(v => {
             let icon = 'ph-gas-pump';
             if(v.tipo === 'Lavagem') icon = 'ph-drop';
             if(v.tipo === 'Manutenção' || v.tipo === 'Troca de óleo') icon = 'ph-wrench';
@@ -125,21 +121,34 @@ window.Views.veiculo = {
                 <td><div class="flex items-center gap-2"><i class="ph ${icon} text-primary"></i> ${v.tipo}</div></td>
                 <td>${v.obs || '-'}</td>
                 <td class="text-danger" style="font-weight: 600">${App.formatCurrency(v.valor)}</td>
+                <td><button class="btn btn-del" data-id="${v.id}" style="padding: 4px; background: transparent; color: var(--danger)"><i class="ph ph-trash"></i></button></td>
             `;
             tbody.appendChild(tr);
         });
         
-        document.getElementById('form-veiculo').addEventListener('submit', (e) => {
+        document.querySelectorAll('.btn-del').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                if(confirm('Apagar este registro?')) {
+                    const id = e.currentTarget.dataset.id;
+                    await Store.delete(KEYS.VEICULO, id);
+                    App.loadView('veiculo');
+                }
+            });
+        });
+        
+        document.getElementById('form-veiculo').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Salvando...';
+            
             const novo = {
-                id: Date.now(),
                 data: document.getElementById('veic-data').value,
                 tipo: document.getElementById('veic-tipo').value,
                 valor: parseFloat(document.getElementById('veic-valor').value),
                 obs: document.getElementById('veic-obs').value
             };
-            veiculo.push(novo);
-            Store.set(KEYS.VEICULO, veiculo);
+            await Store.insert(KEYS.VEICULO, novo);
             App.loadView('veiculo');
         });
     }

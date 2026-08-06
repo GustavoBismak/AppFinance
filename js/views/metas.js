@@ -1,14 +1,12 @@
 window.Views.metas = {
-    render: (container) => {
-        const metas = Store.get(KEYS.METAS) || [];
-        
-        if (metas.length === 0) {
-            metas.push({ id: 1, nome: 'Comprar Terreno', objetivo: 80000, guardado: 15000, prazo: '2027-12-31' });
-            metas.push({ id: 2, nome: 'Reserva de Emergência', objetivo: 30000, guardado: 25000, prazo: '2026-12-31' });
-            Store.set(KEYS.METAS, metas);
-        }
+    render: async (container) => {
+        const metas = await Store.get(KEYS.METAS) || [];
         
         let metasHtml = '';
+        
+        if (metas.length === 0) {
+            metasHtml = '<div class="text-muted" style="grid-column: span 2; text-align: center; padding: 40px;">Nenhuma meta registrada.</div>';
+        }
         
         metas.forEach(m => {
             const pct = Math.min(((m.guardado / m.objetivo) * 100).toFixed(1), 100);

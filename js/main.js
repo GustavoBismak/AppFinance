@@ -21,7 +21,7 @@ const App = {
         });
     },
     
-    loadView: (viewName) => {
+    loadView: async (viewName) => {
         App.currentView = viewName;
         const container = document.getElementById('view-container');
         const title = document.getElementById('page-title');
@@ -29,12 +29,17 @@ const App = {
         // Update Title (capitalize first letter)
         title.textContent = viewName.charAt(0).toUpperCase() + viewName.slice(1);
         
-        // Clear container
-        container.innerHTML = '';
+        // Loading state
+        container.innerHTML = '<div class="text-center text-muted" style="padding: 40px"><i class="ph ph-spinner ph-spin" style="font-size: 32px"></i><p style="margin-top: 16px">Carregando dados da nuvem...</p></div>';
         
         // Call the view renderer if it exists
         if (window.Views && window.Views[viewName]) {
-            window.Views[viewName].render(container);
+            try {
+                await window.Views[viewName].render(container);
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<div class="card text-danger">Erro ao carregar dados.</div>';
+            }
         } else {
             container.innerHTML = `
                 <div class="card">

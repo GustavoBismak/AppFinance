@@ -1,6 +1,6 @@
 window.Views.dashboard = {
-    render: (container) => {
-        const lancamentos = Store.get(KEYS.LANCAMENTOS);
+    render: async (container) => {
+        const lancamentos = await Store.get(KEYS.LANCAMENTOS);
         
         let receitas = 0;
         let despesas = 0;

@@ -1,5 +1,5 @@
 window.Views.configuracoes = {
-    render: (container) => {
+    render: async (container) => {
         let html = `
             <div class="grid grid-2">
                 <div class="card">
@@ -26,6 +26,11 @@ window.Views.configuracoes = {
                 
                 <div class="card">
                     <h3 class="mb-4">Sistema e Dados</h3>
+                    
+                    <div class="mb-4">
+                        <label style="display: block; margin-bottom: 8px" class="text-muted">Sessão</label>
+                        <button class="btn" style="background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-main)" onclick="Auth.logout()"><i class="ph ph-sign-out"></i> Sair da Conta</button>
+                    </div>
                     
                     <div class="mb-4">
                         <label style="display: block; margin-bottom: 8px" class="text-muted">Tema Visual</label>

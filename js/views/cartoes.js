@@ -1,8 +1,12 @@
 window.Views.cartoes = {
-    render: (container) => {
-        const cartoes = Store.get(KEYS.CARTOES) || [];
+    render: async (container) => {
+        const cartoes = await Store.get(KEYS.CARTOES) || [];
         
         let gridHtml = '';
+        
+        if (cartoes.length === 0) {
+            gridHtml = '<div class="text-muted" style="grid-column: span 3; text-align: center; padding: 40px;">Nenhum cartão cadastrado.</div>';
+        }
         
         cartoes.forEach(c => {
             const disponivel = c.limite - c.utilizado;

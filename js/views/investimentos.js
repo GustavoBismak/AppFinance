@@ -1,12 +1,6 @@
 window.Views.investimentos = {
-    render: (container) => {
-        const investimentos = Store.get(KEYS.INVESTIMENTOS) || [];
-        
-        if (investimentos.length === 0) {
-            investimentos.push({ id: 1, ativo: 'CDB Banco Inter', aporte: 5000, atual: 5250, tipo: 'Renda Fixa' });
-            investimentos.push({ id: 2, ativo: 'FIIs (MXRF11)', aporte: 2000, atual: 2100, tipo: 'Renda Variável' });
-            Store.set(KEYS.INVESTIMENTOS, investimentos);
-        }
+    render: async (container) => {
+        const investimentos = await Store.get(KEYS.INVESTIMENTOS) || [];
         
         let totalAporte = 0;
         let totalAtual = 0;
@@ -65,7 +59,8 @@ window.Views.investimentos = {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${investimentos.map(i => {
+                                ${investimentos.length === 0 ? '<tr><td colspan="4" class="text-center text-muted">Nenhum investimento registrado.</td></tr>' : 
+                                investimentos.map(i => {
                                     const rend = i.atual - i.aporte;
                                     const rendPct = ((rend / i.aporte) * 100).toFixed(2);
                                     const color = rend >= 0 ? 'text-success' : 'text-danger';

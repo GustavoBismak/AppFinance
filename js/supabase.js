@@ -1,7 +1,7 @@
 // js/supabase.js
 // Aqui você deve colocar a URL e a KEY do seu projeto Supabase
-const SUPABASE_URL = 'COLE_AQUI_SUA_URL_DO_SUPABASE';
-const SUPABASE_ANON_KEY = 'COLE_AQUI_SUA_ANON_KEY_DO_SUPABASE';
+const SUPABASE_URL = 'https://jczdpsztfktxxjzvtdvg.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_EWcp3wglxztnBb8YmzuIgA_MPRZKYgG';
 
 // Inicializar cliente do Supabase
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

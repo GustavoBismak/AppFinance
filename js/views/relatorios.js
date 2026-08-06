@@ -1,5 +1,5 @@
 window.Views.relatorios = {
-    render: (container) => {
+    render: async (container) => {
         let html = `
             <div class="flex justify-between items-center mb-4">
                 <p class="text-muted">Visão completa das suas finanças através de gráficos dinâmicos.</p>

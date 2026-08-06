@@ -1,6 +1,6 @@
 window.Views.lancamentos = {
-    render: (container) => {
-        const lancamentos = Store.get(KEYS.LANCAMENTOS) || [];
+    render: async (container) => {
+        const lancamentos = await Store.get(KEYS.LANCAMENTOS) || [];
         
         let html = `
             <div class="card mb-4">
@@ -63,10 +63,11 @@ window.Views.lancamentos = {
                                 <th>Forma de Pagto</th>
                                 <th>Valor</th>
                                 <th>Tipo</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody id="lancamentos-tbody">
-                            ${lancamentos.length === 0 ? `<tr><td colspan="6" style="text-align: center" class="text-muted">Nenhum lançamento encontrado.</td></tr>` : ''}
+                            ${lancamentos.length === 0 ? `<tr><td colspan="7" style="text-align: center" class="text-muted">Nenhum lançamento encontrado.</td></tr>` : ''}
                         </tbody>
                     </table>
                 </div>
@@ -77,10 +78,8 @@ window.Views.lancamentos = {
         
         const tbody = document.getElementById('lancamentos-tbody');
         
-        // Sort by id descending
-        const sorted = [...lancamentos].sort((a,b) => b.id - a.id);
-        
-        sorted.forEach(l => {
+        // Supabase returns results sorted by created_at desc as requested in Store.get
+        lancamentos.forEach(l => {
             const dataFormatada = new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR');
             const valorFormatado = App.formatCurrency(l.valor);
             const badgeClass = l.tipo === 'receita' ? 'badge-success' : 'badge-danger';
@@ -95,16 +94,30 @@ window.Views.lancamentos = {
                 <td>${l.forma}</td>
                 <td class="${colorClass}">${valorFormatado}</td>
                 <td><span class="badge ${badgeClass}">${tipoLabel}</span></td>
+                <td><button class="btn btn-del" data-id="${l.id}" style="padding: 4px; background: transparent; color: var(--danger)"><i class="ph ph-trash"></i></button></td>
             `;
             tbody.appendChild(tr);
         });
         
+        // Excluir Lançamento
+        document.querySelectorAll('.btn-del').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                if(confirm('Apagar este lançamento?')) {
+                    const id = e.currentTarget.dataset.id;
+                    await Store.delete(KEYS.LANCAMENTOS, id);
+                    App.loadView('lancamentos');
+                }
+            });
+        });
+        
         // Form submit logic
-        document.getElementById('form-lancamento').addEventListener('submit', (e) => {
+        document.getElementById('form-lancamento').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Salvando...';
             
             const novo = {
-                id: Date.now(),
                 data: document.getElementById('lanc-data').value,
                 descricao: document.getElementById('lanc-desc').value,
                 categoria: document.getElementById('lanc-cat').value,
@@ -113,8 +126,7 @@ window.Views.lancamentos = {
                 forma: document.getElementById('lanc-forma').value
             };
             
-            lancamentos.push(novo);
-            Store.set(KEYS.LANCAMENTOS, lancamentos);
+            await Store.insert(KEYS.LANCAMENTOS, novo);
             
             // Reload view
             App.loadView('lancamentos');

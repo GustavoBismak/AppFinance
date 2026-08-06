@@ -1,6 +1,6 @@
 window.Views.contas = {
-    render: (container) => {
-        const contas = Store.get(KEYS.CONTAS) || [];
+    render: async (container) => {
+        const contas = await Store.get(KEYS.CONTAS) || [];
         
         let html = `
             <div class="card mb-4">
@@ -86,6 +86,7 @@ window.Views.contas = {
                 <td>${c.pago && c.dataPagamento ? new Date(c.dataPagamento + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
                 <td>
                     ${!c.pago ? `<button class="btn btn-marcar-pago" data-id="${c.id}" style="padding: 6px 12px; background: rgba(42, 157, 143, 0.15); color: var(--success);"><i class="ph ph-check"></i> Pagar</button>` : ''}
+                    <button class="btn btn-del" data-id="${c.id}" style="padding: 6px; background: transparent; color: var(--danger)"><i class="ph ph-trash"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -93,35 +94,50 @@ window.Views.contas = {
         
         // Pagar action
         document.querySelectorAll('.btn-marcar-pago').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(e.currentTarget.dataset.id);
-                const conta = contas.find(c => c.id === id);
-                if(conta) {
-                    conta.pago = true;
-                    conta.dataPagamento = new Date().toISOString().split('T')[0];
-                    Store.set(KEYS.CONTAS, contas);
+            btn.addEventListener('click', async (e) => {
+                const id = e.currentTarget.dataset.id;
+                const btnRef = e.currentTarget;
+                btnRef.disabled = true;
+                btnRef.innerHTML = '<i class="ph ph-spinner ph-spin"></i>';
+                
+                await Store.update(KEYS.CONTAS, id, {
+                    pago: true,
+                    data_pagamento: new Date().toISOString().split('T')[0]
+                });
+                App.loadView('contas');
+            });
+        });
+        
+        // Delete action
+        document.querySelectorAll('.btn-del').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                if(confirm('Deseja realmente apagar esta conta?')) {
+                    const id = e.currentTarget.dataset.id;
+                    await Store.delete(KEYS.CONTAS, id);
                     App.loadView('contas');
                 }
             });
         });
         
         // Form submit
-        document.getElementById('form-conta').addEventListener('submit', (e) => {
+        document.getElementById('form-conta').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Aguarde...';
+            
             const isPago = document.getElementById('conta-pago').checked;
             
             const nova = {
-                id: Date.now(),
                 nome: document.getElementById('conta-nome').value,
                 valor: parseFloat(document.getElementById('conta-valor').value),
                 vencimento: document.getElementById('conta-venc').value,
                 obs: document.getElementById('conta-obs').value,
                 pago: isPago,
-                dataPagamento: isPago ? new Date().toISOString().split('T')[0] : ''
+                data_pagamento: isPago ? new Date().toISOString().split('T')[0] : null
             };
             
-            contas.push(nova);
-            Store.set(KEYS.CONTAS, contas);
+            await Store.insert(KEYS.CONTAS, nova);
             App.loadView('contas');
         });
     }
