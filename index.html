@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance App Premium</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Login Overlay -->
+    <div id="login-screen" style="position: fixed; inset: 0; background: var(--bg-dark); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+        <div class="card" style="width: 100%; max-width: 400px; padding: 40px;">
+            <div class="text-center mb-4" style="text-align: center; color: var(--primary)">
+                <i class="ph-fill ph-wallet" style="font-size: 48px"></i>
+                <h2 style="color: var(--text-main); margin-top: 16px">FinApp Premium</h2>
+                <p class="text-muted" style="margin-top: 8px">Acesse sua conta para continuar</p>
+            </div>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="login-email" class="input-control" required>
+                </div>
+                <div class="form-group mb-4">
+                    <label>Senha</label>
+                    <input type="password" id="login-password" class="input-control" required>
+                </div>
+                
+                <div id="login-error" class="text-danger mb-4" style="font-size: 13px; display: none; text-align: center;"></div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-bottom: 12px" id="btn-entrar">Entrar</button>
+                <button type="button" class="btn" style="width: 100%; background: transparent; border: 1px solid var(--border); color: var(--text-main)" id="btn-registrar">Criar Conta</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- App Container (Escondido até login) -->
+    <div class="app-container" id="app-container" style="display: none;">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="ph-fill ph-wallet"></i>
+                <h2>FinApp</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="dashboard">
+                    <i class="ph ph-squares-four"></i> Dashboard
+                </button>
+                <button class="nav-item" data-view="lancamentos">
+                    <i class="ph ph-list-dashes"></i> Lançamentos
+                </button>
+                <button class="nav-item" data-view="contas">
+                    <i class="ph ph-calendar-check"></i> Contas a Pagar
+                </button>
+                <button class="nav-item" data-view="cartoes">
+                    <i class="ph ph-credit-card"></i> Cartões
+                </button>
+                <button class="nav-item" data-view="veiculo">
+                    <i class="ph ph-car"></i> Veículo
+                </button>
+                <button class="nav-item" data-view="investimentos">
+                    <i class="ph ph-chart-line-up"></i> Investimentos
+                </button>
+                <button class="nav-item" data-view="metas">
+                    <i class="ph ph-target"></i> Metas
+                </button>
+                <button class="nav-item" data-view="relatorios">
+                    <i class="ph ph-chart-pie-slice"></i> Relatórios
+                </button>
+                <button class="nav-item" data-view="configuracoes">
+                    <i class="ph ph-gear"></i> Configurações
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <h1 id="page-title">Dashboard</h1>
+                <div class="header-actions">
+                    <div class="user-profile">
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=0a9396&color=fff" alt="Perfil">
+                    </div>
+                </div>
+            </header>
+
+            <div id="view-container" class="view-container">
+                <!-- Views will be injected here via JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/views/dashboard.js"></script>
+    <script src="js/views/lancamentos.js"></script>
+    <script src="js/views/contas.js"></script>
+    <script src="js/views/cartoes.js"></script>
+    <script src="js/views/veiculo.js"></script>
+    <script src="js/views/investimentos.js"></script>
+    <script src="js/views/metas.js"></script>
+    <script src="js/views/relatorios.js"></script>
+    <script src="js/views/configuracoes.js"></script>
+</body>
+</html>
