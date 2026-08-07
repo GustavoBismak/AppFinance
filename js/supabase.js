@@ -1,6 +1,6 @@
 // js/supabase.js
 const SUPABASE_URL = 'https://jczdpsztfktxxjzvtdvg.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_EWcp3wglxztnBb8YmzuIgA_MPRZKYgG';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjemRwc3p0Zmt0eHhqenZ0ZHZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNDM4MjUsImV4cCI6MjEwMTYxOTgyNX0.B_uMA3riDBdKtsj6bzdJomyGWED2yF4tQoSIQb2mIcM';
 
 // O CDN do Supabase v2 expõe o cliente via window.supabase.createClient
 // Tentamos as duas formas para compatibilidade
