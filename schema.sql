@@ -34,6 +34,7 @@ CREATE TABLE cartoes (
     nome TEXT NOT NULL,
     limite NUMERIC(10,2) NOT NULL,
     utilizado NUMERIC(10,2) DEFAULT 0,
+    vencimento INTEGER,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
