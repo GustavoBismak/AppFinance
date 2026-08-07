@@ -154,12 +154,20 @@ window.Views.metas = {
                 return;
             }
 
+            let sucesso = false;
             if (editandoId) {
-                await Store.update(KEYS.METAS, editandoId, payload);
-                Toast.success('Meta atualizada com sucesso!');
+                sucesso = await Store.update(KEYS.METAS, editandoId, payload);
+                if (sucesso) Toast.success('Meta atualizada com sucesso!');
             } else {
-                await Store.insert(KEYS.METAS, payload);
-                Toast.success('Nova meta adicionada!');
+                sucesso = await Store.insert(KEYS.METAS, payload);
+                if (sucesso) Toast.success('Nova meta adicionada!');
+            }
+
+            if (!sucesso) {
+                Toast.error('Erro ao salvar meta. Verifique o console ou sua conexão.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar Meta';
+                return;
             }
 
             App.loadView('metas');
