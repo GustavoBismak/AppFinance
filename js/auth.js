@@ -9,7 +9,7 @@
     const btnRegistrar  = document.getElementById('btn-registrar');
 
     // Verifica se o Supabase foi inicializado
-    if (!supabase) {
+    if (!supabaseClient) {
         alert('CRÍTICO: O Supabase não carregou. Verifique sua conexão.');
         Toast.error('Falha ao conectar ao banco de dados. Verifique as chaves do Supabase.');
         return;

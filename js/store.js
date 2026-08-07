@@ -10,7 +10,7 @@ const KEYS = {
 const Store = {
     get: async (table) => {
         if(!Auth.user) return [];
-        const { data, error } = await supabase.from(table).select('*').order('created_at', { ascending: false });
+        const { data, error } = await supabaseClient.from(table).select('*').order('created_at', { ascending: false });
         if(error) {
             console.error(`Erro ao buscar ${table}:`, error);
             return [];
@@ -25,7 +25,7 @@ const Store = {
         // Remove 'id' se existir para deixar o Postgres gerar
         if(payload.id) delete payload.id;
         
-        const { data, error } = await supabase.from(table).insert(payload).select().single();
+        const { data, error } = await supabaseClient.from(table).insert([payload]).select().single();
         if(error) {
             console.error(`Erro ao inserir em ${table}:`, error);
             return null;
@@ -41,7 +41,7 @@ const Store = {
         if(payload.user_id) delete payload.user_id;
         if(payload.created_at) delete payload.created_at;
 
-        const { error } = await supabase.from(table).update(payload).eq('id', id).eq('user_id', Auth.user.id);
+        const { data, error } = await supabaseClient.from(table).update(payload).eq('id', id).eq('user_id', Auth.user.id);
         if(error) {
             console.error(`Erro ao atualizar em ${table}:`, error);
             return false;
@@ -51,7 +51,7 @@ const Store = {
     
     delete: async (table, id) => {
         if(!Auth.user) return false;
-        const { error } = await supabase.from(table).delete().eq('id', id).eq('user_id', Auth.user.id);
+        const { error } = await supabaseClient.from(table).delete().eq('id', id).eq('user_id', Auth.user.id);
         if(error) {
             console.error(`Erro ao apagar de ${table}:`, error);
             return false;

@@ -4,12 +4,12 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // O CDN do Supabase v2 expõe o cliente via window.supabase.createClient
 // Tentamos as duas formas para compatibilidade
-let supabase;
+let supabaseClient;
 try {
     if (window.supabase && window.supabase.createClient) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     } else if (window.supabaseJs && window.supabaseJs.createClient) {
-        supabase = window.supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = window.supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     } else {
         console.error('Supabase CDN não carregou corretamente.');
     }
@@ -97,30 +97,30 @@ const Auth = {
     user: null,
 
     checkSession: async () => {
-        if (!supabase) return null;
-        const { data: { session } } = await supabase.auth.getSession();
+        if (!supabaseClient) return null;
+        const { data: { session } } = await supabaseClient.auth.getSession();
         Auth.user = session?.user || null;
         return Auth.user;
     },
 
     login: async (email, password) => {
-        if (!supabase) throw new Error('Banco de dados não está conectado.');
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (!supabaseClient) throw new Error('Banco de dados não está conectado.');
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) throw error;
         Auth.user = data.user;
         return data;
     },
 
     register: async (email, password) => {
-        if (!supabase) throw new Error('Banco de dados não está conectado.');
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (!supabaseClient) throw new Error('Banco de dados não está conectado.');
+        const { data, error } = await supabaseClient.auth.signUp({ email, password });
         if (error) throw error;
         Auth.user = data.user;
         return data;
     },
 
     logout: async () => {
-        if (supabase) await supabase.auth.signOut();
+        if (supabaseClient) await supabaseClient.auth.signOut();
         Auth.user = null;
         window.location.reload();
     }
