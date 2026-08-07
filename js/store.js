@@ -29,6 +29,7 @@ const Store = {
         const { data, error } = await supabaseClient.from(table).insert([payload]).select().single();
         if(error) {
             console.error(`Erro ao inserir em ${table}:`, error);
+            Toast.error(`Erro no banco: ${error.message}`);
             return null;
         }
         return data;
