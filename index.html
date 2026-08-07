@@ -114,9 +114,8 @@
         </main>
     </div>
 
-    <!-- Scripts -->
+    <!-- Scripts (a ordem importa!) -->
     <script src="js/supabase.js"></script>
-    <script src="js/auth.js"></script>
     <script src="js/store.js"></script>
     <script src="js/main.js"></script>
     <script src="js/views/dashboard.js"></script>
@@ -128,5 +127,7 @@
     <script src="js/views/metas.js"></script>
     <script src="js/views/relatorios.js"></script>
     <script src="js/views/configuracoes.js"></script>
+    <!-- auth.js SEMPRE por último: depende de App, Store e Views -->
+    <script src="js/auth.js"></script>
 </body>
 </html>

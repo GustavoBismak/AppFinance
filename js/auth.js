@@ -1,5 +1,5 @@
-// js/auth.js
-(async () => {
+// js/auth.js — carregado ÚLTIMO, após todos os outros scripts
+document.addEventListener('DOMContentLoaded', () => {
     const loginScreen   = document.getElementById('login-screen');
     const appContainer  = document.getElementById('app-container');
     const loginForm     = document.getElementById('login-form');
@@ -8,11 +8,10 @@
     const btnEntrar     = document.getElementById('btn-entrar');
     const btnRegistrar  = document.getElementById('btn-registrar');
 
-    // Verifica se o Supabase foi inicializado
-    if (!supabaseClient) {
-        alert('CRÍTICO: O Supabase não carregou. Verifique sua conexão.');
-        Toast.error('Falha ao conectar ao banco de dados. Verifique as chaves do Supabase.');
-        return;
+    function mostrarApp() {
+        loginScreen.style.display = 'none';
+        appContainer.style.display = 'flex';
+        App.init();
     }
 
     // ── LOGIN ────────────────────────────────────────────────
@@ -21,22 +20,22 @@
         const email    = emailInput.value.trim();
         const password = passwordInput.value;
 
+        if (!email || !password) {
+            Toast.warning('Preencha o e-mail e a senha.');
+            return;
+        }
+
         btnEntrar.disabled    = true;
         btnEntrar.textContent = 'Entrando...';
 
         try {
-            await Auth.login(email, password);
-            Toast.success('Bem-vindo de volta! Carregando seus dados...');
-
-            setTimeout(() => {
-                loginScreen.style.display = 'none';
-                appContainer.style.display = 'flex';
-                if(window.App) App.init();
-            }, 800);
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            Auth.user = data.user;
+            Toast.success('Bem-vindo! Carregando seus dados...');
+            setTimeout(mostrarApp, 800);
         } catch (error) {
-            console.error('Login error:', error);
-            const msg = error.message || 'Credenciais incorretas.';
-            Toast.error('Erro ao entrar: ' + msg);
+            Toast.error('Erro ao entrar: ' + (error.message || 'Credenciais incorretas.'));
         } finally {
             btnEntrar.disabled    = false;
             btnEntrar.textContent = 'Entrar';
@@ -61,45 +60,34 @@
         btnRegistrar.textContent = 'Criando conta...';
 
         try {
-            const result = await Auth.register(email, password);
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) throw error;
+            Auth.user = data.user;
 
-            // Supabase retorna user sem session quando confirmação de e-mail está ativa
-            if (result && result.user && !result.session) {
-                Toast.info('Conta criada! Confirme o e-mail antes de entrar. Verifique sua caixa de entrada.');
-            } else if (result && result.user) {
+            if (data.user && !data.session) {
+                Toast.info('Conta criada! Verifique seu e-mail para confirmar antes de entrar.');
+            } else if (data.user) {
                 Toast.success('Conta criada com sucesso! Entrando...');
-                setTimeout(() => {
-                    loginScreen.style.display = 'none';
-                    appContainer.style.display = 'flex';
-                    if(window.App) App.init();
-                }, 1200);
+                setTimeout(mostrarApp, 1200);
             }
         } catch (error) {
-            console.error('Register error:', error);
-            const msg = error.message || 'Erro desconhecido.';
-            Toast.error('Erro ao criar conta: ' + msg);
+            Toast.error('Erro ao criar conta: ' + (error.message || 'Erro desconhecido.'));
         } finally {
             btnRegistrar.disabled    = false;
             btnRegistrar.textContent = 'Criar Conta';
         }
     });
 
-    // Tenta restaurar sessão existente
-    try {
-        const user = await Auth.checkSession();
-        if (user) {
-            loginScreen.style.display = 'none';
-            appContainer.style.display = 'flex';
-            
-            // App.init pode não estar carregado ainda se o checkSession resolver muito rápido (improvável, mas seguro checar)
-            if(window.App) {
-                App.init();
-            } else {
-                setTimeout(() => window.App && App.init(), 100);
+    // ── RESTAURAR SESSÃO EXISTENTE ────────────────────────────
+    (async () => {
+        try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session && session.user) {
+                Auth.user = session.user;
+                mostrarApp();
             }
-            return;
+        } catch (e) {
+            console.error('Erro ao verificar sessão:', e);
         }
-    } catch (e) {
-        console.error('Erro na sessão:', e);
-    }
-})();
+    })();
+});
