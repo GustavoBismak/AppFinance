@@ -128,11 +128,12 @@ window.Views.veiculo = {
         
         document.querySelectorAll('.btn-del').forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                if(confirm('Apagar este registro?')) {
-                    const id = e.currentTarget.dataset.id;
-                    await Store.delete(KEYS.VEICULO, id);
-                    App.loadView('veiculo');
-                }
+                const id = e.currentTarget.dataset.id;
+                const tr = e.currentTarget.closest('tr');
+                if (tr) tr.style.opacity = '0.4';
+                await Store.delete(KEYS.VEICULO, id);
+                Toast.success('Registro apagado com sucesso.');
+                App.loadView('veiculo');
             });
         });
         
@@ -149,6 +150,7 @@ window.Views.veiculo = {
                 obs: document.getElementById('veic-obs').value
             };
             await Store.insert(KEYS.VEICULO, novo);
+            Toast.success('Despesa de veículo registrada!');
             App.loadView('veiculo');
         });
     }

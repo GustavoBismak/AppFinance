@@ -102,11 +102,12 @@ window.Views.lancamentos = {
         // Excluir Lançamento
         document.querySelectorAll('.btn-del').forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                if(confirm('Apagar este lançamento?')) {
-                    const id = e.currentTarget.dataset.id;
-                    await Store.delete(KEYS.LANCAMENTOS, id);
-                    App.loadView('lancamentos');
-                }
+                const id = e.currentTarget.dataset.id;
+                const tr = e.currentTarget.closest('tr');
+                if (tr) tr.style.opacity = '0.4';
+                await Store.delete(KEYS.LANCAMENTOS, id);
+                Toast.success('Lançamento apagado com sucesso.');
+                App.loadView('lancamentos');
             });
         });
         
@@ -127,7 +128,7 @@ window.Views.lancamentos = {
             };
             
             await Store.insert(KEYS.LANCAMENTOS, novo);
-            
+            Toast.success('Lançamento adicionado com sucesso!');
             // Reload view
             App.loadView('lancamentos');
         });

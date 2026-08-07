@@ -111,11 +111,12 @@ window.Views.contas = {
         // Delete action
         document.querySelectorAll('.btn-del').forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                if(confirm('Deseja realmente apagar esta conta?')) {
-                    const id = e.currentTarget.dataset.id;
-                    await Store.delete(KEYS.CONTAS, id);
-                    App.loadView('contas');
-                }
+                const id = e.currentTarget.dataset.id;
+                const tr = e.currentTarget.closest('tr');
+                if (tr) tr.style.opacity = '0.4';
+                await Store.delete(KEYS.CONTAS, id);
+                Toast.success('Conta apagada com sucesso.');
+                App.loadView('contas');
             });
         });
         
@@ -138,6 +139,7 @@ window.Views.contas = {
             };
             
             await Store.insert(KEYS.CONTAS, nova);
+            Toast.success('Conta adicionada com sucesso!');
             App.loadView('contas');
         });
     }
