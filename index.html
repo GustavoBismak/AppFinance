@@ -15,7 +15,18 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-lib.js"></script>
+    
+    <!-- ERROR DEBUGGER -->
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            alert('ERRO JS ENCONTRADO:\n' + message + '\n\nArquivo: ' + source + '\nLinha: ' + lineno);
+        };
+        window.addEventListener('unhandledrejection', function(event) {
+            alert('PROMISE REJECTION:\n' + event.reason);
+        });
+    </script>
+    
     <!-- CSS -->
     <link rel="stylesheet" href="style.css">
 </head>

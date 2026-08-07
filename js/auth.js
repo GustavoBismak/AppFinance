@@ -1,4 +1,5 @@
-document.addEventListener('DOMContentLoaded', async () => {
+// js/auth.js
+(async () => {
     const loginScreen   = document.getElementById('login-screen');
     const appContainer  = document.getElementById('app-container');
     const loginForm     = document.getElementById('login-form');
@@ -9,21 +10,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Verifica se o Supabase foi inicializado
     if (!supabase) {
+        alert('CRÍTICO: O Supabase não carregou. Verifique sua conexão.');
         Toast.error('Falha ao conectar ao banco de dados. Verifique as chaves do Supabase.');
         return;
-    }
-
-    // Tenta restaurar sessão existente
-    try {
-        const user = await Auth.checkSession();
-        if (user) {
-            loginScreen.style.display = 'none';
-            appContainer.style.display = 'flex';
-            App.init();
-            return;
-        }
-    } catch (e) {
-        console.error('Erro na sessão:', e);
     }
 
     // ── LOGIN ────────────────────────────────────────────────
@@ -42,7 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             setTimeout(() => {
                 loginScreen.style.display = 'none';
                 appContainer.style.display = 'flex';
-                App.init();
+                if(window.App) App.init();
             }, 800);
         } catch (error) {
             console.error('Login error:', error);
@@ -82,7 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 setTimeout(() => {
                     loginScreen.style.display = 'none';
                     appContainer.style.display = 'flex';
-                    App.init();
+                    if(window.App) App.init();
                 }, 1200);
             }
         } catch (error) {
@@ -94,4 +83,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             btnRegistrar.textContent = 'Criar Conta';
         }
     });
-});
+
+    // Tenta restaurar sessão existente
+    try {
+        const user = await Auth.checkSession();
+        if (user) {
+            loginScreen.style.display = 'none';
+            appContainer.style.display = 'flex';
+            
+            // App.init pode não estar carregado ainda se o checkSession resolver muito rápido (improvável, mas seguro checar)
+            if(window.App) {
+                App.init();
+            } else {
+                setTimeout(() => window.App && App.init(), 100);
+            }
+            return;
+        }
+    } catch (e) {
+        console.error('Erro na sessão:', e);
+    }
+})();
