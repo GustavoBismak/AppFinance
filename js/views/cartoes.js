@@ -25,8 +25,9 @@ window.Views.cartoes = {
         }
 
         function buildCard(c) {
-            const limite    = parseFloat(c.limite) || 0;
-            const utilizado = parseFloat(c.utilizado) || 0;
+            const limite    = parseFloat(c.limite)    || 0;
+            const utilizado = parseFloat(c.utilizado) || 0;  // total crédito consumido
+            const fatura    = parseFloat(c.fatura)    || 0;  // valor da fatura deste mês
             const disponivel = limite - utilizado;
             const pct = limite > 0 ? Math.min(((utilizado / limite) * 100).toFixed(0), 100) : 0;
             const style = getBankStyle(c.nome);
@@ -35,13 +36,12 @@ window.Views.cartoes = {
             if (pct > 80) progressColor = '#e63946';
             else if (pct > 50) progressColor = '#e9c46a';
 
-            // Formata data de vencimento
             const venc = c.vencimento ? `Vence dia ${c.vencimento}` : '';
 
             return `
-                <div class="card" style="padding: 0; overflow: hidden; border: none;">
-                    <!-- Frente visual do cartão -->
-                    <div style="${style.bg}; padding: 24px; position: relative; min-height: 140px; color: white;">
+                <div class="card" style="padding:0; overflow:hidden; border:none;">
+                    <!-- Visual do cartão -->
+                    <div style="${style.bg}; padding:24px; position:relative; min-height:140px; color:white;">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                             <div>
                                 <div style="font-size:12px; opacity:0.8; text-transform:uppercase; letter-spacing:1px">Cartão de Crédito</div>
@@ -55,39 +55,56 @@ window.Views.cartoes = {
                         <div style="margin-top:20px; font-size:13px; opacity:0.85">${venc}</div>
                     </div>
 
-                    <!-- Corpo com dados -->
-                    <div style="padding: 20px;">
-                        <div style="margin-bottom: 12px;">
-                            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-bottom:6px;">
-                                <span>Utilizado: <strong style="color:var(--text-main)">${pct}%</strong></span>
-                                <span>${App.formatCurrency(utilizado)} / ${App.formatCurrency(limite)}</span>
-                            </div>
-                            <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
-                                <div style="width:${pct}%; height:100%; background:${progressColor}; border-radius:4px; transition:width 1s;"></div>
-                            </div>
+                    <!-- Barra de limite utilizado -->
+                    <div style="padding:20px 20px 0 20px;">
+                        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-bottom:6px;">
+                            <span>Limite Utilizado: <strong style="color:var(--text-main)">${pct}%</strong></span>
+                            <span>${App.formatCurrency(utilizado)} / ${App.formatCurrency(limite)}</span>
                         </div>
+                        <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
+                            <div style="width:${pct}%; height:100%; background:${progressColor}; border-radius:4px; transition:width 1s;"></div>
+                        </div>
+                    </div>
 
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:14px; border-top:1px solid var(--border);">
-                            <div>
-                                <div style="font-size:11px; color:var(--text-muted)">Disponível</div>
-                                <div style="font-weight:700; color:#2a9d8f; font-size:17px">${App.formatCurrency(disponivel)}</div>
-                            </div>
-                            <div style="text-align:right;">
-                                <div style="font-size:11px; color:var(--text-muted)">Fatura</div>
-                                <div style="font-weight:700; color:#e63946; font-size:17px">${App.formatCurrency(utilizado)}</div>
-                            </div>
+                    <!-- 3 métricas -->
+                    <div style="padding:16px 20px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; border-bottom:1px solid var(--border);">
+                        <div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px">Limite Total</div>
+                            <div style="font-weight:700; font-size:15px; color:var(--text-main)">${App.formatCurrency(limite)}</div>
                         </div>
+                        <div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px">Limite Utilizado</div>
+                            <div style="font-weight:700; font-size:15px; color:#e9c46a">${App.formatCurrency(utilizado)}</div>
+                        </div>
+                        <div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px">Disponível</div>
+                            <div style="font-weight:700; font-size:15px; color:#2a9d8f">${App.formatCurrency(disponivel)}</div>
+                        </div>
+                    </div>
 
-                        <div style="margin-top:14px; display:flex; gap:8px;">
-                            <button class="btn btn-edit-cartao" data-id="${c.id}"
-                                style="flex:1; background:rgba(10,147,150,0.12); color:var(--primary); border:1px solid var(--primary); font-size:13px; padding:7px;">
-                                <i class="ph ph-pencil"></i> Atualizar Fatura
-                            </button>
-                            <button class="btn btn-del-cartao" data-id="${c.id}"
-                                style="background:transparent; color:var(--danger); border:1px solid var(--danger); padding:7px 12px; font-size:13px;">
-                                <i class="ph ph-trash"></i>
-                            </button>
+                    <!-- Fatura em destaque -->
+                    <div style="padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-bottom:2px">
+                                <i class="ph ph-receipt"></i> Fatura do Mês Atual
+                            </div>
+                            <div style="font-weight:800; font-size:22px; color:#e63946">${App.formatCurrency(fatura)}</div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px">
+                                ${fatura < utilizado ? `Outras compras (${App.formatCurrency(utilizado - fatura)}) fecham na próxima fatura` : ''}
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- Botões -->
+                    <div style="padding:0 20px 20px 20px; display:flex; gap:8px;">
+                        <button class="btn btn-edit-cartao" data-id="${c.id}"
+                            style="flex:1; background:rgba(10,147,150,0.12); color:var(--primary); border:1px solid var(--primary); font-size:13px; padding:7px;">
+                            <i class="ph ph-pencil"></i> Atualizar
+                        </button>
+                        <button class="btn btn-del-cartao" data-id="${c.id}"
+                            style="background:transparent; color:var(--danger); border:1px solid var(--danger); padding:7px 12px; font-size:13px;">
+                            <i class="ph ph-trash"></i>
+                        </button>
                     </div>
                 </div>
             `;
@@ -108,9 +125,19 @@ window.Views.cartoes = {
                 </button>
             </div>
 
-            <!-- Formulário (oculto por padrão) -->
+            <!-- Formulário -->
             <div id="form-cartao-container" class="card mb-4" style="display:none;">
                 <h3 class="mb-4" id="form-cartao-titulo">Novo Cartão</h3>
+
+                <!-- Ajuda visual -->
+                <div id="cartao-ajuda" style="background:rgba(10,147,150,0.08); border:1px solid rgba(10,147,150,0.3);
+                     border-radius:10px; padding:14px 16px; margin-bottom:20px; font-size:13px; color:var(--text-muted); display:none;">
+                    <i class="ph ph-info" style="color:var(--primary)"></i>
+                    <strong style="color:var(--primary)">Diferença entre os campos:</strong><br>
+                    <b>Limite Utilizado</b> = Total de crédito consumido (ex: compras parceladas em andamento + fatura atual).<br>
+                    <b>Fatura do Mês</b> = Somente o valor que fecha <u>neste mês</u> e você vai pagar na data de vencimento.
+                </div>
+
                 <form id="form-cartao" class="grid grid-3">
                     <div class="form-group">
                         <label>Nome do Cartão / Banco</label>
@@ -121,20 +148,42 @@ window.Views.cartoes = {
                         <input type="number" step="0.01" id="cartao-limite" class="input-control" placeholder="0,00" required>
                     </div>
                     <div class="form-group">
-                        <label>Fatura Atual (R$)</label>
-                        <input type="number" step="0.01" id="cartao-utilizado" class="input-control" placeholder="0,00">
-                    </div>
-                    <div class="form-group">
                         <label>Dia de Vencimento</label>
                         <input type="number" id="cartao-vencimento" class="input-control" min="1" max="31" placeholder="Ex: 10">
                     </div>
-                    <div class="form-group" style="grid-column: span 2; display:flex; gap:12px; align-items:flex-end;">
+
+                    <div class="form-group">
+                        <label>
+                            Limite Utilizado (R$)
+                            <span style="font-size:11px; color:var(--text-muted)"> — total de crédito consumido</span>
+                        </label>
+                        <input type="number" step="0.01" id="cartao-utilizado" class="input-control" placeholder="0,00">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Fatura do Mês Atual (R$)
+                            <span style="font-size:11px; color:var(--text-muted)"> — o que pagar neste vencimento</span>
+                        </label>
+                        <input type="number" step="0.01" id="cartao-fatura" class="input-control" placeholder="0,00">
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:flex-end;">
+                        <div style="font-size:12px; color:var(--text-muted); padding-bottom:4px;">
+                            <i class="ph ph-lightbulb" style="color:#e9c46a"></i>
+                            Fatura ≤ Limite Utilizado
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="grid-column:span 3; display:flex; gap:12px; align-items:center;">
                         <button type="submit" class="btn btn-primary" id="btn-salvar-cartao">
                             <i class="ph ph-floppy-disk"></i> Salvar Cartão
                         </button>
                         <button type="button" class="btn" id="btn-cancelar-cartao"
                             style="background:transparent; border:1px solid var(--border); color:var(--text-main)">
                             Cancelar
+                        </button>
+                        <button type="button" id="btn-ver-ajuda"
+                            style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:13px;">
+                            <i class="ph ph-question"></i> Qual a diferença?
                         </button>
                     </div>
                 </form>
@@ -145,17 +194,18 @@ window.Views.cartoes = {
             </div>
         `;
 
-        const formContainer  = document.getElementById('form-cartao-container');
-        const form           = document.getElementById('form-cartao');
-        const btnNovo        = document.getElementById('btn-novo-cartao');
-        const btnCancelar    = document.getElementById('btn-cancelar-cartao');
-        let editandoId       = null;
+        const formContainer = document.getElementById('form-cartao-container');
+        const form          = document.getElementById('form-cartao');
+        const btnNovo       = document.getElementById('btn-novo-cartao');
+        const btnCancelar   = document.getElementById('btn-cancelar-cartao');
+        const ajuda         = document.getElementById('cartao-ajuda');
+        let editandoId      = null;
 
-        // Abrir formulário de novo cartão
         btnNovo.addEventListener('click', () => {
             editandoId = null;
             document.getElementById('form-cartao-titulo').textContent = 'Novo Cartão';
             form.reset();
+            ajuda.style.display = 'none';
             formContainer.style.display = 'block';
             formContainer.scrollIntoView({ behavior: 'smooth' });
         });
@@ -166,17 +216,32 @@ window.Views.cartoes = {
             editandoId = null;
         });
 
-        // Salvar cartão (novo ou edição)
+        document.getElementById('btn-ver-ajuda').addEventListener('click', () => {
+            ajuda.style.display = ajuda.style.display === 'none' ? 'block' : 'none';
+        });
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btn-salvar-cartao');
             btn.disabled = true;
             btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Salvando...';
 
+            const utilizado = parseFloat(document.getElementById('cartao-utilizado').value) || 0;
+            const fatura    = parseFloat(document.getElementById('cartao-fatura').value) || 0;
+
+            // Validação: fatura não pode ser maior que limite utilizado
+            if (fatura > utilizado && utilizado > 0) {
+                Toast.warning('A fatura do mês não pode ser maior que o limite utilizado.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar Cartão';
+                return;
+            }
+
             const payload = {
                 nome:       document.getElementById('cartao-nome').value.trim(),
                 limite:     parseFloat(document.getElementById('cartao-limite').value) || 0,
-                utilizado:  parseFloat(document.getElementById('cartao-utilizado').value) || 0,
+                utilizado,
+                fatura,
                 vencimento: document.getElementById('cartao-vencimento').value || null,
             };
 
@@ -191,7 +256,7 @@ window.Views.cartoes = {
             App.loadView('cartoes');
         });
 
-        // Botão Atualizar Fatura (edição)
+        // Botão Editar
         document.querySelectorAll('.btn-edit-cartao').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = e.currentTarget.dataset.id;
@@ -203,13 +268,15 @@ window.Views.cartoes = {
                 document.getElementById('cartao-nome').value       = c.nome || '';
                 document.getElementById('cartao-limite').value     = c.limite || '';
                 document.getElementById('cartao-utilizado').value  = c.utilizado || '';
+                document.getElementById('cartao-fatura').value     = c.fatura || '';
                 document.getElementById('cartao-vencimento').value = c.vencimento || '';
+                ajuda.style.display = 'none';
                 formContainer.style.display = 'block';
                 formContainer.scrollIntoView({ behavior: 'smooth' });
             });
         });
 
-        // Excluir cartão
+        // Excluir
         document.querySelectorAll('.btn-del-cartao').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.currentTarget.dataset.id;
