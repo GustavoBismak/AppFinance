@@ -51,7 +51,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             appContainer.style.display = 'flex';
             App.init();
         } catch (error) {
-            showError('Erro ao entrar: E-mail ou senha incorretos.');
+            console.error('Login error:', error);
+            showError('Erro ao entrar: ' + (error.message || 'Credenciais incorretas.'));
         } finally {
             btnEntrar.disabled = false;
             btnEntrar.textContent = 'Entrar';
@@ -68,13 +69,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
         
+        if(password.length < 6) {
+            showError('A senha deve ter pelo menos 6 caracteres.');
+            return;
+        }
+        
         btnRegistrar.disabled = true;
         btnRegistrar.textContent = 'Aguarde...';
         
         try {
-            await Auth.register(email, password);
-            alert('Conta criada com sucesso! Você já pode entrar.');
+            const result = await Auth.register(email, password);
+            // Supabase returns a user but no session if email confirmation is required
+            if (result && result.user && !result.session) {
+                alert('Conta criada! Mas é necessário confirmar o e-mail. Verifique sua caixa de entrada.');
+            } else {
+                alert('Conta criada com sucesso! Você já pode entrar.');
+            }
         } catch (error) {
+            console.error('Register error:', error);
             showError('Erro ao criar conta: ' + error.message);
         } finally {
             btnRegistrar.disabled = false;
