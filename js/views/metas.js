@@ -164,7 +164,6 @@ window.Views.metas = {
             }
 
             if (!sucesso) {
-                Toast.error('Erro ao salvar meta. Verifique o console ou sua conexão.');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar Meta';
                 return;
