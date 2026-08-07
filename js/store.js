@@ -4,7 +4,8 @@ const KEYS = {
     CARTOES: 'cartoes',
     VEICULO: 'veiculo',
     INVESTIMENTOS: 'investimentos',
-    METAS: 'metas'
+    METAS: 'metas',
+    CATEGORIAS: 'categorias'
 };
 
 const Store = {

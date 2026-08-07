@@ -1,7 +1,18 @@
 window.Views.lancamentos = {
     render: async (container) => {
-        const lancamentos = await Store.get(KEYS.LANCAMENTOS) || [];
+        const [lancamentos, categoriasDB] = await Promise.all([
+            Store.get(KEYS.LANCAMENTOS) || [],
+            Store.get(KEYS.CATEGORIAS) || []
+        ]);
         
+        let categoriasOptions = '<option value="">Selecione...</option>';
+        if (categoriasDB.length > 0) {
+            categoriasOptions += categoriasDB.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+        } else {
+            // Fallback temporário
+            const defaults = ['Alimentação', 'Moradia', 'Transporte', 'Lazer', 'Saúde', 'Renda', 'Carro', 'Outros'];
+            categoriasOptions += defaults.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
         let html = `
             <div class="card mb-4">
                 <h3 class="mb-4">Novo Lançamento</h3>
@@ -17,12 +28,7 @@ window.Views.lancamentos = {
                     <div class="form-group">
                         <label>Categoria</label>
                         <select id="lanc-cat" class="input-control" required>
-                            <option value="Alimentação">Alimentação</option>
-                            <option value="Moradia">Moradia</option>
-                            <option value="Transporte">Transporte</option>
-                            <option value="Lazer">Lazer</option>
-                            <option value="Renda">Renda</option>
-                            <option value="Carro">Carro</option>
+                            ${categoriasOptions}
                         </select>
                     </div>
                     <div class="form-group">
