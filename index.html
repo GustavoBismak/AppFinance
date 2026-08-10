@@ -25,21 +25,26 @@
     <!-- Flatpickr PT-BR init -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Inicializa todos os inputs de data com Flatpickr premium
             function initDatePickers() {
                 document.querySelectorAll('input[type="date"]:not(.flatpickr-input)').forEach(el => {
-                    flatpickr(el, {
+                    const fp = flatpickr(el, {
                         locale: 'pt',
                         dateFormat: 'Y-m-d',
                         altInput: true,
-                        altFormat: 'd/m/Y',
+                        altFormat: 'j \\de F \\de Y',
                         allowInput: false,
                         disableMobile: true,
-                        animate: true
+                        defaultDate: el.value || null,
+                        onReady: function(_sel, _str, instance) {
+                            // Copia as classes do input original para o altInput
+                            if (instance.altInput) {
+                                instance.altInput.className = el.className + ' flatpickr-alt-display';
+                                instance.altInput.placeholder = el.placeholder || 'Selecione uma data';
+                            }
+                        }
                     });
                 });
             }
-            // Observer para reiniciar quando o conteúdo da view mudar
             const observer = new MutationObserver(initDatePickers);
             const viewContainer = document.getElementById('view-container');
             if (viewContainer) {
