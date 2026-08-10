@@ -14,16 +14,37 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Flatpickr (calendário bonito) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
     <!-- Supabase -->
     <script src="js/supabase-lib.js"></script>
     
-    <!-- ERROR DEBUGGER -->
+    <!-- Flatpickr PT-BR init -->
     <script>
-        window.onerror = function(message, source, lineno, colno, error) {
-            alert('ERRO JS ENCONTRADO:\n' + message + '\n\nArquivo: ' + source + '\nLinha: ' + lineno);
-        };
-        window.addEventListener('unhandledrejection', function(event) {
-            alert('PROMISE REJECTION:\n' + event.reason);
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicializa todos os inputs de data com Flatpickr premium
+            function initDatePickers() {
+                document.querySelectorAll('input[type="date"]:not(.flatpickr-input)').forEach(el => {
+                    flatpickr(el, {
+                        locale: 'pt',
+                        dateFormat: 'Y-m-d',
+                        altInput: true,
+                        altFormat: 'd/m/Y',
+                        allowInput: false,
+                        disableMobile: true,
+                        animate: true
+                    });
+                });
+            }
+            // Observer para reiniciar quando o conteúdo da view mudar
+            const observer = new MutationObserver(initDatePickers);
+            const viewContainer = document.getElementById('view-container');
+            if (viewContainer) {
+                observer.observe(viewContainer, { childList: true, subtree: true });
+            }
         });
     </script>
     
