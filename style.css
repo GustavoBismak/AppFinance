@@ -556,7 +556,7 @@ span.flatpickr-weekday {
     opacity: 0.4 !important;
 }
 
-/* ─── Input visível (altInput) ──────────────────── */
+/* O altInput herda a estilização via .input-control — pointer cursor adicionado */
 .flatpickr-alt-display {
     cursor: pointer !important;
 }
@@ -564,8 +564,6 @@ span.flatpickr-weekday {
     border-color: var(--primary) !important;
     box-shadow: 0 0 0 3px rgba(10, 147, 150, 0.15) !important;
 }
-input.flatpickr-input[readonly] {
-    display: none; /* Esconde o input original, só o altInput fica visível */
-}
+/* O input original fica oculto pelo próprio Flatpickr — não precisamos interferir */
 
 
