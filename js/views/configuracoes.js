@@ -38,7 +38,7 @@ window.Views.configuracoes = {
                     
                     <div class="mb-4">
                         <label style="display: block; margin-bottom: 8px" class="text-muted">Sessão</label>
-                        <button class="btn" style="background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-main)" onclick="Auth.logout()"><i class="ph ph-sign-out"></i> Sair da Conta</button>
+                        <button class="btn" style="background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-main)" onclick="Auth.confirmLogout()"><i class="ph ph-sign-out"></i> Sair da Conta</button>
                     </div>
                     
                     <div class="mb-4">

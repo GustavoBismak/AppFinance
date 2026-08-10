@@ -32,28 +32,28 @@
 </head>
 <body>
     <!-- Login Overlay -->
-    <div id="login-screen" style="position: fixed; inset: 0; background: var(--bg-dark); z-index: 9999; display: flex; align-items: center; justify-content: center;">
-        <div class="card" style="width: 100%; max-width: 400px; padding: 40px;">
-            <div class="text-center mb-4" style="text-align: center; color: var(--primary)">
-                <i class="ph-fill ph-wallet" style="font-size: 48px"></i>
-                <h2 style="color: var(--text-main); margin-top: 16px">FinApp Premium</h2>
-                <p class="text-muted" style="margin-top: 8px">Acesse sua conta para continuar</p>
+    <div id="login-screen" class="login-wrapper">
+        <div class="login-glass-card">
+            <div class="text-center mb-4 login-header">
+                <i class="ph-fill ph-wallet"></i>
+                <h2>FinApp Premium</h2>
+                <p class="text-muted" style="margin-top: 8px;">Acesse seu império financeiro</p>
             </div>
             
             <form id="login-form">
                 <div class="form-group">
                     <label>E-mail</label>
-                    <input type="email" id="login-email" class="input-control" required>
+                    <input type="email" id="login-email" class="input-control login-input" placeholder="seu@email.com" required>
                 </div>
                 <div class="form-group mb-4">
                     <label>Senha</label>
-                    <input type="password" id="login-password" class="input-control" required>
+                    <input type="password" id="login-password" class="input-control login-input" placeholder="••••••••" required>
                 </div>
                 
                 <div id="login-error" class="text-danger mb-4" style="font-size: 13px; display: none; text-align: center;"></div>
                 
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-bottom: 12px" id="btn-entrar">Entrar</button>
-                <button type="button" class="btn" style="width: 100%; background: transparent; border: 1px solid var(--border); color: var(--text-main)" id="btn-registrar">Criar Conta</button>
+                <button type="submit" class="btn btn-primary login-btn" id="btn-entrar">Entrar</button>
+                <button type="button" class="btn login-btn-outline" id="btn-registrar">Criar Conta</button>
             </form>
         </div>
     </div>

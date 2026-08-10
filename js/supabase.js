@@ -123,5 +123,33 @@ const Auth = {
         if (supabaseClient) await supabaseClient.auth.signOut();
         Auth.user = null;
         window.location.reload();
+    },
+
+    confirmLogout: () => {
+        const modal = document.createElement('div');
+        modal.id = 'logout-modal';
+        modal.style.cssText = `
+            position: fixed; inset: 0; z-index: 999999; display: flex; align-items: center; justify-content: center;
+            background: rgba(15, 17, 21, 0.8); backdrop-filter: blur(8px); animation: fadeIn 0.2s ease;
+        `;
+        
+        modal.innerHTML = `
+            <div class="card" style="width: 100%; max-width: 360px; text-align: center; border: 1px solid rgba(255,255,255,0.1); transform: scale(0.95); animation: popIn 0.2s forwards ease-out; background: var(--bg-panel); padding: 32px 24px;">
+                <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(230, 57, 70, 0.1); color: var(--danger); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px;">
+                    <i class="ph-fill ph-sign-out"></i>
+                </div>
+                <h3 style="margin-bottom: 12px; font-size: 20px; color: var(--text-main);">Sair da Conta?</h3>
+                <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 14px;">Você precisará fazer login novamente para acessar seu painel.</p>
+                <div style="display: flex; gap: 12px; justify-content: center;">
+                    <button class="btn" style="flex: 1; background: transparent; border: 1px solid var(--border); color: var(--text-main);" onclick="document.getElementById('logout-modal').remove()">Cancelar</button>
+                    <button class="btn" style="flex: 1; background: var(--danger); color: white; border: none;" onclick="Auth.logout()">Sim, Sair</button>
+                </div>
+            </div>
+            <style>
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+            </style>
+        `;
+        document.body.appendChild(modal);
     }
 };
