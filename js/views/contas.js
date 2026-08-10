@@ -3,6 +3,8 @@ window.Views.contas = {
         const contas = await Store.get(KEYS.CONTAS) || [];
         
         let html = `
+            ${App.getFilterHTML()}
+            
             <div class="card mb-4">
                 <h3 class="mb-4">Nova Conta</h3>
                 <form id="form-conta" class="grid grid-3">
@@ -54,71 +56,86 @@ window.Views.contas = {
         `;
         container.innerHTML = html;
         
-        const tbody = document.getElementById('contas-tbody');
-        const hoje = new Date();
-        hoje.setHours(0,0,0,0);
-        
-        contas.forEach(c => {
-            const vencimento = new Date(c.vencimento + 'T00:00:00');
-            const diffDias = Math.ceil((vencimento - hoje) / (1000 * 60 * 60 * 24));
+        const renderTable = () => {
+            const filtered = App.applyFilters(contas, 'vencimento', ['nome', 'obs']);
+            const tbody = document.getElementById('contas-tbody');
+            tbody.innerHTML = '';
             
-            let statusBadge = '';
-            
-            if (c.pago) {
-                statusBadge = '<span class="badge badge-success"><i class="ph ph-check-circle"></i> Paga</span>';
-            } else if (diffDias < 0) {
-                statusBadge = '<span class="badge badge-danger"><i class="ph ph-warning-circle"></i> Atrasada</span>';
-            } else if (diffDias <= 5) {
-                statusBadge = '<span class="badge badge-warning"><i class="ph ph-clock"></i> Vence em breve</span>';
-            } else {
-                statusBadge = '<span class="badge" style="background: var(--border); color: var(--text-main);">Pendente</span>';
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center" class="text-muted">Nenhuma conta encontrada para estes filtros.</td></tr>';
+                return;
             }
             
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${statusBadge}</td>
-                <td>
-                    <div style="font-weight: 500">${c.nome}</div>
-                    <div class="text-muted" style="font-size: 12px">${c.obs || ''}</div>
-                </td>
-                <td style="font-weight: 600">${App.formatCurrency(c.valor)}</td>
-                <td>${vencimento.toLocaleDateString('pt-BR')}</td>
-                <td>${c.pago && c.dataPagamento ? new Date(c.dataPagamento + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
-                <td>
-                    ${!c.pago ? `<button class="btn btn-marcar-pago" data-id="${c.id}" style="padding: 6px 12px; background: rgba(42, 157, 143, 0.15); color: var(--success);"><i class="ph ph-check"></i> Pagar</button>` : ''}
-                    <button class="btn btn-del" data-id="${c.id}" style="padding: 6px; background: transparent; color: var(--danger)"><i class="ph ph-trash"></i></button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-        
-        // Pagar action
-        document.querySelectorAll('.btn-marcar-pago').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = e.currentTarget.dataset.id;
-                const btnRef = e.currentTarget;
-                btnRef.disabled = true;
-                btnRef.innerHTML = '<i class="ph ph-spinner ph-spin"></i>';
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+            
+            filtered.forEach(c => {
+                const vencimento = new Date(c.vencimento + 'T00:00:00');
+                const diffDias = Math.ceil((vencimento - hoje) / (1000 * 60 * 60 * 24));
                 
-                await Store.update(KEYS.CONTAS, id, {
-                    pago: true,
-                    data_pagamento: new Date().toISOString().split('T')[0]
+                let statusBadge = '';
+                
+                if (c.pago) {
+                    statusBadge = '<span class="badge badge-success"><i class="ph ph-check-circle"></i> Paga</span>';
+                } else if (diffDias < 0) {
+                    statusBadge = '<span class="badge badge-danger"><i class="ph ph-warning-circle"></i> Atrasada</span>';
+                } else if (diffDias <= 5) {
+                    statusBadge = '<span class="badge badge-warning"><i class="ph ph-clock"></i> Vence em breve</span>';
+                } else {
+                    statusBadge = '<span class="badge" style="background: var(--border); color: var(--text-main);">Pendente</span>';
+                }
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${statusBadge}</td>
+                    <td>
+                        <div style="font-weight: 500">${c.nome}</div>
+                        <div class="text-muted" style="font-size: 12px">${c.obs || ''}</div>
+                    </td>
+                    <td style="font-weight: 600">${App.formatCurrency(c.valor)}</td>
+                    <td>${vencimento.toLocaleDateString('pt-BR')}</td>
+                    <td>${c.pago && c.dataPagamento ? new Date(c.dataPagamento + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+                    <td>
+                        ${!c.pago ? `<button class="btn btn-marcar-pago" data-id="${c.id}" style="padding: 6px 12px; background: rgba(42, 157, 143, 0.15); color: var(--success);"><i class="ph ph-check"></i> Pagar</button>` : ''}
+                        <button class="btn btn-del" data-id="${c.id}" style="padding: 6px; background: transparent; color: var(--danger)"><i class="ph ph-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            // Pagar action
+            document.querySelectorAll('.btn-marcar-pago').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.currentTarget.dataset.id;
+                    const btnRef = e.currentTarget;
+                    btnRef.disabled = true;
+                    btnRef.innerHTML = '<i class="ph ph-spinner ph-spin"></i>';
+                    
+                    await Store.update(KEYS.CONTAS, id, {
+                        pago: true,
+                        data_pagamento: new Date().toISOString().split('T')[0]
+                    });
+                    App.loadView('contas');
                 });
-                App.loadView('contas');
             });
-        });
-        
-        // Delete action
-        document.querySelectorAll('.btn-del').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = e.currentTarget.dataset.id;
-                const tr = e.currentTarget.closest('tr');
-                if (tr) tr.style.opacity = '0.4';
-                await Store.delete(KEYS.CONTAS, id);
-                Toast.success('Conta apagada com sucesso.');
-                App.loadView('contas');
+            
+            // Delete action
+            document.querySelectorAll('.btn-del').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.currentTarget.dataset.id;
+                    const tr = e.currentTarget.closest('tr');
+                    if (tr) tr.style.opacity = '0.4';
+                    await Store.delete(KEYS.CONTAS, id);
+                    Toast.success('Conta apagada com sucesso.');
+                    App.loadView('contas');
+                });
             });
-        });
+        };
+
+        // Attach filter logic
+        App.bindFilters(renderTable);
+        // Initial render
+        renderTable();
         
         // Form submit
         document.getElementById('form-conta').addEventListener('submit', async (e) => {

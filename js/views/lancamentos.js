@@ -9,11 +9,13 @@ window.Views.lancamentos = {
         if (categoriasDB.length > 0) {
             categoriasOptions += categoriasDB.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
         } else {
-            // Fallback temporário
             const defaults = ['Alimentação', 'Moradia', 'Transporte', 'Lazer', 'Saúde', 'Renda', 'Carro', 'Outros'];
             categoriasOptions += defaults.map(c => `<option value="${c}">${c}</option>`).join('');
         }
+        
         let html = `
+            ${App.getFilterHTML()}
+            
             <div class="card mb-4">
                 <h3 class="mb-4">Novo Lançamento</h3>
                 <form id="form-lancamento" class="grid grid-3">
@@ -73,7 +75,6 @@ window.Views.lancamentos = {
                             </tr>
                         </thead>
                         <tbody id="lancamentos-tbody">
-                            ${lancamentos.length === 0 ? `<tr><td colspan="7" style="text-align: center" class="text-muted">Nenhum lançamento encontrado.</td></tr>` : ''}
                         </tbody>
                     </table>
                 </div>
@@ -82,40 +83,53 @@ window.Views.lancamentos = {
         
         container.innerHTML = html;
         
-        const tbody = document.getElementById('lancamentos-tbody');
-        
-        // Supabase returns results sorted by created_at desc as requested in Store.get
-        lancamentos.forEach(l => {
-            const dataFormatada = new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR');
-            const valorFormatado = App.formatCurrency(l.valor);
-            const badgeClass = l.tipo === 'receita' ? 'badge-success' : 'badge-danger';
-            const tipoLabel = l.tipo === 'receita' ? 'Receita' : 'Despesa';
-            const colorClass = l.tipo === 'receita' ? 'text-success' : 'text-danger';
+        const renderTable = () => {
+            const filtered = App.applyFilters(lancamentos, 'data', ['descricao', 'categoria', 'forma']);
+            const tbody = document.getElementById('lancamentos-tbody');
+            tbody.innerHTML = '';
             
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${dataFormatada}</td>
-                <td>${l.descricao}</td>
-                <td>${l.categoria}</td>
-                <td>${l.forma}</td>
-                <td class="${colorClass}">${valorFormatado}</td>
-                <td><span class="badge ${badgeClass}">${tipoLabel}</span></td>
-                <td><button class="btn btn-del" data-id="${l.id}" style="padding: 4px; background: transparent; color: var(--danger)"><i class="ph ph-trash"></i></button></td>
-            `;
-            tbody.appendChild(tr);
-        });
-        
-        // Excluir Lançamento
-        document.querySelectorAll('.btn-del').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = e.currentTarget.dataset.id;
-                const tr = e.currentTarget.closest('tr');
-                if (tr) tr.style.opacity = '0.4';
-                await Store.delete(KEYS.LANCAMENTOS, id);
-                Toast.success('Lançamento apagado com sucesso.');
-                App.loadView('lancamentos');
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center" class="text-muted">Nenhum lançamento encontrado para estes filtros.</td></tr>';
+                return;
+            }
+            
+            filtered.forEach(l => {
+                const dataFormatada = new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR');
+                const valorFormatado = App.formatCurrency(l.valor);
+                const badgeClass = l.tipo === 'receita' ? 'badge-success' : 'badge-danger';
+                const tipoLabel = l.tipo === 'receita' ? 'Receita' : 'Despesa';
+                const colorClass = l.tipo === 'receita' ? 'text-success' : 'text-danger';
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${dataFormatada}</td>
+                    <td>${l.descricao}</td>
+                    <td>${l.categoria}</td>
+                    <td>${l.forma}</td>
+                    <td class="${colorClass}">${valorFormatado}</td>
+                    <td><span class="badge ${badgeClass}">${tipoLabel}</span></td>
+                    <td><button class="btn btn-del" data-id="${l.id}" style="padding: 4px; background: transparent; color: var(--danger)"><i class="ph ph-trash"></i></button></td>
+                `;
+                tbody.appendChild(tr);
             });
-        });
+            
+            // Re-bind delete actions
+            document.querySelectorAll('.btn-del').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.currentTarget.dataset.id;
+                    const tr = e.currentTarget.closest('tr');
+                    if (tr) tr.style.opacity = '0.4';
+                    await Store.delete(KEYS.LANCAMENTOS, id);
+                    Toast.success('Lançamento apagado com sucesso.');
+                    App.loadView('lancamentos'); // Reload from server to reflect delete
+                });
+            });
+        };
+
+        // Attach filter logic
+        App.bindFilters(renderTable);
+        // Initial render
+        renderTable();
         
         // Form submit logic
         document.getElementById('form-lancamento').addEventListener('submit', async (e) => {
@@ -135,7 +149,6 @@ window.Views.lancamentos = {
             
             await Store.insert(KEYS.LANCAMENTOS, novo);
             Toast.success('Lançamento adicionado com sucesso!');
-            // Reload view
             App.loadView('lancamentos');
         });
     }
