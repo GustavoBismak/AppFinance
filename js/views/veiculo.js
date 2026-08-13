@@ -181,12 +181,24 @@ window.Views.veiculo = {
         // Excluir
         document.querySelectorAll('.btn-del').forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                const id = e.currentTarget.dataset.id;
                 if (!confirm('Deseja apagar este registro?')) return;
+                
+                const id = e.currentTarget.dataset.id;
                 const tr = e.currentTarget.closest('tr');
                 if (tr) tr.style.opacity = '0.4';
+                
+                // Restaurar limite do cartão, se aplicável
+                const v = veiculos.find(x => x.id == id);
+                if (v && v.forma === 'Cartão de Crédito' && v.cartao_id) {
+                    const cartao = cartoes.find(c => c.id == v.cartao_id);
+                    if (cartao) {
+                        const novoUtilizado = Math.max(0, (parseFloat(cartao.utilizado) || 0) - (parseFloat(v.valor) || 0));
+                        await Store.update(KEYS.CARTOES, cartao.id, { utilizado: novoUtilizado });
+                    }
+                }
+
                 await Store.delete(KEYS.VEICULO, id);
-                Toast.success('Registro apagado.');
+                Toast.success('Registro apagado. (O Lançamento automático associado deve ser apagado manualmente no Dashboard)');
                 App.loadView('veiculo');
             });
         });

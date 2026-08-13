@@ -138,9 +138,22 @@ window.Views.lancamentos = {
             // Re-bind delete actions
             document.querySelectorAll('.btn-del').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
+                    if (!confirm('Deseja realmente apagar este lançamento?')) return;
+                    
                     const id = e.currentTarget.dataset.id;
                     const tr = e.currentTarget.closest('tr');
                     if (tr) tr.style.opacity = '0.4';
+                    
+                    // Restaurar limite do cartão, se aplicável
+                    const l = lancamentos.find(x => x.id == id);
+                    if (l && l.forma === 'Cartão de Crédito' && l.cartao_id && l.tipo === 'despesa') {
+                        const cartao = cartoes.find(c => c.id == l.cartao_id);
+                        if (cartao) {
+                            const novoUtilizado = Math.max(0, (parseFloat(cartao.utilizado) || 0) - (parseFloat(l.valor) || 0));
+                            await Store.update(KEYS.CARTOES, cartao.id, { utilizado: novoUtilizado });
+                        }
+                    }
+
                     await Store.delete(KEYS.LANCAMENTOS, id);
                     Toast.success('Lançamento apagado com sucesso.');
                     App.loadView('lancamentos'); // Reload from server to reflect delete

@@ -13,13 +13,21 @@ window.Views.dashboard = {
             
             let receitas = 0;
             let despesas = 0;
+            let despesasParaSaldo = 0;
 
             lancamentos.forEach(l => {
-                if (l.tipo === 'receita') receitas += parseFloat(l.valor) || 0;
-                if (l.tipo === 'despesa') despesas += parseFloat(l.valor) || 0;
+                const val = parseFloat(l.valor) || 0;
+                if (l.tipo === 'receita') receitas += val;
+                if (l.tipo === 'despesa') {
+                    despesas += val;
+                    if (l.forma !== 'Cartão de Crédito') {
+                        despesasParaSaldo += val;
+                    }
+                }
             });
 
-            const saldo   = receitas - despesas;
+            // O saldo não desconta compras feitas no cartão de crédito
+            const saldo = receitas - despesasParaSaldo;
             const economia = receitas > 0 ? ((saldo / receitas) * 100).toFixed(1) : 0;
 
             // Agrupar por mês para o gráfico de evolução
