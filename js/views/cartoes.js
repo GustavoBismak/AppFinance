@@ -97,9 +97,13 @@ window.Views.cartoes = {
 
                     <!-- Botões -->
                     <div style="padding:0 20px 20px 20px; display:flex; gap:8px;">
+                        <button class="btn btn-pagar-fatura" data-id="${c.id}" title="Marcar fatura como paga (Zera o limite utilizado)"
+                            style="flex:1; background:rgba(42, 157, 143, 0.12); color:var(--success); border:1px solid var(--success); font-size:13px; padding:7px;">
+                            <i class="ph ph-check-circle"></i> Pagar Fatura
+                        </button>
                         <button class="btn btn-edit-cartao" data-id="${c.id}"
-                            style="flex:1; background:rgba(10,147,150,0.12); color:var(--primary); border:1px solid var(--primary); font-size:13px; padding:7px;">
-                            <i class="ph ph-pencil"></i> Atualizar
+                            style="background:rgba(10,147,150,0.12); color:var(--primary); border:1px solid var(--primary); font-size:13px; padding:7px 12px;">
+                            <i class="ph ph-pencil"></i>
                         </button>
                         <button class="btn btn-del-cartao" data-id="${c.id}"
                             style="background:transparent; color:var(--danger); border:1px solid var(--danger); padding:7px 12px; font-size:13px;">
@@ -283,6 +287,21 @@ window.Views.cartoes = {
                 if (!confirm('Deseja remover este cartão?')) return;
                 await Store.delete(KEYS.CARTOES, id);
                 Toast.success('Cartão removido.');
+                App.loadView('cartoes');
+            });
+        });
+
+        // Pagar Fatura
+        document.querySelectorAll('.btn-pagar-fatura').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = e.currentTarget.dataset.id;
+                const c  = cartoes.find(x => x.id == id);
+                if (!c) return;
+
+                if (!confirm(`Deseja marcar a fatura do cartão ${c.nome} como paga? Isso zerará o limite utilizado e a fatura.`)) return;
+                
+                await Store.update(KEYS.CARTOES, id, { utilizado: 0, fatura: 0 });
+                Toast.success('Fatura paga e limite restabelecido!');
                 App.loadView('cartoes');
             });
         });
