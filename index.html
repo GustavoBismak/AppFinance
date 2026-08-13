@@ -27,7 +27,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             function initDatePickers() {
                 document.querySelectorAll('input[type="date"]:not(.flatpickr-input)').forEach(el => {
-                    const fp = flatpickr(el, {
+                    flatpickr(el, {
                         locale: 'pt',
                         dateFormat: 'Y-m-d',
                         altInput: true,
@@ -36,10 +36,10 @@
                         disableMobile: true,
                         defaultDate: el.value || null,
                         onReady: function(_sel, _str, instance) {
-                            // Copia as classes do input original para o altInput
                             if (instance.altInput) {
-                                instance.altInput.className = el.className + ' flatpickr-alt-display';
-                                instance.altInput.placeholder = el.placeholder || 'Selecione uma data';
+                                // Adiciona as classes sem sobrescrever as classes do Flatpickr
+                                instance.altInput.classList.add('input-control', 'flatpickr-alt-display');
+                                instance.altInput.placeholder = 'Selecione uma data';
                             }
                         }
                     });
