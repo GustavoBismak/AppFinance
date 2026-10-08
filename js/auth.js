@@ -64,26 +64,42 @@ window.Auth = {
     },
 
     mostrarApp: async () => {
+        // Esconde a tela de login imediatamente
         document.getElementById('login-screen').style.display = 'none';
-        
-        if (window.Onboarding) {
-            const isShowingOnboarding = await Onboarding.check();
-            if (isShowingOnboarding) return;
-        }
 
-        if (window.Subscription) {
-            await Subscription.ensureFreePlan();
-        }
-
-        document.getElementById('app-container').style.display = 'flex';
-        
-        // Verifica se é admin para exibir o menu restrito
-        if (window.Views && window.Views.admin) {
-            const isAdmin = await window.Views.admin.checkAdmin();
-            if (isAdmin) {
-                const navAdmin = document.getElementById('nav-admin');
-                if (navAdmin) navAdmin.style.display = 'flex';
+        // Onboarding — envolvido em try/catch para não travar
+        try {
+            if (window.Onboarding) {
+                const isShowingOnboarding = await Onboarding.check();
+                if (isShowingOnboarding) return;
             }
+        } catch (e) {
+            console.warn('[Auth] Onboarding ignorado por erro:', e.message);
+        }
+
+        // Assinatura — envolvido em try/catch para não travar
+        try {
+            if (window.Subscription) {
+                await Subscription.ensureFreePlan();
+            }
+        } catch (e) {
+            console.warn('[Auth] Subscription ignorado por erro:', e.message);
+        }
+
+        // Exibe o app garantidamente
+        document.getElementById('app-container').style.display = 'flex';
+
+        // Verifica admin — envolvido em try/catch para não travar
+        try {
+            if (window.Views && window.Views.admin) {
+                const isAdmin = await window.Views.admin.checkAdmin();
+                if (isAdmin) {
+                    const navAdmin = document.getElementById('nav-admin');
+                    if (navAdmin) navAdmin.style.display = 'flex';
+                }
+            }
+        } catch (e) {
+            console.warn('[Auth] Admin check ignorado por erro:', e.message);
         }
 
         if (window.App && typeof window.App.init === 'function') {
