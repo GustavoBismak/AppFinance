@@ -63,24 +63,185 @@
             <div class="text-center mb-4 login-header">
                 <i class="ph-fill ph-wallet"></i>
                 <h2>FinApp Premium</h2>
-                <p class="text-muted" style="margin-top: 8px;">Acesse seu império financeiro</p>
+                <p class="text-muted" style="margin-top: 8px;" id="login-subtitle">Acesse seu império financeiro</p>
             </div>
             
+            <!-- Login Form -->
             <form id="login-form">
                 <div class="form-group">
                     <label>E-mail</label>
                     <input type="email" id="login-email" class="input-control login-input" placeholder="seu@email.com" required>
                 </div>
-                <div class="form-group mb-4">
+                <div class="form-group mb-2">
                     <label>Senha</label>
                     <input type="password" id="login-password" class="input-control login-input" placeholder="••••••••" required>
                 </div>
-                
-                <div id="login-error" class="text-danger mb-4" style="font-size: 13px; display: none; text-align: center;"></div>
+                <div class="text-right mb-4">
+                    <a href="#" id="link-forgot" style="font-size: 13px; color: var(--primary);">Esqueci minha senha</a>
+                </div>
                 
                 <button type="submit" class="btn btn-primary login-btn" id="btn-entrar">Entrar</button>
-                <button type="button" class="btn login-btn-outline" id="btn-registrar">Criar Conta</button>
+                <div class="text-center mt-4">
+                    <span class="text-muted" style="font-size: 14px;">Não tem uma conta?</span>
+                    <a href="#" id="link-register" style="font-size: 14px; color: var(--primary); margin-left: 4px;">Criar Conta</a>
+                </div>
             </form>
+
+            <!-- Register Form -->
+            <form id="register-form" style="display: none;">
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="register-email" class="input-control login-input" placeholder="seu@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="register-password" class="input-control login-input" placeholder="Mínimo 6 caracteres" required>
+                </div>
+                <div class="form-group mb-4">
+                    <label>Confirmar Senha</label>
+                    <input type="password" id="register-password-confirm" class="input-control login-input" placeholder="Repita a senha" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary login-btn" id="btn-create-account">Criar Conta</button>
+                <div class="text-center mt-4">
+                    <span class="text-muted" style="font-size: 14px;">Já tem uma conta?</span>
+                    <a href="#" id="link-back-login" style="font-size: 14px; color: var(--primary); margin-left: 4px;">Fazer Login</a>
+                </div>
+            </form>
+
+            <!-- Forgot Password Form -->
+            <form id="forgot-form" style="display: none;">
+                <div class="form-group mb-4">
+                    <label>E-mail cadastrado</label>
+                    <input type="email" id="forgot-email" class="input-control login-input" placeholder="seu@email.com" required>
+                    <p class="text-muted mt-2" style="font-size: 12px;">Enviaremos um link para você redefinir sua senha.</p>
+                </div>
+                
+                <button type="submit" class="btn btn-primary login-btn" id="btn-send-reset">Enviar Link</button>
+                <div class="text-center mt-4">
+                    <a href="#" id="link-back-login-2" style="font-size: 14px; color: var(--text-muted);">Voltar para o login</a>
+                </div>
+            </form>
+
+            <!-- Reset Password Form (shown from email link) -->
+            <form id="reset-form" style="display: none;">
+                <div class="form-group">
+                    <label>Nova Senha</label>
+                    <input type="password" id="reset-password" class="input-control login-input" placeholder="Mínimo 6 caracteres" required>
+                </div>
+                <div class="form-group mb-4">
+                    <label>Confirmar Nova Senha</label>
+                    <input type="password" id="reset-password-confirm" class="input-control login-input" placeholder="Repita a senha" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary login-btn" id="btn-update-password">Atualizar Senha</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Onboarding Overlay -->
+    <div id="onboarding-screen" class="login-wrapper" style="display: none;">
+        <div class="login-glass-card" style="max-width: 500px;">
+            <!-- Step 1 -->
+            <div id="onboarding-step-1" class="text-center">
+                <i class="ph-fill ph-rocket" style="font-size: 48px; color: var(--primary); margin-bottom: 16px;"></i>
+                <h2 class="mb-2">Bem-vindo ao FinApp!</h2>
+                <p class="text-muted mb-4">Vamos configurar sua conta rapidamente para você começar a organizar sua vida financeira.</p>
+                <button class="btn btn-primary login-btn" onclick="Onboarding.next(2)">Começar</button>
+            </div>
+            
+            <!-- Step 2 -->
+            <div id="onboarding-step-2" style="display: none;">
+                <h3 class="mb-4 text-center" style="font-size: 18px;">Qual é o seu principal objetivo?</h3>
+                <div class="grid gap-2 mb-4" style="grid-template-columns: 1fr;">
+                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Organizar minhas despesas')">Organizar minhas despesas</button>
+                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Economizar dinheiro')">Economizar dinheiro</button>
+                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Sair das dívidas')">Sair das dívidas</button>
+                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Controlar minha família')">Controlar minha família</button>
+                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Acompanhar meus investimentos')">Acompanhar meus investimentos</button>
+                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Apenas quero organizar minhas finanças')">Apenas quero organizar minhas finanças</button>
+                </div>
+                <button class="btn btn-primary login-btn" id="btn-onb-2" disabled onclick="Onboarding.next(3)">Continuar</button>
+            </div>
+            
+            <!-- Step 3 -->
+            <div id="onboarding-step-3" style="display: none;">
+                <h3 class="mb-4 text-center" style="font-size: 18px;">Qual é aproximadamente sua renda mensal?</h3>
+                <div class="form-group mb-4">
+                    <input type="number" id="onboarding-income" class="input-control login-input" placeholder="R$ 0,00">
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn login-btn-outline" onclick="Onboarding.next(2)">Voltar</button>
+                    <button class="btn btn-primary login-btn" onclick="Onboarding.next(4)">Continuar</button>
+                </div>
+            </div>
+            
+            <!-- Step 4 -->
+            <div id="onboarding-step-4" style="display: none;">
+                <h3 class="mb-4 text-center" style="font-size: 18px;">Como você conheceu o FinApp?</h3>
+                <div class="grid gap-2 mb-4" style="grid-template-columns: 1fr;">
+                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'Instagram')">Instagram</button>
+                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'TikTok')">TikTok</button>
+                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'Google')">Google</button>
+                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'Indicação')">Indicação</button>
+                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'WhatsApp')">WhatsApp</button>
+                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'Outro')">Outro</button>
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn login-btn-outline" onclick="Onboarding.next(3)">Voltar</button>
+                    <button class="btn btn-primary login-btn" id="btn-onb-4" disabled onclick="Onboarding.next(5)">Continuar</button>
+                </div>
+            </div>
+            
+            <!-- Step 5 -->
+            <div id="onboarding-step-5" style="display: none;" class="text-center">
+                <i class="ph-fill ph-check-circle" style="font-size: 48px; color: var(--success); margin-bottom: 16px;"></i>
+                <h2 class="mb-2">Pronto!</h2>
+                <p class="text-muted mb-4">Sua conta está configurada.</p>
+                <button class="btn btn-primary login-btn" id="btn-onb-finish" onclick="Onboarding.finish()">Ir para meu Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Premium Modal -->
+    <div id="premium-modal" class="login-wrapper" style="display: none; z-index: 9999;">
+        <div class="login-glass-card text-center" style="max-width: 450px;">
+            <i class="ph-fill ph-crown" style="font-size: 56px; color: #f5cb5c; margin-bottom: 16px;"></i>
+            <h2 class="mb-2">Recurso Premium</h2>
+            <p class="text-muted mb-4">Esta funcionalidade é exclusiva para assinantes do FinApp PRO.</p>
+            <ul class="text-left mb-4" style="list-style: none; padding: 0; display: inline-block; text-align: left;">
+                <li style="margin-bottom: 8px;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Acesso a Cartões e Veículos</li>
+                <li style="margin-bottom: 8px;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Metas e Investimentos</li>
+                <li style="margin-bottom: 8px;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Contas a Pagar Fixas</li>
+                <li style="margin-bottom: 8px;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Relatórios Avançados</li>
+            </ul>
+            <div class="flex gap-2">
+                <button class="btn login-btn-outline" onclick="document.getElementById('premium-modal').style.display='none'">Fechar</button>
+                <button class="btn btn-primary login-btn" style="background: #f5cb5c; color: #111; font-weight: 600; border: none;" onclick="Pricing.open()">Conhecer o PRO</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Overlay -->
+    <div id="pricing-screen" class="login-wrapper" style="display: none; align-items: flex-start; overflow-y: auto; padding: 40px 20px;">
+        <div style="max-width: 900px; width: 100%; margin: 0 auto;">
+            <div class="text-center mb-4">
+                <i class="ph-fill ph-wallet" style="font-size: 48px; color: var(--primary);"></i>
+                <h2 style="font-size: 32px; margin: 16px 0;">Escolha o plano ideal</h2>
+                <p class="text-muted" style="font-size: 18px;">Tenha o controle total sobre sua vida financeira.</p>
+            </div>
+
+            <div class="grid grid-2" style="gap: 24px; margin-top: 40px;" id="pricing-cards-container">
+                <!-- Cards injectados via JS -->
+                <div class="text-center" style="width: 100%; grid-column: 1 / -1;">
+                    <i class="ph ph-spinner ph-spin" style="font-size: 32px; color: var(--primary);"></i>
+                    <p class="text-muted mt-2">Carregando planos...</p>
+                </div>
+            </div>
+            
+            <div class="text-center" style="margin-top: 40px;">
+                <button class="btn login-btn-outline" onclick="Pricing.close()">Voltar ao App</button>
+            </div>
         </div>
     </div>
 
@@ -117,8 +278,14 @@
                 <button class="nav-item" data-view="relatorios">
                     <i class="ph ph-chart-pie-slice"></i> Relatórios
                 </button>
+                <button class="nav-item" data-view="conta">
+                    <i class="ph ph-user"></i> Minha Conta
+                </button>
                 <button class="nav-item" data-view="configuracoes">
                     <i class="ph ph-gear"></i> Configurações
+                </button>
+                <button class="nav-item" data-view="admin" id="nav-admin" style="display: none; color: #f5cb5c; border-top: 1px solid var(--border); margin-top: 16px; margin-bottom: 8px;">
+                    <i class="ph ph-shield-check"></i> Administração
                 </button>
             </nav>
         </aside>
@@ -144,6 +311,9 @@
     <script src="js/supabase.js"></script>
     <script src="js/store.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/onboarding.js"></script>
+    <script src="js/subscription.js"></script>
+    <script src="js/pricing.js"></script>
     <script src="js/views/dashboard.js"></script>
     <script src="js/views/lancamentos.js"></script>
     <script src="js/views/contas.js"></script>
@@ -152,7 +322,9 @@
     <script src="js/views/investimentos.js"></script>
     <script src="js/views/metas.js"></script>
     <script src="js/views/relatorios.js"></script>
+    <script src="js/views/conta.js"></script>
     <script src="js/views/configuracoes.js"></script>
+    <script src="js/views/admin.js"></script>
     <!-- auth.js SEMPRE por último: depende de App, Store e Views -->
     <script src="js/auth.js"></script>
 </body>

@@ -10,7 +10,9 @@ const App = {
         investimentos: 'Investimentos',
         metas: 'Metas',
         relatorios: 'Relatórios',
-        configuracoes: 'Configurações'
+        conta: 'Minha Conta',
+        configuracoes: 'Configurações',
+        admin: 'Administração SaaS'
     },
 
     init: () => {
@@ -30,6 +32,24 @@ const App = {
     },
 
     loadView: async (viewName) => {
+        // SaaS: Verificação de acesso Premium
+        const proViews = ['contas', 'cartoes', 'veiculo', 'investimentos', 'metas', 'relatorios'];
+        if (proViews.includes(viewName)) {
+            const planSlug = window.Subscription?.current?.plans?.slug;
+            const isAdmin = window.Views?.admin?.isAdmin === true;
+            // Bloquear acesso se não for PRO e não for admin
+            if (planSlug !== 'pro' && !isAdmin) {
+                document.getElementById('premium-modal').style.display = 'flex';
+                
+                // Reverter a aba visualmente selecionada no sidebar
+                document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+                const activeBtn = document.querySelector(`.nav-item[data-view="${App.currentView}"]`);
+                if(activeBtn) activeBtn.classList.add('active');
+                
+                return;
+            }
+        }
+
         App.currentView = viewName;
         const container = document.getElementById('view-container');
         const title     = document.getElementById('page-title');

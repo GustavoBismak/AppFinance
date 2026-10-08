@@ -96,3 +96,53 @@ CREATE TABLE categorias (
 );
 ALTER TABLE categorias ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Usuários veem suas próprias categorias" ON categorias FOR ALL USING (auth.uid() = user_id);
+
+-- SAAS: Tabela de Planos
+CREATE TABLE plans (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    description TEXT,
+    price NUMERIC(10,2) NOT NULL,
+    billing_cycle TEXT NOT NULL DEFAULT 'monthly',
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+ALTER TABLE plans ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Planos são visíveis para todos" ON plans FOR SELECT USING (active = TRUE);
+
+INSERT INTO plans (name, slug, description, price, billing_cycle) VALUES
+('FREE', 'free', 'O básico essencial para organizar suas finanças.', 0.00, 'monthly'),
+('PRO', 'pro', 'Controle total com recursos premium.', 14.90, 'monthly');
+
+-- SAAS: Tabela de Assinaturas
+CREATE TABLE subscriptions (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users NOT NULL,
+    plan_id UUID REFERENCES plans NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active',
+    started_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    expires_at TIMESTAMP WITH TIME ZONE,
+    payment_provider TEXT,
+    payment_id TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Usuários veem suas próprias assinaturas" ON subscriptions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Usuários inserem a própria assinatura inicial" ON subscriptions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Usuários alteram própria assinatura" ON subscriptions FOR UPDATE USING (auth.uid() = user_id);
+
+-- SAAS: Tabela de Administradores
+CREATE TABLE admin_users (
+    user_id UUID REFERENCES auth.users NOT NULL PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins podem se ver" ON admin_users FOR SELECT USING (auth.uid() = user_id);
+
+CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN AS $$
+  SELECT EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid());
+$$ LANGUAGE sql SECURITY DEFINER;
+
+CREATE POLICY "Admins veem todas as assinaturas" ON subscriptions FOR SELECT USING (is_admin());
