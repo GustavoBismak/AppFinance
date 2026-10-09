@@ -183,3 +183,6 @@ const App = {
 
 // Namespace global das views
 window.Views = {};
+
+// Expõe App no objeto window para compatibilidade com outros scripts
+window.App = App;

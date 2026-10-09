@@ -69,3 +69,7 @@ const Store = {
 };
 
 Store.init();
+
+// Expõe globalmente no window por segurança
+window.Store = Store;
+window.KEYS = KEYS;
