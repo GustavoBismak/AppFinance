@@ -113,24 +113,25 @@ window.Pricing = {
         btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Redirecionando pro Asaas...';
 
         try {
-            // Chama a Edge Function do Supabase
             const { data, error } = await supabaseClient.functions.invoke('asaas-checkout', { 
                 body: { planId: planId } 
             });
 
-            if (error) {
-                console.error("Erro da API:", error);
-                throw error;
-            }
+            // Erro de rede/função (não chegou a responder)
+            if (error) throw new Error(error.message);
+            
+            // Erro retornado pelo nosso backend
+            if (!data.success) throw new Error(data.error || 'Erro desconhecido no servidor.');
 
-            if (data && data.checkoutUrl) {
-                window.location.href = data.checkoutUrl; // Redireciona pro Asaas
+            if (data.checkoutUrl) {
+                window.open(data.checkoutUrl, '_blank'); // Abre o Asaas em nova aba
             } else {
-                throw new Error("URL de checkout não retornada pelo servidor.");
+                Toast.warning('Assinatura criada! Aguardando confirmação de pagamento.');
             }
 
         } catch (error) {
-            Toast.error('Erro ao iniciar checkout: ' + error.message);
+            console.error('[Pricing] Erro no checkout:', error.message);
+            Toast.error('Erro: ' + error.message);
             btn.disabled = false;
             btn.innerHTML = originalText;
         }

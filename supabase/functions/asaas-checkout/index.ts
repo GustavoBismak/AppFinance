@@ -7,10 +7,12 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
+
+  const respond = (body: object, status = 200) =>
+    new Response(JSON.stringify(body), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status })
 
   try {
     const supabaseClient = createClient(
@@ -18,132 +20,124 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     )
-    
-    // Get the user from the request
+
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
-    if (userError || !user) throw new Error('Unauthorized')
+    if (userError || !user) return respond({ success: false, error: 'Não autorizado. Faça login novamente.' })
 
     const body = await req.json()
-    const { planId } = body // Ex: 'pro'
-    
-    // Configurações do Asaas
+    const { planId } = body
+    console.log('[checkout] planId recebido:', planId, '| user:', user.id)
+
     const ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY')
-    const ASAAS_URL = Deno.env.get('ASAAS_URL') || 'https://sandbox.asaas.com/api/v3' // Use sandbox para testes
+    const ASAAS_URL = Deno.env.get('ASAAS_URL') || 'https://api.asaas.com/v3'
 
-    if (!ASAAS_API_KEY) throw new Error('Asaas API key missing')
+    if (!ASAAS_API_KEY) return respond({ success: false, error: 'Chave da API do Asaas não configurada.' })
 
-    // 1. Verificar se o usuário já tem customer_id
-    // Usaremos o Service Role para contornar o RLS se necessário, 
-    // mas como a query é pro próprio user_id, a anon key com auth header já funciona.
-    let asaasCustomerId = null;
-    const { data: customerData } = await supabaseClient
-      .from('customers')
-      .select('asaas_customer_id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (customerData?.asaas_customer_id) {
-      asaasCustomerId = customerData.asaas_customer_id;
-    } else {
-      // 2. Criar cliente no Asaas
-      const customerBody = {
-        name: user.user_metadata?.full_name || user.email,
-        email: user.email,
-      }
-      
-      const asaasCustomerRes = await fetch(`${ASAAS_URL}/customers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'access_token': ASAAS_API_KEY
-        },
-        body: JSON.stringify(customerBody)
-      })
-      
-      const asaasCustomer = await asaasCustomerRes.json()
-      if (!asaasCustomerRes.ok) throw new Error(asaasCustomer.errors?.[0]?.description || 'Erro ao criar cliente no Asaas')
-      
-      asaasCustomerId = asaasCustomer.id
-      
-      // Salvar no banco (aqui precisamos do service_role para garantir a gravação segura caso o RLS limite)
-      const supabaseAdmin = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SVC_ROLE_KEY') ?? ''
-      )
-      
-      await supabaseAdmin.from('customers').insert({
-        user_id: user.id,
-        asaas_customer_id: asaasCustomerId
-      })
-    }
-
-    // 3. Criar a assinatura no Asaas
-    // O valor do plano deve vir do banco para não depender do frontend
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SVC_ROLE_KEY') ?? ''
     )
-    
-    const { data: planData } = await supabaseAdmin
+
+    // 1. Buscar o plano no banco
+    const { data: planData, error: planError } = await supabaseAdmin
       .from('plans')
       .select('*')
       .eq('id', planId)
       .single()
-      
-    if (!planData) throw new Error('Plano não encontrado')
 
-    const subscriptionBody = {
-      customer: asaasCustomerId,
-      billingType: 'PIX', // Pode ser BOLETO, CREDIT_CARD, PIX, UNDEFINED
-      value: planData.price,
-      nextDueDate: new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0], // Amanhã
-      cycle: 'MONTHLY',
-      description: `Assinatura ${planData.name}`
+    console.log('[checkout] planData:', JSON.stringify(planData), '| planError:', JSON.stringify(planError))
+    if (planError || !planData) return respond({ success: false, error: `Plano não encontrado (id: ${planId}). Execute migration_planos.sql no Supabase.` })
+
+    // 2. Verificar se o usuário já tem customer_id no Asaas
+    let asaasCustomerId = null
+    const { data: customerData } = await supabaseAdmin
+      .from('customers')
+      .select('asaas_customer_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (customerData?.asaas_customer_id) {
+      asaasCustomerId = customerData.asaas_customer_id
+      console.log('[checkout] Cliente Asaas já existe:', asaasCustomerId)
+    } else {
+      // 3. Criar cliente no Asaas
+      const customerPayload = {
+        name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Cliente',
+        email: user.email,
+      }
+      console.log('[checkout] Criando cliente no Asaas:', JSON.stringify(customerPayload))
+
+      const asaasCustomerRes = await fetch(`${ASAAS_URL}/customers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+        body: JSON.stringify(customerPayload)
+      })
+
+      const asaasCustomer = await asaasCustomerRes.json()
+      console.log('[checkout] Resposta cliente Asaas:', JSON.stringify(asaasCustomer))
+
+      if (!asaasCustomerRes.ok) {
+        const msg = asaasCustomer.errors?.[0]?.description || asaasCustomer.message || 'Erro ao criar cliente no Asaas'
+        return respond({ success: false, error: `Asaas (cliente): ${msg}` })
+      }
+
+      asaasCustomerId = asaasCustomer.id
+      await supabaseAdmin.from('customers').insert({ user_id: user.id, asaas_customer_id: asaasCustomerId })
     }
+
+    // 4. Criar assinatura no Asaas
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1)
+    const nextDueDate = tomorrow.toISOString().split('T')[0]
+
+    const subscriptionPayload = {
+      customer: asaasCustomerId,
+      billingType: 'UNDEFINED',
+      value: planData.price,
+      nextDueDate,
+      cycle: 'MONTHLY',
+      description: `Assinatura ${planData.name} - FinApp`
+    }
+    console.log('[checkout] Criando assinatura:', JSON.stringify(subscriptionPayload))
 
     const asaasSubRes = await fetch(`${ASAAS_URL}/subscriptions`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'access_token': ASAAS_API_KEY
-      },
-      body: JSON.stringify(subscriptionBody)
+      headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+      body: JSON.stringify(subscriptionPayload)
     })
 
     const asaasSub = await asaasSubRes.json()
-    if (!asaasSubRes.ok) throw new Error(asaasSub.errors?.[0]?.description || 'Erro ao criar assinatura no Asaas')
+    console.log('[checkout] Resposta assinatura:', JSON.stringify(asaasSub))
 
-    // 4. Salvar a assinatura com status 'pending' no banco
+    if (!asaasSubRes.ok) {
+      const msg = asaasSub.errors?.[0]?.description || asaasSub.message || 'Erro ao criar assinatura'
+      return respond({ success: false, error: `Asaas (assinatura): ${msg}` })
+    }
+
+    // 5. Salvar assinatura no banco
     await supabaseAdmin.from('subscriptions').upsert({
       user_id: user.id,
       plan_id: planId,
       asaas_subscription_id: asaasSub.id,
       status: 'pending',
       payment_provider: 'asaas'
-    }, { onConflict: 'user_id' }) // Atualiza se já existir
+    }, { onConflict: 'user_id' })
 
-    // Retorna o link de pagamento da primeira cobrança (se houver fatura vinculada)
-    // Se quiser pegar o link do PIX:
-    let checkoutUrl = '';
-    // Pegar as faturas da assinatura para redirecionar o cliente para pagamento
+    // 6. Buscar link de pagamento da fatura
+    let checkoutUrl = ''
     const asaasPaymentsRes = await fetch(`${ASAAS_URL}/payments?subscription=${asaasSub.id}`, {
-        headers: { 'access_token': ASAAS_API_KEY }
+      headers: { 'access_token': ASAAS_API_KEY }
     })
     const asaasPayments = await asaasPaymentsRes.json()
-    
+
     if (asaasPayments.data && asaasPayments.data.length > 0) {
-        checkoutUrl = asaasPayments.data[0].invoiceUrl;
+      checkoutUrl = asaasPayments.data[0].invoiceUrl
     }
 
-    return new Response(
-      JSON.stringify({ checkoutUrl, asaasSubscriptionId: asaasSub.id }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-    )
+    console.log('[checkout] checkoutUrl:', checkoutUrl)
+    return respond({ success: true, checkoutUrl, asaasSubscriptionId: asaasSub.id })
 
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-    )
+    console.error('[checkout] Erro inesperado:', error.message)
+    return respond({ success: false, error: error.message })
   }
 })
