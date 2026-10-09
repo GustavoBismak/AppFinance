@@ -21,6 +21,8 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
     <!-- Supabase -->
     <script src="js/supabase-lib.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <!-- Flatpickr PT-BR init -->
     <script>
@@ -92,6 +94,10 @@
                 <div class="form-group">
                     <label>E-mail</label>
                     <input type="email" id="register-email" class="input-control login-input" placeholder="seu@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>CPF (Apenas números)</label>
+                    <input type="text" id="register-cpf" class="input-control login-input" placeholder="00000000000" maxlength="11" required>
                 </div>
                 <div class="form-group">
                     <label>Senha</label>

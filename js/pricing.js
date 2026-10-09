@@ -110,38 +110,118 @@ window.Pricing = {
         if (!btn) btn = document.activeElement;
         const originalText = btn.innerHTML;
         
-        // O Asaas exige CPF/CNPJ para gerar assinaturas.
-        const cpfCnpj = prompt("Por favor, digite seu CPF ou CNPJ (somente números) para gerar a assinatura:");
+        let cpfCnpj = Auth.user?.user_metadata?.cpfCnpj;
+        
+        // 1. Se não tem CPF, pede usando SweetAlert
         if (!cpfCnpj) {
-            Toast.warning('O CPF é obrigatório para gerar a cobrança.');
-            return;
+            const { value: cpfInput } = await Swal.fire({
+                title: 'Quase lá!',
+                text: 'Precisamos do seu CPF para gerar a assinatura.',
+                input: 'text',
+                inputPlaceholder: 'Apenas números',
+                showCancelButton: true,
+                confirmButtonText: 'Continuar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: 'var(--primary)',
+                background: '#1a1f2b',
+                color: '#fff',
+                inputValidator: (value) => {
+                    if (!value || value.length < 11) return 'Digite um CPF válido.'
+                }
+            });
+            if (!cpfInput) return;
+            cpfCnpj = cpfInput;
         }
 
-        btn.disabled = true;
-        btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Redirecionando pro Asaas...';
+        // 2. Escolher a forma de pagamento
+        const { value: paymentMethod } = await Swal.fire({
+            title: 'Forma de Pagamento',
+            text: 'Como deseja assinar o FinApp PRO?',
+            icon: 'question',
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText: '<i class="ph ph-credit-card"></i> Cartão de Crédito',
+            denyButtonText: '<i class="ph ph-qr-code"></i> PIX',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#f5cb5c',
+            denyButtonColor: '#0a9396',
+            background: '#1a1f2b',
+            color: '#fff',
+            customClass: {
+                confirmButton: 'text-dark font-bold'
+            }
+        });
+
+        if (!paymentMethod && paymentMethod !== false) return; // Cancelou
+        
+        const billingType = paymentMethod ? 'CREDIT_CARD' : 'PIX';
+
+        // 3. Processar
+        Swal.fire({
+            title: 'Gerando assinatura...',
+            text: 'Conectando com o Asaas',
+            allowOutsideClick: false,
+            background: '#1a1f2b',
+            color: '#fff',
+            didOpen: () => Swal.showLoading()
+        });
 
         try {
             const { data, error } = await supabaseClient.functions.invoke('asaas-checkout', { 
-                body: { planId: planId, cpfCnpj: cpfCnpj } 
+                body: { planId, cpfCnpj, billingType } 
             });
 
-            // Erro de rede/função (não chegou a responder)
             if (error) throw new Error(error.message);
-            
-            // Erro retornado pelo nosso backend
-            if (!data.success) throw new Error(data.error || 'Erro desconhecido no servidor.');
+            if (!data.success) throw new Error(data.error || 'Erro desconhecido.');
 
-            if (data.checkoutUrl) {
-                window.location.href = data.checkoutUrl; // Redireciona na mesma aba para evitar bloqueio
-            } else {
-                Toast.warning('Assinatura gerada, aguarde a liberação (link não retornado).');
+            if (billingType === 'CREDIT_CARD') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Redirecionando...',
+                    text: 'Você será levado ao Asaas para inserir seu cartão com segurança.',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    background: '#1a1f2b', color: '#fff'
+                }).then(() => {
+                    window.location.href = data.checkoutUrl;
+                });
+            } else if (billingType === 'PIX' && data.pix) {
+                // Exibe o QR Code
+                Swal.fire({
+                    title: 'Pague via PIX',
+                    html: `
+                        <p class="text-muted" style="margin-bottom: 16px;">Escaneie o QR Code ou copie o código abaixo.</p>
+                        <img src="data:image/png;base64,${data.pix.encodedImage}" style="width: 200px; border-radius: 8px; margin-bottom: 16px;">
+                        <br>
+                        <input type="text" readonly value="${data.pix.payload}" class="input-control" style="width: 100%; text-align: center; font-size: 12px; margin-bottom: 8px;" id="pix-copy">
+                        <button onclick="navigator.clipboard.writeText(document.getElementById('pix-copy').value); Toast.success('Copiado!')" class="btn btn-outline" style="width: 100%;">Copiar Copia e Cola</button>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Já paguei',
+                    cancelButtonText: 'Fechar',
+                    confirmButtonColor: 'var(--primary)',
+                    background: '#1a1f2b', color: '#fff'
+                }).then((res) => {
+                    if (res.isConfirmed) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Pagamento em Processamento',
+                            text: 'Assim que o Asaas confirmar o PIX, seu plano será ativado automaticamente!',
+                            confirmButtonColor: 'var(--primary)',
+                            background: '#1a1f2b', color: '#fff'
+                        }).then(() => { Pricing.close(); });
+                    }
+                });
             }
 
         } catch (error) {
-            console.error('[Pricing] Erro no checkout:', error.message);
-            Toast.error('Erro: ' + error.message);
-            btn.disabled = false;
-            btn.innerHTML = originalText;
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: error.message,
+                background: '#1a1f2b', color: '#fff',
+                confirmButtonColor: 'var(--primary)'
+            });
         }
     },
 

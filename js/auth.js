@@ -142,12 +142,17 @@ window.Auth = {
     handleRegister: async (e) => {
         e.preventDefault();
         const email = document.getElementById('register-email').value.trim();
+        const cpf = document.getElementById('register-cpf').value.trim();
         const password = document.getElementById('register-password').value;
         const confirm = document.getElementById('register-password-confirm').value;
         const btn = document.getElementById('btn-create-account');
 
         if (!Auth.isValidEmail(email)) {
             Toast.warning('Por favor, informe um e-mail válido.');
+            return;
+        }
+        if (!cpf || cpf.length < 11) {
+            Toast.warning('Por favor, informe um CPF válido (11 números).');
             return;
         }
         if (password.length < 6) {
@@ -163,7 +168,13 @@ window.Auth = {
         btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Criando conta...';
 
         try {
-            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+            const { data, error } = await supabaseClient.auth.signUp({ 
+                email, 
+                password,
+                options: {
+                    data: { cpfCnpj: cpf }
+                }
+            });
             if (error) throw error;
             Auth.user = data.user;
 
