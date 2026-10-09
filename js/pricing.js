@@ -132,9 +132,9 @@ window.Pricing = {
             if (!data.success) throw new Error(data.error || 'Erro desconhecido no servidor.');
 
             if (data.checkoutUrl) {
-                window.open(data.checkoutUrl, '_blank'); // Abre o Asaas em nova aba
+                window.location.href = data.checkoutUrl; // Redireciona na mesma aba para evitar bloqueio
             } else {
-                Toast.warning('Assinatura criada! Aguardando confirmação de pagamento.');
+                Toast.warning('Assinatura gerada, aguarde a liberação (link não retornado).');
             }
 
         } catch (error) {

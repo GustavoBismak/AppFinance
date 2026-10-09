@@ -98,14 +98,13 @@ serve(async (req) => {
     }
 
     // 4. Criar assinatura no Asaas
-    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1)
-    const nextDueDate = tomorrow.toISOString().split('T')[0]
+    const today = new Date().toISOString().split('T')[0] // Hoje
 
     const subscriptionPayload = {
       customer: asaasCustomerId,
       billingType: 'UNDEFINED',
       value: planData.price,
-      nextDueDate,
+      nextDueDate: today,
       cycle: 'MONTHLY',
       description: `Assinatura ${planData.name} - FinApp`
     }
