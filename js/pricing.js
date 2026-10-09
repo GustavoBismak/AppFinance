@@ -65,7 +65,7 @@ window.Pricing = {
                     <p class="text-muted" style="margin-bottom: 24px;">${plan.description}</p>
                     
                     <div style="font-size: 40px; font-weight: 700; margin-bottom: 32px;">
-                        <span style="font-size: 20px; font-weight: normal; vertical-align: super;">R$</span>${plan.price.toString().replace('.', ',')}
+                        <span style="font-size: 20px; font-weight: normal; vertical-align: super;">R$</span>${Number(plan.price).toFixed(2).replace('.', ',')}
                         <span style="font-size: 14px; font-weight: normal; color: var(--text-muted);">/mês</span>
                     </div>
                     
