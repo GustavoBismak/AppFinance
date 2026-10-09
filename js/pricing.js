@@ -110,25 +110,24 @@ window.Pricing = {
         if (!btn) btn = document.activeElement;
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Redirecionando...';
+        btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Redirecionando pro Asaas...';
 
         try {
-            // ARQUITETURA CORRETA (SaaS Real):
-            // 1. O frontend não sabe criar pagamentos, ele pede pro backend.
-            // const { data, error } = await supabaseClient.functions.invoke('mp-checkout', { body: { planId } });
-            // if (error) throw error;
-            // window.location.href = data.checkoutUrl;
+            // Chama a Edge Function do Supabase
+            const { data, error } = await supabaseClient.functions.invoke('asaas-checkout', { 
+                body: { planId: planId } 
+            });
 
-            // MOCK PARA FINS DE DESENVOLVIMENTO (Até o backend estar no ar):
-            setTimeout(() => {
-                const aprovado = confirm('[AMBIENTE DE TESTE] Simulando redirecionamento para o Mercado Pago.\n\nDeseja simular que o pagamento foi APROVADO agora?');
-                if (aprovado) {
-                    Pricing.simulateWebhookApproval(planId);
-                } else {
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                }
-            }, 1000);
+            if (error) {
+                console.error("Erro da API:", error);
+                throw error;
+            }
+
+            if (data && data.checkoutUrl) {
+                window.location.href = data.checkoutUrl; // Redireciona pro Asaas
+            } else {
+                throw new Error("URL de checkout não retornada pelo servidor.");
+            }
 
         } catch (error) {
             Toast.error('Erro ao iniciar checkout: ' + error.message);
@@ -138,8 +137,8 @@ window.Pricing = {
     },
 
     simulateWebhookApproval: async (planId) => {
-        // NOTA DE ARQUITETURA: Isso será feito no backend (Webhook) usando Service Role
-        // O frontend NUNCA deve confiar no callback de tela para confirmar um plano PRO.
+        // ESSA FUNÇÃO NÃO É MAIS NECESSÁRIA, O WEBHOOK DO ASAAS FARÁ ISSO.
+        // Fica aqui apenas por registro.
         try {
             const { error } = await supabaseClient
                 .from('subscriptions')
