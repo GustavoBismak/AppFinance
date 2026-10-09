@@ -25,8 +25,8 @@ serve(async (req) => {
     if (userError || !user) return respond({ success: false, error: 'Não autorizado. Faça login novamente.' })
 
     const body = await req.json()
-    const { planId } = body
-    console.log('[checkout] planId recebido:', planId, '| user:', user.id)
+    const { planId, cpfCnpj } = body
+    console.log('[checkout] planId recebido:', planId, '| user:', user.id, '| cpf:', cpfCnpj)
 
     const ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY')
     const ASAAS_URL = Deno.env.get('ASAAS_URL') || 'https://api.asaas.com/v3'
@@ -59,11 +59,23 @@ serve(async (req) => {
     if (customerData?.asaas_customer_id) {
       asaasCustomerId = customerData.asaas_customer_id
       console.log('[checkout] Cliente Asaas já existe:', asaasCustomerId)
+      
+      // Se recebemos um CPF, vamos atualizar o cliente no Asaas por garantia
+      if (cpfCnpj) {
+        await fetch(`${ASAAS_URL}/customers/${asaasCustomerId}`, {
+          method: 'POST', // Asaas usa POST para update no customer route
+          headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+          body: JSON.stringify({ cpfCnpj: cpfCnpj.replace(/\D/g, '') })
+        })
+      }
     } else {
       // 3. Criar cliente no Asaas
-      const customerPayload = {
+      const customerPayload: any = {
         name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Cliente',
         email: user.email,
+      }
+      if (cpfCnpj) {
+          customerPayload.cpfCnpj = cpfCnpj.replace(/\D/g, '');
       }
       console.log('[checkout] Criando cliente no Asaas:', JSON.stringify(customerPayload))
 

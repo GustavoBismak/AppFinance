@@ -109,12 +109,20 @@ window.Pricing = {
     subscribe: async (planId, btn) => {
         if (!btn) btn = document.activeElement;
         const originalText = btn.innerHTML;
+        
+        // O Asaas exige CPF/CNPJ para gerar assinaturas.
+        const cpfCnpj = prompt("Por favor, digite seu CPF ou CNPJ (somente números) para gerar a assinatura:");
+        if (!cpfCnpj) {
+            Toast.warning('O CPF é obrigatório para gerar a cobrança.');
+            return;
+        }
+
         btn.disabled = true;
         btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Redirecionando pro Asaas...';
 
         try {
             const { data, error } = await supabaseClient.functions.invoke('asaas-checkout', { 
-                body: { planId: planId } 
+                body: { planId: planId, cpfCnpj: cpfCnpj } 
             });
 
             // Erro de rede/função (não chegou a responder)
