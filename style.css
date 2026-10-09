@@ -314,6 +314,11 @@ tr:last-child td {
     background-repeat: no-repeat;
 }
 
+/* Forçar SweetAlert por cima da tela de preços */
+.swal2-container {
+    z-index: 99999 !important;
+}
+
 /* Fallback gradient se a imagem não carregar imediatamente */
 .login-wrapper::before {
     content: '';
