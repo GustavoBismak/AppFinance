@@ -68,7 +68,7 @@ serve(async (req) => {
       // Salvar no banco (aqui precisamos do service_role para garantir a gravação segura caso o RLS limite)
       const supabaseAdmin = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        Deno.env.get('SVC_ROLE_KEY') ?? ''
       )
       
       await supabaseAdmin.from('customers').insert({
@@ -81,7 +81,7 @@ serve(async (req) => {
     // O valor do plano deve vir do banco para não depender do frontend
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SVC_ROLE_KEY') ?? ''
     )
     
     const { data: planData } = await supabaseAdmin
