@@ -3,6 +3,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 serve(async (req) => {
   try {
+    // Validação do token de segurança do Asaas
+    const webhookToken = Deno.env.get('ASAAS_WEBHOOK_TOKEN')
+    const incomingToken = req.headers.get('asaas-access-token')
+
+    if (!webhookToken || incomingToken !== webhookToken) {
+      console.error('Webhook token inválido ou ausente')
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SVC_ROLE_KEY') ?? ''
@@ -14,6 +23,8 @@ serve(async (req) => {
     
     const event = payload.event;
     const subscriptionId = payload.payment?.subscription;
+
+    console.log(`Webhook recebido: ${event}, subscription: ${subscriptionId}`)
 
     if (!subscriptionId) {
        return new Response(JSON.stringify({ message: "Not a subscription payment, ignored." }), { status: 200 })
@@ -28,10 +39,13 @@ serve(async (req) => {
 
     // Atualiza a assinatura no Supabase
     if (status === 'active' || status === 'expired') {
-        await supabaseAdmin
+        const { error } = await supabaseAdmin
             .from('subscriptions')
             .update({ status: status })
             .eq('asaas_subscription_id', subscriptionId)
+        
+        if (error) throw error
+        console.log(`Assinatura ${subscriptionId} atualizada para: ${status}`)
     }
 
     return new Response(
