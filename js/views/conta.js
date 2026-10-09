@@ -55,6 +55,20 @@ window.Views.conta = {
                 </div>
                 
                 <div class="card">
+                    <h3 class="mb-4">Perfil</h3>
+                    
+                    <form id="form-alterar-nome" class="mb-4">
+                        <div class="form-group mb-4">
+                            <label>Nome de Exibição</label>
+                            <input type="text" id="nome-usuario" class="input-control" value="${user.user_metadata?.full_name || ''}" placeholder="Seu nome" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="btn-salvar-nome">
+                            Salvar Nome
+                        </button>
+                    </form>
+
+                    <hr style="border: none; border-top: 1px solid var(--border); margin: 24px 0;">
+
                     <h3 class="mb-4">Segurança</h3>
                     
                     <form id="form-alterar-senha" class="mb-4">
@@ -88,6 +102,31 @@ window.Views.conta = {
         `;
         
         container.innerHTML = html;
+
+        document.getElementById('form-alterar-nome').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-salvar-nome');
+            const newName = document.getElementById('nome-usuario').value.trim();
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Salvando...';
+
+            try {
+                const { data, error } = await supabaseClient.auth.updateUser({
+                    data: { full_name: newName }
+                });
+                if (error) throw error;
+                
+                Auth.user = data.user;
+                Toast.success('Nome atualizado com sucesso!');
+                App.loadView('conta'); // Recarrega a view para mostrar o novo nome no perfil
+            } catch (error) {
+                Toast.error('Erro ao atualizar nome: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Salvar Nome';
+            }
+        });
 
         document.getElementById('form-alterar-senha').addEventListener('submit', async (e) => {
             e.preventDefault();

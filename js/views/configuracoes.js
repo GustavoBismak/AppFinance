@@ -48,17 +48,6 @@ window.Views.configuracoes = {
                             <option disabled>Light Mode (Em breve)</option>
                         </select>
                     </div>
-                    
-                    <hr style="border: none; border-top: 1px solid var(--border); margin: 24px 0;">
-                    
-                    <div class="mb-4">
-                        <h4 class="mb-2 text-danger">Zona de Perigo</h4>
-                        <p class="text-muted mb-4" style="font-size: 13px">Esta ação apagará permanentemente todos os dados da sua conta, incluindo lançamentos, cartões, e configurações.</p>
-                        
-                        <div class="flex gap-2">
-                            <button class="btn" style="background: rgba(230, 57, 70, 0.1); color: var(--danger)" id="btn-apagar-conta"><i class="ph ph-trash"></i> Apagar Minha Conta e Dados</button>
-                        </div>
-                    </div>
                 </div>
             </div>
         `;
@@ -94,13 +83,6 @@ window.Views.configuracoes = {
                     App.loadView('configuracoes'); // Recarrega a view
                 }
             });
-        });
-
-        // Apagar Conta
-        document.getElementById('btn-apagar-conta').addEventListener('click', () => {
-            if(confirm('Tem certeza? Isso apagará a sua conta do sistema, todos os dados no banco serão perdidos de forma irreversível!')) { 
-                alert('Função em desenvolvimento. Para apagar, acesse o painel do Supabase diretamente.');
-            }
         });
     }
 };
