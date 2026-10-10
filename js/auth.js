@@ -208,7 +208,7 @@ window.Auth = {
 
         try {
             const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                redirectTo: window.location.origin + window.location.pathname + '#reset'
+                redirectTo: window.location.origin + window.location.pathname + '?reset=true'
             });
             if (error) throw error;
             Toast.success('Um link de recuperação foi enviado para seu e-mail.');
@@ -255,7 +255,7 @@ window.Auth = {
     },
 
     checkHashForReset: () => {
-        if (window.location.hash.includes('type=recovery') || window.location.hash.includes('#reset')) {
+        if (window.location.hash.includes('type=recovery') || window.location.search.includes('reset=true')) {
             Auth.showForm('reset');
         }
     },
