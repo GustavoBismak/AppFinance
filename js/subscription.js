@@ -29,34 +29,64 @@ window.Subscription = {
 
             if (subs && subs.length > 0) {
                 Subscription.current = subs[0];
+                
+                // Verificar se é um trial que expirou
+                if (Subscription.current.expires_at && new Date(Subscription.current.expires_at) < new Date()) {
+                    const { data: freePlan } = await supabaseClient.from('plans').select('id, name, slug').eq('slug', 'free').maybeSingle();
+                    if (freePlan && Subscription.current.plans.slug !== 'free') {
+                        await supabaseClient.from('subscriptions').update({
+                            plan_id: freePlan.id,
+                            expires_at: null
+                        }).eq('id', Subscription.current.id);
+                        
+                        Subscription.current.plan_id = freePlan.id;
+                        Subscription.current.plans = freePlan;
+                        Subscription.current.expires_at = null;
+                        Toast.warning('Seu período de teste PRO acabou. Você voltou para o plano Grátis.');
+                    }
+                }
                 return;
             }
 
-            // 2. Não tem assinatura: buscar o plano FREE e atribuir
-            const { data: freePlan, error: planError } = await supabaseClient
+            // 2. Não tem assinatura: buscar os planos
+            const { data: plansData, error: planError } = await supabaseClient
                 .from('plans')
-                .select('id, slug, name, price')
-                .eq('slug', 'free')
-                .maybeSingle();
+                .select('*');
 
-            if (planError || !freePlan) {
-                console.warn('[Subscription] Plano FREE não encontrado. Execute as migrations no Supabase.');
+            if (planError || !plansData || plansData.length === 0) {
+                console.warn('[Subscription] Planos não encontrados.');
                 return;
             }
+            
+            const freePlan = plansData.find(p => p.slug === 'free');
+            const proPlan = plansData.find(p => p.slug === 'pro');
+            
+            // Verificar contagem de usuários
+            const { data: userCount } = await supabaseClient.rpc('get_total_users_count');
+            
+            let planToAssign = freePlan.id;
+            let expiresAt = null;
+            
+            if (userCount !== null && userCount <= 15 && proPlan) {
+                planToAssign = proPlan.id;
+                const d = new Date();
+                d.setDate(d.getDate() + 7);
+                expiresAt = d.toISOString();
+            }
 
-            // 3. Inserir com proteção contra duplicidade (UNIQUE user_id seria ideal no banco)
+            // 3. Inserir a assinatura
             const { data: newSub, error: insertError } = await supabaseClient
                 .from('subscriptions')
                 .insert([{
                     user_id: user.id,
-                    plan_id: freePlan.id,
-                    status: 'active'
+                    plan_id: planToAssign,
+                    status: 'active',
+                    expires_at: expiresAt
                 }])
                 .select('*, plans(*)')
                 .single();
 
             if (insertError) {
-                // Se for violação de duplicidade, tentar buscar a existente
                 if (insertError.code === '23505') {
                     const { data: existing } = await supabaseClient
                         .from('subscriptions')
@@ -66,11 +96,15 @@ window.Subscription = {
                         .limit(1)
                         .single();
                     Subscription.current = existing;
-                } else {
-                    console.error('[Subscription] Erro ao criar assinatura FREE:', insertError.message);
                 }
             } else {
                 Subscription.current = newSub;
+                if (expiresAt) {
+                    // Espera 1 segundo para o carregamento do app terminar antes de avisar
+                    setTimeout(() => {
+                        Toast.info('🎉 Parabéns! Como um dos nossos 15 primeiros usuários, você ganhou 7 dias de PRO grátis!', 8000);
+                    }, 1000);
+                }
             }
         } finally {
             Subscription._loading = false;

@@ -132,7 +132,10 @@ window.Auth = {
             Toast.success('Bem-vindo! Carregando seus dados...');
             setTimeout(Auth.mostrarApp, 800);
         } catch (error) {
-            Toast.error('Erro ao entrar: ' + (error.message || 'Credenciais incorretas.'));
+            let msg = error.message;
+            if (msg.includes('Invalid login credentials')) msg = 'E-mail ou senha incorretos.';
+            if (msg.includes('Email not confirmed')) msg = 'Por favor, confirme seu e-mail antes de entrar.';
+            Toast.error('Erro ao entrar: ' + msg);
         } finally {
             btn.disabled = false;
             btn.textContent = 'Entrar';
@@ -186,7 +189,10 @@ window.Auth = {
                 setTimeout(Auth.mostrarApp, 1200);
             }
         } catch (error) {
-            Toast.error('Erro ao criar conta: ' + (error.message || 'Erro desconhecido.'));
+            let msg = error.message;
+            if (msg.includes('User already registered')) msg = 'Este e-mail já está cadastrado.';
+            if (msg.includes('Password should be')) msg = 'A senha informada é muito fraca.';
+            Toast.error('Erro ao criar conta: ' + msg);
         } finally {
             btn.disabled = false;
             btn.textContent = 'Criar Conta';
