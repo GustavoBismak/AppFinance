@@ -34,11 +34,21 @@ window.Views.configuracoes = {
                 </div>
                 
                 <div class="card">
-                    <h3 class="mb-4">Sistema e Dados</h3>
+                    <h3 class="mb-4">Sistema e Aplicativo</h3>
+
+                    <div class="mb-4">
+                        <label style="display: block; margin-bottom: 8px" class="text-muted">Aplicativo Mobile (PWA)</label>
+                        <button class="btn btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="installPWA()">
+                            <i class="ph ph-device-mobile"></i> Instalar FinApp no Celular
+                        </button>
+                        <p class="text-muted mt-2" style="font-size: 12px; line-height: 1.4;">
+                            Adicione o FinApp à tela inicial do seu celular para usar como aplicativo completo, com ícone próprio e sem barra do navegador.
+                        </p>
+                    </div>
                     
                     <div class="mb-4">
                         <label style="display: block; margin-bottom: 8px" class="text-muted">Sessão</label>
-                        <button class="btn" style="background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-main)" onclick="Auth.confirmLogout()"><i class="ph ph-sign-out"></i> Sair da Conta</button>
+                        <button class="btn" style="background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-main); width: 100%;" onclick="Auth.confirmLogout()"><i class="ph ph-sign-out"></i> Sair da Conta</button>
                     </div>
                     
                     <div class="mb-4">

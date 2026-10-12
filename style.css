@@ -34,6 +34,11 @@ body {
     background-color: var(--bg-dark);
     color: var(--text-main);
     overflow: hidden; /* App feel */
+    height: 100vh;
+    height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
 }
 
 /* Scrollbar */
@@ -52,6 +57,9 @@ body {
 .app-container {
     display: flex;
     height: 100vh;
+    height: 100dvh;
+    position: relative;
+    overflow: hidden;
 }
 
 /* Sidebar */
@@ -62,25 +70,111 @@ body {
     display: flex;
     flex-direction: column;
     padding: 24px 16px;
+    overflow-y: auto;
 }
 
 .sidebar-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
-    padding: 0 12px 32px 12px;
-    color: var(--primary);
+    padding: 0 8px 24px 8px;
 }
 
-.sidebar-header i {
-    font-size: 28px;
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.sidebar-header h2 {
+.sidebar-brand-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    border: 1px solid rgba(255, 215, 0, 0.25);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    object-fit: cover;
+}
+
+.sidebar-brand h2 {
     font-size: 20px;
     font-weight: 700;
     letter-spacing: -0.5px;
+    color: #ffd700;
+}
+
+.btn-close-sidebar {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 18px;
+    transition: var(--transition);
+}
+
+.btn-close-sidebar:hover {
+    background: rgba(255, 255, 255, 0.1);
     color: var(--text-main);
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-footer-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 11px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: left;
+}
+
+.sidebar-footer-btn:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-main);
+}
+
+.sidebar-footer-btn.logout-btn:hover {
+    background: rgba(230, 57, 70, 0.12);
+    color: var(--danger);
+    border-color: rgba(230, 57, 70, 0.3);
+}
+
+.sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 2400;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .sidebar-nav {
@@ -140,6 +234,58 @@ body {
     justify-content: space-between;
     background-color: var(--bg-panel);
     border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 10;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    overflow: hidden;
+}
+
+.btn-mobile-menu {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    font-size: 22px;
+    cursor: pointer;
+    transition: var(--transition);
+    flex-shrink: 0;
+}
+
+.btn-mobile-menu:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-brand-pill {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.mobile-brand-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 215, 0, 0.25);
+    object-fit: cover;
+}
+
+.mobile-brand-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: #ffd700;
+    letter-spacing: -0.5px;
 }
 
 #page-title {
@@ -147,17 +293,133 @@ body {
     font-weight: 600;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-header-install {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(255, 215, 0, 0.12);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    color: #ffd700;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-header-install:hover {
+    background: rgba(255, 215, 0, 0.22);
+    transform: translateY(-1px);
+}
+
 .user-profile img {
     width: 40px;
     height: 40px;
     border-radius: 50%;
     border: 2px solid var(--border);
+    object-fit: cover;
 }
 
 .view-container {
     flex: 1;
     padding: 32px;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* PWA Install Banner */
+.pwa-install-banner {
+    background: linear-gradient(135deg, rgba(26, 29, 36, 0.98), rgba(35, 40, 50, 0.98));
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    animation: slideDownBanner 0.3s ease;
+}
+
+@keyframes slideDownBanner {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.pwa-banner-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pwa-banner-img {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    flex-shrink: 0;
+    object-fit: cover;
+}
+
+.pwa-banner-left strong {
+    display: block;
+    font-size: 14px;
+    color: #ffd700;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.pwa-banner-left p {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.pwa-banner-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.btn-sm {
+    padding: 8px 14px;
+    font-size: 13px;
+    border-radius: 6px;
+}
+
+.btn-icon-subtle {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.btn-icon-subtle:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Bottom Nav (desktop oculto) */
+.bottom-nav {
+    display: none;
 }
 
 /* UI Components */
@@ -350,12 +612,7 @@ tr:last-child td {
     display: inline-block;
 }
 
-.login-header h2 {
-    color: var(--text-main);
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-}
+/* login-header h2 defined at end of file with login-brand-icon block */
 
 .login-input {
     background: rgba(0, 0, 0, 0.25);
@@ -570,5 +827,287 @@ span.flatpickr-weekday {
     box-shadow: 0 0 0 3px rgba(10, 147, 150, 0.15) !important;
 }
 /* O input original fica oculto pelo próprio Flatpickr — não precisamos interferir */
+.login-brand-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
+    border: 2px solid rgba(255, 215, 0, 0.4);
+    box-shadow: 0 8px 32px rgba(255, 215, 0, 0.2), 0 0 0 6px rgba(255, 215, 0, 0.05);
+    margin-bottom: 12px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    object-fit: cover;
+    animation: floatIcon 4s ease-in-out infinite;
+}
 
+@keyframes floatIcon {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+}
+
+.login-header h2 {
+    color: #ffd700;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+/* ─────────────────────────────────────────────────────
+   RESPONSIVE — Mobile Web / PWA
+───────────────────────────────────────────────────── */
+
+/* Tablet + pequenos desktops */
+@media (max-width: 1024px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Mobile (layout principal muda aqui) */
+@media (max-width: 768px) {
+    :root {
+        --sidebar-width: 280px;
+    }
+
+    /* Sidebar vira drawer deslizante */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 2500;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 8px 0 40px rgba(0, 0, 0, 0.5);
+        padding: 24px 12px;
+        padding-top: calc(24px + env(safe-area-inset-top));
+        overflow-y: auto;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    /* Botão X no sidebar visível só no mobile */
+    .btn-close-sidebar {
+        display: flex;
+    }
+
+    /* App container sem sidebar */
+    .app-container {
+        flex-direction: column;
+    }
+
+    /* Header mobile compacto */
+    .top-header {
+        height: 60px;
+        padding: 0 16px;
+        padding-top: env(safe-area-inset-top);
+    }
+
+    /* Mostrar botão menu e brand pill */
+    .btn-mobile-menu {
+        display: flex;
+    }
+
+    .mobile-brand-pill {
+        display: flex;
+    }
+
+    /* Ocultar título de página no header mobile (fica redundante com a brand pill) */
+    #page-title {
+        display: none;
+    }
+
+    /* View container com padding-bottom para não sobrepor o bottom nav */
+    .view-container {
+        padding: 16px;
+        padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    }
+
+    /* Grids colapsam para 1 coluna */
+    .grid-4,
+    .grid-3,
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    /* Cards com menos padding */
+    .card {
+        padding: 16px;
+    }
+
+    /* Formulários em 1 coluna */
+    form.grid-3,
+    form.grid-4 {
+        grid-template-columns: 1fr;
+    }
+
+    /* Inputs maiores para toque */
+    .input-control {
+        font-size: 16px; /* Previne zoom auto no iOS */
+        padding: 14px 16px;
+    }
+
+    /* Tabelas: scroll horizontal */
+    .table-container {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    th, td {
+        padding: 12px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    /* Bottom navigation visível */
+    .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: calc(64px + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
+        background: var(--bg-panel);
+        border-top: 1px solid var(--border);
+        z-index: 1000;
+        justify-content: space-around;
+        align-items: center;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .bottom-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        flex: 1;
+        height: 100%;
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-size: 11px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: color 0.2s, transform 0.15s;
+        padding: 8px 4px 0;
+        border-radius: 0;
+        -webkit-tap-highlight-color: transparent;
+        position: relative;
+    }
+
+    .bottom-nav-item i {
+        font-size: 22px;
+        transition: transform 0.15s, color 0.2s;
+    }
+
+    .bottom-nav-item.active {
+        color: #ffd700;
+    }
+
+    .bottom-nav-item.active::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 28px;
+        height: 3px;
+        background: #ffd700;
+        border-radius: 0 0 4px 4px;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    .bottom-nav-item.active i {
+        color: #ffd700;
+        transform: translateY(-1px);
+    }
+
+    .bottom-nav-item:active {
+        transform: scale(0.92);
+    }
+
+    /* Ocultar "Instalar App" no header em mobile (tem no sidebar e banner) */
+    .btn-header-install {
+        display: none !important;
+    }
+
+    /* Login mobile */
+    .login-glass-card {
+        max-width: 100%;
+        margin: 16px;
+        padding: 32px 24px;
+        border-radius: 20px;
+    }
+
+    .login-brand-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+    }
+
+    /* Preços mobile */
+    #pricing-screen .grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    /* PWA Banner mobile */
+    .pwa-install-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .pwa-banner-right {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+/* Ultra-small devices */
+@media (max-width: 375px) {
+    .view-container {
+        padding: 12px;
+        padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    }
+
+    .card {
+        padding: 12px;
+    }
+
+    .bottom-nav-item span {
+        font-size: 10px;
+    }
+}
+
+/* Modo standalone (instalado como PWA) */
+.is-standalone-app .btn-header-install,
+.is-standalone-app #btn-sidebar-install {
+    display: none !important;
+}
+
+/* iOS safe area para standalone */
+@media (display-mode: standalone) {
+    .top-header {
+        padding-top: env(safe-area-inset-top);
+        height: calc(60px + env(safe-area-inset-top));
+    }
+
+    .sidebar {
+        padding-top: calc(24px + env(safe-area-inset-top));
+    }
+
+    .bottom-nav {
+        height: calc(64px + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+/* Utilitário mt-2 */
+.mt-2 { margin-top: 8px; }
+.flex-1 { flex: 1; }
 

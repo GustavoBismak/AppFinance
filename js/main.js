@@ -20,14 +20,51 @@ const App = {
         App.loadView(App.currentView);
     },
 
+    openMobileMenu: () => {
+        document.getElementById('sidebar')?.classList.add('open');
+        document.getElementById('sidebar-backdrop')?.classList.add('active');
+    },
+
+    closeMobileMenu: () => {
+        document.getElementById('sidebar')?.classList.remove('open');
+        document.getElementById('sidebar-backdrop')?.classList.remove('active');
+    },
+
+    toggleMobileMenu: () => {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar && sidebar.classList.contains('open')) {
+            App.closeMobileMenu();
+        } else {
+            App.openMobileMenu();
+        }
+    },
+
     bindNavigation: () => {
-        document.querySelectorAll('.nav-item').forEach(btn => {
+        // Navegação via Sidebar e Bottom Nav
+        document.querySelectorAll('.nav-item, .bottom-nav-item[data-view]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const view = e.currentTarget.dataset.view;
-                document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-                e.currentTarget.classList.add('active');
+                if (!view) return;
                 App.loadView(view);
+                App.closeMobileMenu();
             });
+        });
+
+        // Controles de abertura e fechamento do menu no celular
+        document.getElementById('btn-mobile-menu')?.addEventListener('click', () => {
+            App.toggleMobileMenu();
+        });
+
+        document.getElementById('btn-close-sidebar')?.addEventListener('click', () => {
+            App.closeMobileMenu();
+        });
+
+        document.getElementById('sidebar-backdrop')?.addEventListener('click', () => {
+            App.closeMobileMenu();
+        });
+
+        document.getElementById('btn-bottom-menu')?.addEventListener('click', () => {
+            App.toggleMobileMenu();
         });
     },
 
@@ -41,10 +78,13 @@ const App = {
             if (planSlug !== 'pro' && !isAdmin) {
                 document.getElementById('premium-modal').style.display = 'flex';
                 
-                // Reverter a aba visualmente selecionada no sidebar
-                document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-                const activeBtn = document.querySelector(`.nav-item[data-view="${App.currentView}"]`);
-                if(activeBtn) activeBtn.classList.add('active');
+                // Reverter a seleção visual para a aba atual
+                document.querySelectorAll('.nav-item').forEach(b => {
+                    b.classList.toggle('active', b.dataset.view === App.currentView);
+                });
+                document.querySelectorAll('.bottom-nav-item').forEach(b => {
+                    b.classList.toggle('active', b.dataset.view === App.currentView);
+                });
                 
                 return;
             }
@@ -54,8 +94,20 @@ const App = {
         const container = document.getElementById('view-container');
         const title     = document.getElementById('page-title');
 
+        // Sincronizar classes ativas tanto no sidebar quanto no bottom nav
+        document.querySelectorAll('.nav-item').forEach(b => {
+            b.classList.toggle('active', b.dataset.view === viewName);
+        });
+        document.querySelectorAll('.bottom-nav-item').forEach(b => {
+            b.classList.toggle('active', b.dataset.view === viewName);
+        });
+
         // Atualiza título da página
-        title.textContent = App.titulos[viewName] || viewName;
+        if (title) title.textContent = App.titulos[viewName] || viewName;
+        App.closeMobileMenu();
+
+        // Rola conteúdo para o topo
+        if (container) container.scrollTop = 0;
 
         // Estado de carregamento
         container.innerHTML = `

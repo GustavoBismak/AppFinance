@@ -89,6 +89,20 @@ window.Auth = {
         // Exibe o app garantidamente
         document.getElementById('app-container').style.display = 'flex';
 
+        // Atualiza avatar do header com a inicial do e-mail do usuário logado
+        try {
+            const user = Auth.user;
+            if (user) {
+                const avatarEl = document.getElementById('header-avatar');
+                if (avatarEl) {
+                    const name = user.user_metadata?.full_name || user.email || 'U';
+                    avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name.charAt(0).toUpperCase())}&background=0a9396&color=fff&size=64`;
+                }
+            }
+        } catch (e) {
+            console.warn('[Auth] Avatar update ignorado:', e.message);
+        }
+
         // Verifica admin — envolvido em try/catch para não travar
         try {
             if (window.Views && window.Views.admin) {
@@ -106,6 +120,7 @@ window.Auth = {
             window.App.init();
         }
     },
+
 
     handleLogin: async (e) => {
         e.preventDefault();
