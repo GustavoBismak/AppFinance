@@ -27,6 +27,47 @@ window.Subscription = {
                 return;
             }
 
+            const isVipUser = user.email?.toLowerCase().trim() === 'bismakgustavo3@gmail.com';
+
+            // Tratamento especial para usuário VIP/Admin (bismakgustavo3@gmail.com): PRO vitalício sem cobrança
+            if (isVipUser) {
+                const { data: proPlan } = await supabaseClient.from('plans').select('*').eq('slug', 'pro').maybeSingle();
+                if (proPlan) {
+                    if (subs && subs.length > 0) {
+                        const currentSub = subs[0];
+                        if (currentSub.plan_id !== proPlan.id || currentSub.expires_at !== null || currentSub.status !== 'active') {
+                            await supabaseClient.from('subscriptions').update({
+                                plan_id: proPlan.id,
+                                status: 'active',
+                                expires_at: null
+                            }).eq('id', currentSub.id);
+                            currentSub.plan_id = proPlan.id;
+                            currentSub.plans = proPlan;
+                            currentSub.status = 'active';
+                            currentSub.expires_at = null;
+                        }
+                        Subscription.current = currentSub;
+                    } else {
+                        const { data: newSub } = await supabaseClient.from('subscriptions').insert([{
+                            user_id: user.id,
+                            plan_id: proPlan.id,
+                            status: 'active',
+                            expires_at: null
+                        }]).select('*, plans(*)').single();
+                        Subscription.current = newSub || { plan_id: proPlan.id, plans: proPlan, status: 'active', expires_at: null };
+                    }
+                    return;
+                } else {
+                    Subscription.current = {
+                        plan_id: 'pro-vip',
+                        plans: { slug: 'pro', name: 'FINAPP PRO' },
+                        status: 'active',
+                        expires_at: null
+                    };
+                    return;
+                }
+            }
+
             if (subs && subs.length > 0) {
                 Subscription.current = subs[0];
                 
@@ -112,6 +153,7 @@ window.Subscription = {
     },
 
     isPro: () => {
+        if (Auth.user?.email?.toLowerCase().trim() === 'bismakgustavo3@gmail.com') return true;
         return Subscription.current?.plans?.slug === 'pro';
     },
 
@@ -120,6 +162,9 @@ window.Subscription = {
     },
 
     getPlanName: () => {
+        if (Auth.user?.email?.toLowerCase().trim() === 'bismakgustavo3@gmail.com') {
+            return Subscription.current?.plans?.name || 'FINAPP PRO (Vitalício)';
+        }
         return Subscription.current?.plans?.name || 'FREE';
     }
 };

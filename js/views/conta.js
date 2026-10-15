@@ -6,7 +6,7 @@ window.Views.conta = {
         const dataCadastro = new Date(user.created_at).toLocaleDateString('pt-BR');
         
         // Carregando dados reais do plano e assinatura
-        const plano = window.Subscription?.current?.plans?.name || 'FINAPP FREE';
+        const plano = window.Subscription?.getPlanName ? window.Subscription.getPlanName() : (window.Subscription?.current?.plans?.name || 'FINAPP FREE');
         const rawStatus = window.Subscription?.current?.status || 'active';
         
         const statusMap = {

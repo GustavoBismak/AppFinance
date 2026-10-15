@@ -72,10 +72,11 @@ const App = {
         // SaaS: Verificação de acesso Premium
         const proViews = ['contas', 'cartoes', 'veiculo', 'investimentos', 'metas', 'relatorios'];
         if (proViews.includes(viewName)) {
-            const planSlug = window.Subscription?.current?.plans?.slug;
+            const isVipUser = Auth.user?.email?.toLowerCase().trim() === 'bismakgustavo3@gmail.com';
             const isAdmin = window.Views?.admin?.isAdmin === true;
-            // Bloquear acesso se não for PRO e não for admin
-            if (planSlug !== 'pro' && !isAdmin) {
+            const isPro = window.Subscription?.isPro ? window.Subscription.isPro() : (window.Subscription?.current?.plans?.slug === 'pro');
+            // Bloquear acesso se não for PRO, não for admin e não for VIP
+            if (!isPro && !isAdmin && !isVipUser) {
                 document.getElementById('premium-modal').style.display = 'flex';
                 
                 // Reverter a seleção visual para a aba atual

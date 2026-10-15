@@ -26,7 +26,8 @@ window.Pricing = {
 
         Pricing.plans.forEach(plan => {
             const isPro = plan.slug === 'pro';
-            const isCurrent = window.Subscription?.current?.plans?.slug === plan.slug;
+            const isVip = Auth.user?.email?.toLowerCase().trim() === 'bismakgustavo3@gmail.com';
+            const isCurrent = isVip ? isPro : (window.Subscription?.isPro ? (window.Subscription.isPro() && isPro) : (window.Subscription?.current?.plans?.slug === plan.slug));
             
             let featuresHtml = '';
             if (isPro) {
