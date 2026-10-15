@@ -23,35 +23,49 @@ window.Views.lancamentos = {
             ${App.getFilterHTML()}
             
             <div class="card mb-4">
-                <h3 class="mb-4">Novo Lançamento</h3>
-                <form id="form-lancamento" class="grid grid-3">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(10,147,150,0.15); display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 20px;">
+                        <i class="ph ph-plus-circle"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 700;">Novo Lançamento</h3>
+                        <p class="text-muted" style="margin: 2px 0 0 0; font-size: 13px;">Preencha os campos abaixo</p>
+                    </div>
+                </div>
+
+                <form id="form-lancamento" class="form-lancamento">
                     <div class="form-group">
-                        <label>Data</label>
+                        <label for="lanc-data"><i class="ph ph-calendar"></i> Data</label>
                         <input type="date" id="lanc-data" class="input-control" required>
                     </div>
+
                     <div class="form-group">
-                        <label>Descrição</label>
-                        <input type="text" id="lanc-desc" class="input-control" placeholder="Ex: Conta de Luz" required>
+                        <label for="lanc-desc"><i class="ph ph-text-t"></i> Descrição</label>
+                        <input type="text" id="lanc-desc" class="input-control" placeholder="Ex: Supermercado, Aluguel, Salário..." required>
                     </div>
+
                     <div class="form-group">
-                        <label>Categoria</label>
-                        <select id="lanc-cat" class="input-control" required>
-                            ${categoriasOptions}
-                        </select>
+                        <label for="lanc-valor"><i class="ph ph-currency-dollar"></i> Valor (R$)</label>
+                        <input type="number" step="0.01" id="lanc-valor" class="input-control" placeholder="0,00" required>
                     </div>
+
                     <div class="form-group">
-                        <label>Tipo</label>
+                        <label for="lanc-tipo"><i class="ph ph-arrows-down-up"></i> Tipo</label>
                         <select id="lanc-tipo" class="input-control" required>
                             <option value="despesa">Despesa</option>
                             <option value="receita">Receita</option>
                         </select>
                     </div>
+
                     <div class="form-group">
-                        <label>Valor (R$)</label>
-                        <input type="number" step="0.01" id="lanc-valor" class="input-control" placeholder="0,00" required>
+                        <label for="lanc-cat"><i class="ph ph-tag"></i> Categoria</label>
+                        <select id="lanc-cat" class="input-control" required>
+                            ${categoriasOptions}
+                        </select>
                     </div>
+
                     <div class="form-group">
-                        <label>Forma de Pagamento</label>
+                        <label for="lanc-forma"><i class="ph ph-credit-card"></i> Forma de Pagamento</label>
                         <select id="lanc-forma" class="input-control" required>
                             <option value="Pix">Pix</option>
                             <option value="Cartão de Crédito">Cartão de Crédito</option>
@@ -61,15 +75,17 @@ window.Views.lancamentos = {
                     </div>
 
                     <!-- Seletor de cartão (aparece só quando "Cartão de Crédito") -->
-                    <div class="form-group" id="grupo-cartao" style="display:none; grid-column: span 3;">
-                        <label>Qual cartão? <span style="color:var(--primary); font-size:12px">(vai atualizar a fatura automaticamente)</span></label>
+                    <div class="form-group" id="grupo-cartao" style="display:none;">
+                        <label for="lanc-cartao-id"><i class="ph ph-credit-card"></i> Qual cartão? <span style="color:var(--primary); font-size:12px; font-weight:normal;">(vai atualizar a fatura automaticamente)</span></label>
                         <select id="lanc-cartao-id" class="input-control">
                             ${cartaoOptions}
                         </select>
                     </div>
 
-                    <div class="form-group" style="grid-column: span 3;">
-                        <button type="submit" class="btn btn-primary"><i class="ph ph-plus"></i> Adicionar Lançamento</button>
+                    <div class="form-group form-actions" style="margin-top: 6px;">
+                        <button type="submit" class="btn btn-primary btn-submit-form" id="btn-adicionar-lancamento">
+                            <i class="ph ph-plus-bold"></i> Adicionar Lançamento
+                        </button>
                     </div>
                 </form>
             </div>

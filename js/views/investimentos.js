@@ -63,7 +63,7 @@ window.Views.investimentos = {
         }
         
         let html = `
-            <div class="flex justify-between items-center mb-4">
+            <div class="view-header-action mb-4">
                 <p class="text-muted">Acompanhe a rentabilidade e distribuição da sua carteira.</p>
                 <button class="btn btn-primary" id="btn-novo-inv"><i class="ph ph-plus"></i> Novo Investimento</button>
             </div>
@@ -102,9 +102,9 @@ window.Views.investimentos = {
                         </label>
                         <input type="number" step="0.01" id="inv-atual" class="input-control" placeholder="0,00" required>
                     </div>
-                    <div class="form-group" style="grid-column: span 2; display: flex; align-items: flex-end; gap: 12px;">
+                    <div class="form-group form-actions" style="grid-column: span 2; display: flex; align-items: flex-end; gap: 12px;">
                         <button type="submit" class="btn btn-primary" id="btn-salvar-inv"><i class="ph ph-floppy-disk"></i> Salvar</button>
-                        <button type="button" class="btn" id="btn-cancelar-inv" style="background: transparent; border: 1px solid var(--border); color: var(--text-main)">Cancelar</button>
+                        <button type="button" class="btn btn-outline" id="btn-cancelar-inv" style="background: transparent; border: 1px solid var(--border); color: var(--text-main)">Cancelar</button>
                     </div>
                 </form>
             </div>

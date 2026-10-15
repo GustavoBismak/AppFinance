@@ -67,7 +67,7 @@ window.Views.cartoes = {
                     </div>
 
                     <!-- 3 métricas -->
-                    <div style="padding:16px 20px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; border-bottom:1px solid var(--border);">
+                    <div class="cartao-metrics-grid" style="padding:16px 20px; border-bottom:1px solid var(--border);">
                         <div>
                             <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px">Limite Total</div>
                             <div style="font-weight:700; font-size:15px; color:var(--text-main)">${App.formatCurrency(limite)}</div>
@@ -122,7 +122,7 @@ window.Views.cartoes = {
             : cartoes.map(buildCard).join('');
 
         container.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+            <div class="view-header-action mb-4">
                 <p class="text-muted">Gerencie limites e faturas dos seus cartões de crédito.</p>
                 <button class="btn btn-primary" id="btn-novo-cartao">
                     <i class="ph ph-plus"></i> Novo Cartão
@@ -177,7 +177,7 @@ window.Views.cartoes = {
                         </div>
                     </div>
 
-                    <div class="form-group" style="grid-column:span 3; display:flex; gap:12px; align-items:center;">
+                    <div class="form-group form-actions" style="grid-column:span 3; display:flex; gap:12px; align-items:center;">
                         <button type="submit" class="btn btn-primary" id="btn-salvar-cartao">
                             <i class="ph ph-floppy-disk"></i> Salvar Cartão
                         </button>

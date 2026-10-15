@@ -67,12 +67,12 @@ window.Views.admin = {
         }).join('');
 
         const html = `
-            <div class="mb-4 flex justify-between items-center" style="display: flex; justify-content: space-between;">
+            <div class="view-header-action mb-4" style="display: flex; justify-content: space-between; align-items: center;">
                 <h2>Visão Geral do SaaS</h2>
                 <div class="text-muted" style="font-size: 12px; background: rgba(255,0,0,0.1); color: var(--danger); padding: 4px 12px; border-radius: 12px;"><i class="ph ph-shield-check"></i> Área Restrita</div>
             </div>
 
-            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div class="grid admin-metrics-grid" style="gap: 16px; margin-bottom: 24px;">
                 <div class="card text-center" style="padding: 24px 16px;">
                     <h3 class="text-muted mb-2" style="font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Total de Usuários</h3>
                     <div style="font-size: 36px; font-weight: bold; color: var(--text-main);">${totalUsers}</div>
@@ -93,7 +93,7 @@ window.Views.admin = {
 
             <div class="card">
                 <h3 class="mb-4">Registro de Assinaturas</h3>
-                <div style="overflow-x: auto;">
+                <div class="table-container">
                     <table style="width: 100%; text-align: left; border-collapse: collapse;">
                         <thead>
                             <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 12px; text-transform: uppercase;">

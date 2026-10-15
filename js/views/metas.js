@@ -64,7 +64,7 @@ window.Views.metas = {
         });
         
         container.innerHTML = `
-            <div class="flex justify-between items-center mb-4">
+            <div class="view-header-action mb-4">
                 <p class="text-muted">Acompanhe suas metas de vida e simule prazos.</p>
                 <button class="btn btn-primary" id="btn-nova-meta"><i class="ph ph-plus"></i> Nova Meta</button>
             </div>
@@ -89,9 +89,9 @@ window.Views.metas = {
                         <label>Prazo</label>
                         <input type="date" id="meta-prazo" class="input-control" required>
                     </div>
-                    <div class="form-group" style="grid-column: span 2; display: flex; align-items: flex-end; gap: 12px;">
+                    <div class="form-group form-actions" style="grid-column: span 2; display: flex; align-items: flex-end; gap: 12px;">
                         <button type="submit" class="btn btn-primary" id="btn-salvar-meta"><i class="ph ph-floppy-disk"></i> Salvar Meta</button>
-                        <button type="button" class="btn" id="btn-cancelar-meta" style="background: transparent; border: 1px solid var(--border); color: var(--text-main)">Cancelar</button>
+                        <button type="button" class="btn btn-outline" id="btn-cancelar-meta" style="background: transparent; border: 1px solid var(--border); color: var(--text-main)">Cancelar</button>
                     </div>
                 </form>
             </div>

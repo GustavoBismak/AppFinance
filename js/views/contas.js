@@ -24,11 +24,11 @@ window.Views.contas = {
                         <label>Observações</label>
                         <input type="text" id="conta-obs" class="input-control">
                     </div>
-                    <div class="form-group flex items-center" style="flex-direction: row; gap: 8px; margin-top: 24px;">
-                        <input type="checkbox" id="conta-pago" style="width: 20px; height: 20px;">
-                        <label>Já está paga?</label>
+                    <div class="form-group form-checkbox-group">
+                        <input type="checkbox" id="conta-pago">
+                        <label for="conta-pago">Já está paga?</label>
                     </div>
-                    <div class="form-group" style="grid-column: span 3;">
+                    <div class="form-group form-actions" style="grid-column: span 3;">
                         <button type="submit" class="btn btn-primary"><i class="ph ph-plus"></i> Adicionar Conta</button>
                     </div>
                 </form>

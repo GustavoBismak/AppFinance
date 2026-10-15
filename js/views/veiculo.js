@@ -104,7 +104,7 @@ window.Views.veiculo = {
                         <input type="text" id="veic-obs" class="input-control" placeholder="Ex: Posto Shell, km 45.200...">
                     </div>
 
-                    <div class="form-group" style="grid-column: span 4; display:flex; align-items:center; gap:12px;">
+                    <div class="form-group form-actions" style="grid-column: span 4; display:flex; align-items:center; gap:12px;">
                         <button type="submit" class="btn btn-primary">
                             <i class="ph ph-plus"></i> Registrar Despesa
                         </button>

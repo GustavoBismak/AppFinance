@@ -24,9 +24,9 @@ window.Views.configuracoes = {
             <div class="grid grid-2">
                 <div class="card">
                     <h3 class="mb-4">Categorias de Despesas</h3>
-                    <form id="form-nova-categoria" class="flex gap-2 mb-4">
-                        <input type="text" id="nova-cat-nome" class="input-control flex-1" placeholder="Nova Categoria" required>
-                        <button type="submit" class="btn btn-primary" id="btn-salvar-cat">Adicionar</button>
+                    <form id="form-nova-categoria" class="form-inline-mobile mb-4">
+                        <input type="text" id="nova-cat-nome" class="input-control" placeholder="Nova Categoria" required>
+                        <button type="submit" class="btn btn-primary" id="btn-salvar-cat"><i class="ph ph-plus"></i> Adicionar Categoria</button>
                     </form>
                     <ul id="lista-categorias" style="list-style: none; padding: 0;">
                         ${categoriasHtml}

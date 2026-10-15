@@ -161,29 +161,31 @@ const App = {
         ];
         
         return `
-            <div class="card mb-4" style="padding: 16px 24px; background: rgba(10, 147, 150, 0.05); border-color: rgba(10, 147, 150, 0.2);">
-                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; align-items: end;">
-                    <div class="form-group" style="margin-bottom: 0;">
+            <div class="card mb-4 filter-card">
+                <div class="filter-grid">
+                    <div class="form-group filter-item">
                         <label>Mês</label>
                         <select id="filter-mes" class="input-control">
                             <option value="">Todos os Meses</option>
                             ${meses.map(m => `<option value="${m.v}" ${App.globalFilters.mes === m.v ? 'selected' : ''}>${m.l}</option>`).join('')}
                         </select>
                     </div>
-                    <div class="form-group" style="margin-bottom: 0;">
+                    <div class="form-group filter-item">
                         <label>Ano</label>
                         <select id="filter-ano" class="input-control">
                             <option value="">Todos os Anos</option>
                             ${anos.map(a => `<option value="${a}" ${App.globalFilters.ano == a ? 'selected' : ''}>${a}</option>`).join('')}
                         </select>
                     </div>
-                    <div class="form-group" style="margin-bottom: 0; min-width: 200px;">
+                    <div class="form-group filter-item filter-search">
                         <label>Buscar</label>
                         <input type="text" id="filter-busca" class="input-control" placeholder="Palavra-chave..." value="${App.globalFilters.busca}">
                     </div>
-                    <div class="form-group flex gap-2" style="margin-bottom: 0; flex-direction: row;">
-                        <button id="btn-apply-filter" class="btn btn-primary" style="flex: 1;"><i class="ph ph-funnel"></i> Filtrar</button>
-                        <button id="btn-clear-filter" class="btn btn-outline" style="background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 12px;"><i class="ph ph-eraser"></i></button>
+                    <div class="form-group filter-actions">
+                        <div class="filter-buttons-wrapper">
+                            <button id="btn-apply-filter" class="btn btn-primary"><i class="ph ph-funnel"></i> Filtrar</button>
+                            <button id="btn-clear-filter" class="btn btn-outline" title="Limpar Filtros"><i class="ph ph-eraser"></i> Limpar</button>
+                        </div>
                     </div>
                 </div>
             </div>
