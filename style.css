@@ -1517,10 +1517,25 @@ span.flatpickr-weekday {
     }
 }
 
-/* Modo standalone (instalado como PWA) */
+/* Modo standalone ou instalado como PWA: ocultar TODOS os botões e avisos de instalação */
 .is-standalone-app .btn-header-install,
+.is-standalone-app #btn-header-install,
+.is-standalone-app #pwa-install-banner,
+.is-standalone-app .pwa-install-element,
+.is-standalone-app #config-pwa-install-box,
 .is-standalone-app #btn-sidebar-install {
     display: none !important;
+}
+
+@media (display-mode: standalone) {
+    .btn-header-install,
+    #btn-header-install,
+    #pwa-install-banner,
+    .pwa-install-element,
+    #config-pwa-install-box,
+    #btn-sidebar-install {
+        display: none !important;
+    }
 }
 
 /* iOS safe area para standalone */

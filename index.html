@@ -67,7 +67,7 @@
     </script>
     
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=2.5">
+    <link rel="stylesheet" href="style.css?v=2.6">
 </head>
 <body>
     <!-- Login Overlay -->
@@ -314,9 +314,6 @@
                 </button>
             </nav>
             <div class="sidebar-footer">
-                <button class="sidebar-footer-btn" onclick="installPWA()" id="btn-sidebar-install">
-                    <i class="ph ph-device-mobile"></i> Instalar Aplicativo
-                </button>
                 <button class="sidebar-footer-btn logout-btn" onclick="Auth.confirmLogout()">
                     <i class="ph ph-sign-out"></i> Sair da Conta
                 </button>
@@ -337,7 +334,7 @@
                     <h1 id="page-title">Dashboard</h1>
                 </div>
                 <div class="header-actions">
-                    <button id="btn-header-install" class="btn-header-install" onclick="installPWA()" title="Instalar aplicativo no celular">
+                    <button id="btn-header-install" class="btn-header-install" onclick="installPWA()" title="Instalar aplicativo no celular" style="display: none;">
                         <i class="ph ph-download-simple"></i>
                         <span>Instalar App</span>
                     </button>
@@ -407,7 +404,7 @@
     <script src="js/views/metas.js"></script>
     <script src="js/views/relatorios.js"></script>
     <script src="js/views/conta.js"></script>
-    <script src="js/views/configuracoes.js"></script>
+    <script src="js/views/configuracoes.js?v=2.6"></script>
     <script src="js/views/admin.js"></script>
     <!-- auth.js SEMPRE por último: depende de App, Store e Views -->
     <script src="js/auth.js"></script>
@@ -422,26 +419,52 @@
             });
         }
 
+        window.isAppInstalled = () => {
+            return window.matchMedia('(display-mode: standalone)').matches ||
+                   window.navigator.standalone === true ||
+                   document.referrer.includes('android-app://') ||
+                   localStorage.getItem('finapp_installed') === 'true';
+        };
+
+        const updateInstalledUI = () => {
+            if (window.isAppInstalled()) {
+                document.body.classList.add('is-standalone-app');
+                const banner = document.getElementById('pwa-install-banner');
+                if (banner) banner.style.display = 'none';
+                const btnHeader = document.getElementById('btn-header-install');
+                if (btnHeader) btnHeader.style.display = 'none';
+                document.querySelectorAll('.pwa-install-element, .btn-header-install, #pwa-install-banner, #btn-sidebar-install').forEach(el => {
+                    el.style.display = 'none';
+                });
+            }
+        };
+
+        window.addEventListener('appinstalled', () => {
+            localStorage.setItem('finapp_installed', 'true');
+            updateInstalledUI();
+        });
+
+        // Executar verificação imediatamente
+        updateInstalledUI();
+
         let deferredPrompt = null;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
+            if (window.isAppInstalled()) return;
             const banner = document.getElementById('pwa-install-banner');
             const btnHeader = document.getElementById('btn-header-install');
-            if (banner && !sessionStorage.getItem('dismiss_pwa_banner')) {
+            if (banner && !sessionStorage.getItem('dismiss_pwa_banner') && window.innerWidth <= 768) {
                 banner.style.display = 'flex';
             }
-            if (btnHeader) btnHeader.style.display = 'inline-flex';
+            if (btnHeader && !window.isAppInstalled()) btnHeader.style.display = 'inline-flex';
         });
 
-        // Detectar se já está rodando standalone (instalado)
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-        if (isStandalone) {
-            document.body.classList.add('is-standalone-app');
-        } else {
+        // Se NÃO estiver instalado, pode agendar exibição do banner
+        if (!window.isAppInstalled()) {
             setTimeout(() => {
                 const banner = document.getElementById('pwa-install-banner');
-                if (banner && !sessionStorage.getItem('dismiss_pwa_banner') && window.innerWidth <= 768) {
+                if (banner && !sessionStorage.getItem('dismiss_pwa_banner') && window.innerWidth <= 768 && !window.isAppInstalled()) {
                     banner.style.display = 'flex';
                 }
             }, 2500);
@@ -458,8 +481,8 @@
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
                 if (outcome === 'accepted') {
-                    const banner = document.getElementById('pwa-install-banner');
-                    if (banner) banner.style.display = 'none';
+                    localStorage.setItem('finapp_installed', 'true');
+                    updateInstalledUI();
                 }
                 deferredPrompt = null;
             } else {

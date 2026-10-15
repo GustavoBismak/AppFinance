@@ -35,8 +35,8 @@ window.Views.configuracoes = {
                 
                 <div class="card">
                     <h3 class="mb-4">Sistema e Aplicativo</h3>
-
-                    <div class="mb-4">
+                    ${window.isAppInstalled && window.isAppInstalled() ? '' : `
+                    <div class="mb-4 pwa-install-element" id="config-pwa-install-box">
                         <label style="display: block; margin-bottom: 8px" class="text-muted">Aplicativo Mobile (PWA)</label>
                         <button class="btn btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="installPWA()">
                             <i class="ph ph-device-mobile"></i> Instalar FinApp no Celular
@@ -45,6 +45,7 @@ window.Views.configuracoes = {
                             Adicione o FinApp à tela inicial do seu celular para usar como aplicativo completo, com ícone próprio e sem barra do navegador.
                         </p>
                     </div>
+                    `}
                     
                     <div class="mb-4">
                         <label style="display: block; margin-bottom: 8px" class="text-muted">Sessão</label>
