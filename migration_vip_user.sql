@@ -19,27 +19,33 @@ BEGIN
   WHERE slug = 'pro';
 
   IF v_user_id IS NOT NULL AND v_pro_plan_id IS NOT NULL THEN
-    -- Inserir ou atualizar a assinatura para PRO permanente (status = 'active', sem expires_at)
-    INSERT INTO public.subscriptions (user_id, plan_id, status, expires_at)
-    VALUES (v_user_id, v_pro_plan_id, 'active', NULL)
-    ON CONFLICT (user_id) 
-    DO UPDATE SET 
-      plan_id = v_pro_plan_id,
-      status = 'active',
-      expires_at = NULL;
+    -- Se já tiver registro na tabela subscriptions, atualiza para PRO vitalício
+    IF EXISTS (SELECT 1 FROM public.subscriptions WHERE user_id = v_user_id) THEN
+      UPDATE public.subscriptions
+      SET plan_id = v_pro_plan_id,
+          status = 'active',
+          expires_at = NULL
+      WHERE user_id = v_user_id;
+    ELSE
+      -- Caso contrário, insere uma nova assinatura ativa
+      INSERT INTO public.subscriptions (user_id, plan_id, status, expires_at)
+      VALUES (v_user_id, v_pro_plan_id, 'active', NULL);
+    END IF;
 
-    -- Opcional: Adicionar usuário também na tabela de administradores
-    INSERT INTO public.admin_users (user_id)
-    VALUES (v_user_id)
-    ON CONFLICT (user_id) DO NOTHING;
+    -- Conceder permissão na tabela de administradores se ela existir
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'admin_users') THEN
+      IF NOT EXISTS (SELECT 1 FROM public.admin_users WHERE user_id = v_user_id) THEN
+        INSERT INTO public.admin_users (user_id) VALUES (v_user_id);
+      END IF;
+    END IF;
 
-    RAISE NOTICE 'Usuário bismakgustavo3@gmail.com configurado como PRO Vitalício com sucesso!';
+    RAISE NOTICE 'Sucesso! Usuário bismakgustavo3@gmail.com configurado como PRO Vitalício e Administrador.';
   ELSE
     IF v_user_id IS NULL THEN
-      RAISE NOTICE 'Atenção: Usuário bismakgustavo3@gmail.com ainda não foi encontrado no auth.users.';
+      RAISE EXCEPTION 'Usuário bismakgustavo3@gmail.com não encontrado no auth.users. Certifique-se de que a conta foi criada.';
     END IF;
     IF v_pro_plan_id IS NULL THEN
-      RAISE NOTICE 'Atenção: Plano PRO não encontrado na tabela public.plans.';
+      RAISE EXCEPTION 'Plano "pro" não encontrado na tabela public.plans.';
     END IF;
   END IF;
 END $$;
