@@ -120,6 +120,9 @@ const App = {
         if (window.Views && window.Views[viewName]) {
             try {
                 await window.Views[viewName].render(container);
+                if (window.CustomSelect) {
+                    window.CustomSelect.init();
+                }
             } catch (err) {
                 console.error('Erro ao renderizar view:', viewName, err);
                 container.innerHTML = `

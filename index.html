@@ -58,7 +58,10 @@
                     });
                 });
             }
-            const observer = new MutationObserver(initDatePickers);
+            const observer = new MutationObserver(() => {
+                initDatePickers();
+                if (window.CustomSelect) window.CustomSelect.init();
+            });
             const viewContainer = document.getElementById('view-container');
             if (viewContainer) {
                 observer.observe(viewContainer, { childList: true, subtree: true });
@@ -67,7 +70,7 @@
     </script>
     
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=2.6">
+    <link rel="stylesheet" href="style.css?v=2.7">
 </head>
 <body>
     <!-- Login Overlay -->
@@ -391,7 +394,8 @@
     <!-- Scripts (a ordem importa!) -->
     <script src="js/supabase.js"></script>
     <script src="js/store.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/main.js?v=2.7"></script>
+    <script src="js/custom-select.js?v=2.7"></script>
     <script src="js/onboarding.js"></script>
     <script src="js/subscription.js"></script>
     <script src="js/pricing.js?v=2.5"></script>
