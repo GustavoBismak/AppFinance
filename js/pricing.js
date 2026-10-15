@@ -116,22 +116,35 @@ window.Pricing = {
         if (!cpfCnpj) {
             const { value: cpfInput } = await Swal.fire({
                 title: 'Quase lá!',
-                text: 'Precisamos do seu CPF para gerar a assinatura.',
-                input: 'text',
-                inputPlaceholder: 'Apenas números',
+                html: `
+                    <p style="color:#9ca3af; margin-bottom:16px; font-size:15px;">
+                        Precisamos do seu CPF para gerar a assinatura.
+                    </p>
+                    <input id="swal-cpf-input" type="tel" inputmode="numeric" maxlength="11"
+                        class="swal2-input"
+                        placeholder="Apenas números (11 dígitos)"
+                        style="margin:0; width:100%; box-sizing:border-box;">
+                `,
                 showCancelButton: true,
                 confirmButtonText: 'Continuar',
                 cancelButtonText: 'Cancelar',
                 confirmButtonColor: 'var(--primary)',
                 background: '#1a1f2b',
                 color: '#fff',
-                inputValidator: (value) => {
-                    if (!value || value.length < 11) return 'Digite um CPF válido.'
+                focusConfirm: false,
+                preConfirm: () => {
+                    const val = document.getElementById('swal-cpf-input').value.replace(/\D/g, '');
+                    if (!val || val.length < 11) {
+                        Swal.showValidationMessage('Digite um CPF válido (11 números).');
+                        return false;
+                    }
+                    return val;
                 }
             });
             if (!cpfInput) return;
             cpfCnpj = cpfInput;
         }
+
 
         // 2. Escolher a forma de pagamento
         const { value: paymentMethod } = await Swal.fire({
