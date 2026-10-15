@@ -671,6 +671,11 @@ tr:last-child td {
     display: none !important;
 }
 
+/* Seletor de cartão: oculto por padrão no CSS (JS usa inline style para mostrar/ocultar) */
+#grupo-cartao {
+    display: none;
+}
+
 /* --- Login Screen Redesign --- */
 
 .login-wrapper {
