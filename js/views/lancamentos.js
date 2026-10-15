@@ -116,7 +116,8 @@ window.Views.lancamentos = {
 
         // Mostrar/ocultar seletor de cartão
         document.getElementById('lanc-forma').addEventListener('change', (e) => {
-            const isCartao = e.target.value === 'Cartão de Crédito';
+            const v = e.target.value;
+            const isCartao = v === 'Cartão de Crédito' || v === 'Cartão de Débito';
             document.getElementById('grupo-cartao').style.display = isCartao ? 'block' : 'none';
         });
         
@@ -190,7 +191,7 @@ window.Views.lancamentos = {
             btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Salvando...';
             
             const forma = document.getElementById('lanc-forma').value;
-            const isCartao = forma === 'Cartão de Crédito';
+            const isCartao = forma === 'Cartão de Crédito' || forma === 'Cartão de Débito';
             const tipo = document.getElementById('lanc-tipo').value;
             const valor = parseFloat(document.getElementById('lanc-valor').value);
 
