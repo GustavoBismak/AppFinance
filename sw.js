@@ -1,5 +1,5 @@
 // FinApp - Service Worker PWA
-const CACHE_NAME = 'finapp-pwa-v3.0';
+const CACHE_NAME = 'finapp-pwa-v3.1';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
