@@ -1,13 +1,70 @@
 // js/open-finance.js — Módulo de Integração Open Finance do FinApp
 
-const PLUGGY_STATIC_KEY = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoiNjljOTgzN2I0OWY2N2RjZTRmMGI3Mjg3YTExYjMwMGI6M2Q4ZDNiYThkNTZlZTE3YmQ3N2QzMGJjY2M4NzJhYjBkN2YyYTg5ZTBmOTViZDQzNTE5ZjBmNzIwYzJiYzE4ZTRjNTcxYmQxNTU4MWMyYTBiYWMwYjVkNTA2ZWVlN2I2ZjAwOTI4M2U2YjZkMmI1ZGIzNjkwNTBjNTllYWU1MDM4MGYyZjFkMTgxNDk0MjhjOTA5OGVjOWIxYWY4ZGYxNyIsImlhdCI6MTc5Mzk4NTI4OSwiZXhwIjoxNzkzOTkyNDg5fQ.hSgy19Tp98KEJyMDxeJU8o0oxFHHM9HXzIcsAx86P7eEssgIWHtOoNn3bXhh6Se27yBBFoS8JTNXA9Y6ji-uaCs2wkpr9vd_5EfssJWyr0V95P1k2K1lgQRInYspuFIET55I1ownZp_vFIxKgUzmQYDiIjXIt1-DScmJBn2xcL0jgk4iuleoJM3ncwy73Bd6fqFzSQBjFZ5HdlGoBaFl2HY8ux4d6glKvik2kkfOTxbOQjT3yqlmVpXTZkdRkmFDKyV5mB75peXdUM918o-ZmthYSYe68YM_GCOCyYh4d2QhiFLn81IS3yYfdruo8vSREL44uo8vKO8xuVMnKJHGTA';
-
 window.OpenFinance = {
     pluggyScriptLoaded: false,
+    clientId: '2bf8fd0b-20ea-4fb0-91bf-637836604d76',
+    clientSecret: 'J5zNwFZ3M18npY-XKvHZIf1DDtY0xb1yOGJx0qjfwVs',
+    cachedApiKey: null,
+    apiKeyExpiresAt: 0,
 
-    // Obtém a API Key ativa (seja customizada, do localStorage ou a padrão)
-    getApiKey: () => {
-        return window.PLUGGY_API_KEY || localStorage.getItem('pluggy_api_key') || PLUGGY_STATIC_KEY;
+    // Obtém ou renova automaticamente a API Key válida usando o Client ID e Client Secret
+    getValidApiKey: async (forceRefresh = false) => {
+        const now = Date.now();
+
+        // 1. Usa chave em memória se ainda válida por pelo menos mais 3 minutos
+        if (!forceRefresh && OpenFinance.cachedApiKey && OpenFinance.apiKeyExpiresAt > (now + 180000)) {
+            return OpenFinance.cachedApiKey;
+        }
+
+        // 2. Tenta pegar chave válida salva no localStorage
+        if (!forceRefresh) {
+            const storedKey = localStorage.getItem('pluggy_api_key');
+            const storedExp = parseInt(localStorage.getItem('pluggy_api_key_exp') || '0', 10);
+            if (storedKey && storedExp > (now + 180000)) {
+                OpenFinance.cachedApiKey = storedKey;
+                OpenFinance.apiKeyExpiresAt = storedExp;
+                return storedKey;
+            }
+        }
+
+        // 3. Renova automaticamente na Pluggy usando as credenciais permanentes (Client ID + Secret)
+        try {
+            console.log('[OpenFinance] Renovando token de acesso Pluggy com Client Secret...');
+            const res = await fetch('https://api.pluggy.ai/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    clientId: OpenFinance.clientId,
+                    clientSecret: OpenFinance.clientSecret
+                })
+            });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`Falha na autenticação da Pluggy: ${res.status} ${errText}`);
+            }
+
+            const data = await res.json();
+            const newKey = data.apiKey;
+            // Validade padrão: 2 horas (armazenamos com margem segura de 1h50m)
+            const expiresAt = now + (110 * 60 * 1000);
+
+            OpenFinance.cachedApiKey = newKey;
+            OpenFinance.apiKeyExpiresAt = expiresAt;
+            localStorage.setItem('pluggy_api_key', newKey);
+            localStorage.setItem('pluggy_api_key_exp', expiresAt.toString());
+
+            return newKey;
+        } catch (err) {
+            console.error('[OpenFinance] Erro ao renovar API Key:', err);
+            if (OpenFinance.cachedApiKey) return OpenFinance.cachedApiKey;
+            throw err;
+        }
+    },
+
+    // Obtém a API Key ativa
+    getApiKey: async () => {
+        return await OpenFinance.getValidApiKey();
     },
 
     // Obtém a classe construtora do SDK Pluggy Connect
@@ -145,8 +202,8 @@ window.OpenFinance = {
 
             // 4. Fallback imediato se a Edge Function ainda não foi deployada
             if (!connectToken) {
-                const apiKey = OpenFinance.getApiKey();
-                const pluggyRes = await fetch('https://api.pluggy.ai/connect_token', {
+                let apiKey = await OpenFinance.getValidApiKey();
+                let pluggyRes = await fetch('https://api.pluggy.ai/connect_token', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -154,6 +211,20 @@ window.OpenFinance = {
                     },
                     body: JSON.stringify(itemId ? { itemId } : { options: { clientUserId: Auth.user.id } })
                 });
+
+                // Se a chave expirou, renova forçado com o Client Secret e tenta novamente
+                if (pluggyRes.status === 401 || pluggyRes.status === 403) {
+                    console.log('[OpenFinance] Token expirado detectado. Renovando com Client Secret...');
+                    apiKey = await OpenFinance.getValidApiKey(true);
+                    pluggyRes = await fetch('https://api.pluggy.ai/connect_token', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-API-KEY': apiKey
+                        },
+                        body: JSON.stringify(itemId ? { itemId } : { options: { clientUserId: Auth.user.id } })
+                    });
+                }
 
                 if (pluggyRes.ok) {
                     const pluggyData = await pluggyRes.json();
@@ -249,8 +320,8 @@ window.OpenFinance = {
 
     // Sincronização direta no cliente (fallback quando Edge Function não está implantada)
     syncDirect: async (itemId) => {
-        const apiKey = OpenFinance.getApiKey();
-        const headers = {
+        let apiKey = await OpenFinance.getValidApiKey();
+        let headers = {
             'Content-Type': 'application/json',
             'X-API-KEY': apiKey
         };
@@ -259,7 +330,12 @@ window.OpenFinance = {
         if (!user) throw new Error('Usuário não autenticado');
 
         // 1. Buscar Item
-        const itemRes = await fetch(`https://api.pluggy.ai/items/${itemId}`, { headers });
+        let itemRes = await fetch(`https://api.pluggy.ai/items/${itemId}`, { headers });
+        if (itemRes.status === 401 || itemRes.status === 403) {
+            apiKey = await OpenFinance.getValidApiKey(true);
+            headers['X-API-KEY'] = apiKey;
+            itemRes = await fetch(`https://api.pluggy.ai/items/${itemId}`, { headers });
+        }
         if (!itemRes.ok) throw new Error(`Erro ao buscar banco: ${itemRes.status}`);
         const itemData = await itemRes.json();
 
@@ -478,7 +554,7 @@ window.OpenFinance = {
             });
 
             // Tenta revogar na Pluggy
-            const apiKey = OpenFinance.getApiKey();
+            const apiKey = await OpenFinance.getValidApiKey();
             try {
                 await fetch(`https://api.pluggy.ai/items/${itemId}`, {
                     method: 'DELETE',
