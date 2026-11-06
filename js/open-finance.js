@@ -3,23 +3,51 @@
 window.OpenFinance = {
     pluggyScriptLoaded: false,
 
-    // Garante o carregamento sob demanda do SDK oficial do Pluggy Connect
-    loadSdk: () => {
+    // Obtém a classe construtora do SDK Pluggy Connect
+    getConstructor: () => {
+        return window.PluggyConnect?.default || window.PluggyConnect || window.pluggyConnect;
+    },
+
+    // Injeta script com promessa
+    loadScript: (url) => {
         return new Promise((resolve, reject) => {
-            if (window.PluggyConnect) {
-                resolve();
-                return;
-            }
             const script = document.createElement('script');
-            script.src = 'https://cdn.pluggy.ai/pluggy-connect/v2.latest.js';
+            script.src = url;
             script.async = true;
-            script.onload = () => {
-                window.OpenFinance.pluggyScriptLoaded = true;
-                resolve();
-            };
-            script.onerror = () => reject(new Error('Falha ao carregar o SDK Pluggy Connect. Verifique sua conexão.'));
+            script.onload = () => resolve();
+            script.onerror = () => reject();
             document.head.appendChild(script);
         });
+    },
+
+    // Garante o carregamento do SDK oficial do Pluggy Connect com fallback automático
+    loadSdk: async () => {
+        if (OpenFinance.getConstructor()) {
+            window.OpenFinance.pluggyScriptLoaded = true;
+            return;
+        }
+
+        const cdnUrls = [
+            'https://cdn.jsdelivr.net/npm/pluggy-connect-sdk@latest/dist/main.js',
+            'https://cdn.pluggy.ai/pluggy-connect/v2.7.0/pluggy-connect.js',
+            'https://unpkg.com/pluggy-connect-sdk@latest/dist/main.js'
+        ];
+
+        for (const url of cdnUrls) {
+            try {
+                await OpenFinance.loadScript(url);
+                if (OpenFinance.getConstructor()) {
+                    window.OpenFinance.pluggyScriptLoaded = true;
+                    return;
+                }
+            } catch (_) {
+                // Tenta próximo CDN
+            }
+        }
+
+        if (!OpenFinance.getConstructor()) {
+            throw new Error('Falha ao carregar o SDK Pluggy Connect. Verifique sua conexão com a internet.');
+        }
     },
 
     // Inicia o fluxo seguro de conexão bancária
@@ -44,6 +72,11 @@ window.OpenFinance = {
 
             // 2. Carregar SDK se necessário
             await OpenFinance.loadSdk();
+
+            const PluggyConstructor = OpenFinance.getConstructor();
+            if (!PluggyConstructor) {
+                throw new Error('SDK do Pluggy Connect não inicializou corretamente.');
+            }
 
             // 3. Obter token de conexão seguro da Edge Function
             const session = await supabaseClient.auth.getSession();
@@ -70,7 +103,7 @@ window.OpenFinance = {
             Swal.close();
 
             // 4. Instanciar e abrir o widget Pluggy Connect
-            const pluggyConnect = new window.PluggyConnect({
+            const pluggyConnect = new PluggyConstructor({
                 connectToken: data.connectToken,
                 includeSandbox: true, // Habilita bancos de teste e reais
                 onSuccess: async (itemData) => {
