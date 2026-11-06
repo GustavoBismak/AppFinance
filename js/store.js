@@ -6,7 +6,11 @@ const KEYS = {
     INVESTIMENTOS: 'investimentos',
     METAS: 'metas',
     CATEGORIAS: 'categorias',
-    PLANS: 'plans'
+    PLANS: 'plans',
+    BANK_CONNECTIONS: 'bank_connections',
+    BANK_ACCOUNTS: 'bank_accounts',
+    BANK_TRANSACTIONS: 'bank_transactions',
+    BANK_SYNC_LOGS: 'bank_sync_logs'
 };
 
 const Store = {

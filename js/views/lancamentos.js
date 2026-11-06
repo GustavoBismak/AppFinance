@@ -138,11 +138,14 @@ window.Views.lancamentos = {
                 const tipoLabel = l.tipo === 'receita' ? 'Receita' : 'Despesa';
                 const colorClass = l.tipo === 'receita' ? 'text-success' : 'text-danger';
                 const cartaoNome = l.cartao_nome ? ` (${l.cartao_nome})` : '';
+                const openFinanceBadge = (l.is_open_finance || l.bank_transaction_id) 
+                    ? `<span class="badge" style="background: rgba(10,147,150,0.15); color: var(--primary); font-size: 10px; margin-left: 6px;" title="Importado via Open Finance"><i class="ph ph-bank"></i> Open Finance</span>` 
+                    : '';
                 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${dataFormatada}</td>
-                    <td>${l.descricao}</td>
+                    <td>${l.descricao} ${openFinanceBadge}</td>
                     <td>${l.categoria}</td>
                     <td>${l.forma}${cartaoNome}</td>
                     <td class="${colorClass}">${valorFormatado}</td>

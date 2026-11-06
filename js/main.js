@@ -4,6 +4,7 @@ const App = {
     titulos: {
         dashboard: 'Dashboard',
         lancamentos: 'Lançamentos',
+        conexoes: 'Contas Conectadas',
         contas: 'Contas a Pagar',
         cartoes: 'Cartões',
         veiculo: 'Veículo',
@@ -70,7 +71,7 @@ const App = {
 
     loadView: async (viewName) => {
         // SaaS: Verificação de acesso Premium
-        const proViews = ['contas', 'cartoes', 'veiculo', 'investimentos', 'metas', 'relatorios'];
+        const proViews = ['conexoes', 'contas', 'cartoes', 'veiculo', 'investimentos', 'metas', 'relatorios'];
         if (proViews.includes(viewName)) {
             const isVipUser = Auth.user?.email?.toLowerCase().trim() === 'bismakgustavo3@gmail.com';
             const isAdmin = window.Views?.admin?.isAdmin === true;

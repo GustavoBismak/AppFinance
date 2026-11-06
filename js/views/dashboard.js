@@ -1,6 +1,16 @@
 window.Views.dashboard = {
     render: async (container) => {
-        const todosLancamentos = await Store.get(KEYS.LANCAMENTOS) || [];
+        const [todosLancamentos, bankAccounts] = await Promise.all([
+            Store.get(KEYS.LANCAMENTOS) || [],
+            Store.get(KEYS.BANK_ACCOUNTS) || []
+        ]);
+
+        let totalBancario = 0;
+        if (bankAccounts && bankAccounts.length > 0) {
+            bankAccounts.forEach(acc => {
+                totalBancario += (parseFloat(acc.balance_available) || parseFloat(acc.balance_current) || 0);
+            });
+        }
         
         container.innerHTML = `
             ${App.getFilterHTML()}
@@ -16,6 +26,7 @@ window.Views.dashboard = {
             let despesasParaSaldo = 0;
 
             lancamentos.forEach(l => {
+                if (l.categoria === 'Transferência Interna') return; // Neutraliza transferência interna entre contas próprias
                 const val = parseFloat(l.valor) || 0;
                 if (l.tipo === 'receita') receitas += val;
                 if (l.tipo === 'despesa') {
@@ -29,6 +40,24 @@ window.Views.dashboard = {
             // O saldo não desconta compras feitas no cartão de crédito
             const saldo = receitas - despesasParaSaldo;
             const economia = receitas > 0 ? ((saldo / receitas) * 100).toFixed(1) : 0;
+
+            // Banner Open Finance se houver contas conectadas
+            const openFinanceBanner = bankAccounts.length > 0 ? `
+                <div class="mb-4" style="background: linear-gradient(90deg, rgba(10,147,150,0.15) 0%, rgba(26,29,36,0.7) 100%); border: 1px solid rgba(10,147,150,0.3); border-radius: 12px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(10,147,150,0.25); display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                            <i class="ph ph-bank" style="font-size: 22px;"></i>
+                        </div>
+                        <div>
+                            <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Saldo Bancário Consolidado (Open Finance)</span>
+                            <div style="font-size: 18px; font-weight: 700; color: #fff;">${App.formatCurrency(totalBancario)} <span style="font-size: 12px; font-weight: normal; color: var(--text-muted);">(${bankAccounts.length} ${bankAccounts.length === 1 ? 'conta' : 'contas'})</span></div>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline" onclick="App.loadView('conexoes')" style="font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                        <i class="ph ph-bank"></i> Contas Conectadas
+                    </button>
+                </div>
+            ` : '';
 
             // Agrupar por mês para o gráfico de evolução
             const mesesMap = {};
@@ -61,6 +90,7 @@ window.Views.dashboard = {
             const semDados = lancamentos.length === 0;
 
             content.innerHTML = `
+                ${openFinanceBanner}
                 <div class="grid grid-4 mb-4">
                     <div class="card">
                         <div class="flex justify-between items-center mb-2">

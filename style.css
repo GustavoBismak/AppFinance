@@ -1887,3 +1887,28 @@ span.flatpickr-weekday {
     gap: 8px;
 }
 
+
+/* ====================================================================
+   OPEN FINANCE & UI ENHANCEMENTS
+   ==================================================================== */
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 8px 16px;
+    border-radius: var(--border-radius);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+.btn-outline:hover {
+    background: var(--bg-panel-hover);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #fff;
+}
