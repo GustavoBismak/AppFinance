@@ -144,6 +144,75 @@ window.Views.dashboard = {
                         }
                     </div>
                 </div>
+
+                <!-- Tabela de Movimentações na Dashboard Principal -->
+                <div class="card mt-4">
+                    <div class="flex justify-between items-center mb-4 flex-wrap" style="gap: 12px;">
+                        <div>
+                            <h3 style="font-size: 18px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-receipt text-primary"></i> Movimentações Recentes & Valores
+                            </h3>
+                            <p class="text-muted" style="font-size: 13px; margin: 2px 0 0 0;">
+                                Extrato consolidado de receitas, despesas e lançamentos do Open Finance
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="badge" style="background: rgba(10,147,150,0.15); color: var(--primary);">
+                                ${lancamentos.length} movimentações no período
+                            </span>
+                            <button class="btn btn-sm btn-outline" onclick="App.loadView('lancamentos')" style="font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                                <span>Ver Todos</span> <i class="ph ph-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Descrição</th>
+                                    <th>Categoria</th>
+                                    <th>Forma de Pagamento</th>
+                                    <th>Tipo</th>
+                                    <th style="text-align: right;">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${(() => {
+                                    if (lancamentos.length === 0) {
+                                        return `<tr><td colspan="6" style="text-align: center; padding: 32px 0;" class="text-muted">Nenhuma movimentação encontrada para os filtros atuais.</td></tr>`;
+                                    }
+                                    const ordenados = [...lancamentos].sort((a, b) => new Date(b.data + 'T00:00:00') - new Date(a.data + 'T00:00:00')).slice(0, 25);
+                                    return ordenados.map(l => {
+                                        const dataFormatada = new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR');
+                                        const isCredit = l.tipo === 'receita';
+                                        const isTransfer = l.categoria === 'Transferência Interna';
+                                        const badgeClass = isTransfer ? 'badge' : (isCredit ? 'badge-success' : 'badge-danger');
+                                        const colorClass = isTransfer ? 'text-primary' : (isCredit ? 'text-success' : 'text-danger');
+                                        const tipoLabel = isTransfer ? 'Transferência' : (isCredit ? 'Receita' : 'Despesa');
+                                        const styleBadge = isTransfer ? 'style="background: rgba(10,147,150,0.2); color: var(--primary);"' : '';
+                                        const ofBadge = (l.is_open_finance || l.bank_transaction_id) 
+                                            ? `<span class="badge" style="background: rgba(10,147,150,0.15); color: var(--primary); font-size: 10px; margin-left: 6px;" title="Importado via Open Finance"><i class="ph ph-bank"></i> Open Finance</span>` 
+                                            : '';
+                                        const cartaoNome = l.cartao_nome ? ` (${l.cartao_nome})` : '';
+
+                                        return `
+                                            <tr>
+                                                <td style="white-space: nowrap;">${dataFormatada}</td>
+                                                <td><strong>${l.descricao}</strong> ${ofBadge}</td>
+                                                <td><span class="badge" style="background: rgba(255,255,255,0.05); color: var(--text-main);">${l.categoria || 'Geral'}</span></td>
+                                                <td>${l.forma || 'Outro'}${cartaoNome}</td>
+                                                <td><span class="badge ${badgeClass}" ${styleBadge}>${tipoLabel}</span></td>
+                                                <td style="text-align: right;" class="${colorClass}"><strong>${App.formatCurrency(l.valor)}</strong></td>
+                                            </tr>
+                                        `;
+                                    }).join('');
+                                })()}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             `;
 
             // Renderizar gráficos apenas com dados reais
