@@ -1,8 +1,9 @@
 window.Views.dashboard = {
     render: async (container) => {
-        const [todosLancamentos, bankAccounts] = await Promise.all([
+        const [todosLancamentos, bankAccounts, bankConnections] = await Promise.all([
             Store.get(KEYS.LANCAMENTOS) || [],
-            Store.get(KEYS.BANK_ACCOUNTS) || []
+            Store.get(KEYS.BANK_ACCOUNTS) || [],
+            Store.get(KEYS.BANK_CONNECTIONS) || []
         ]);
 
         let totalBancario = 0;
@@ -24,8 +25,10 @@ window.Views.dashboard = {
             let receitas = 0;
             let despesas = 0;
             let despesasParaSaldo = 0;
+            let qtdLancamentosOF = 0;
 
             lancamentos.forEach(l => {
+                if (l.is_open_finance || l.bank_transaction_id) qtdLancamentosOF++;
                 if (l.categoria === 'Transferência Interna') return; // Neutraliza transferência interna entre contas próprias
                 const val = parseFloat(l.valor) || 0;
                 if (l.tipo === 'receita') receitas += val;
@@ -37,25 +40,40 @@ window.Views.dashboard = {
                 }
             });
 
-            // O saldo não desconta compras feitas no cartão de crédito
-            const saldo = receitas - despesasParaSaldo;
-            const economia = receitas > 0 ? ((saldo / receitas) * 100).toFixed(1) : 0;
+            // Se há contas bancárias conectadas via Open Finance, o saldo real é o saldo consolidado de todos os bancos conectados!
+            const temBancosConectados = bankAccounts && bankAccounts.length > 0;
+            const saldoCalculado = receitas - despesasParaSaldo;
+            const saldoConsolidado = temBancosConectados ? totalBancario : saldoCalculado;
+            const economia = receitas > 0 ? (((receitas - despesas) / receitas) * 100).toFixed(1) : 0;
 
-            // Banner Open Finance se houver contas conectadas
-            const openFinanceBanner = bankAccounts.length > 0 ? `
-                <div class="mb-4" style="background: linear-gradient(90deg, rgba(10,147,150,0.15) 0%, rgba(26,29,36,0.7) 100%); border: 1px solid rgba(10,147,150,0.3); border-radius: 12px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(10,147,150,0.25); display: flex; align-items: center; justify-content: center; color: var(--primary);">
-                            <i class="ph ph-bank" style="font-size: 22px;"></i>
+            // Barra de Detalhamento por Banco Conectado
+            const bancosBreakdown = (bankConnections && bankConnections.length > 0) ? `
+                <div class="card mb-4" style="padding: 12px 18px; background: rgba(26,29,36,0.6); border: 1px solid var(--border);">
+                    <div class="flex justify-between items-center flex-wrap" style="gap: 12px;">
+                        <div class="flex items-center gap-2">
+                            <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(10,147,150,0.15); display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                                <i class="ph ph-bank" style="font-size: 16px;"></i>
+                            </div>
+                            <strong style="font-size: 13px;">Saldos por Instituição Conectada:</strong>
                         </div>
-                        <div>
-                            <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Saldo Bancário Consolidado (Open Finance)</span>
-                            <div style="font-size: 18px; font-weight: 700; color: #fff;">${App.formatCurrency(totalBancario)} <span style="font-size: 12px; font-weight: normal; color: var(--text-muted);">(${bankAccounts.length} ${bankAccounts.length === 1 ? 'conta' : 'contas'})</span></div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            ${bankConnections.map(conn => {
+                                const connAccs = bankAccounts.filter(a => a.bank_connection_id === conn.id);
+                                let connSaldo = 0;
+                                connAccs.forEach(a => connSaldo += (parseFloat(a.balance_available) || parseFloat(a.balance_current) || 0));
+                                return `
+                                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 8px;">
+                                        ${conn.institution_logo ? `<img src="${conn.institution_logo}" alt="${conn.institution_name}" style="width: 18px; height: 18px; border-radius: 4px; object-fit: contain;">` : '<i class="ph ph-bank text-primary"></i>'}
+                                        <span style="font-size: 12px; color: var(--text-muted);">${conn.institution_name}:</span>
+                                        <strong style="font-size: 13px;" class="${connSaldo >= 0 ? 'text-success' : 'text-danger'}">${App.formatCurrency(connSaldo)}</strong>
+                                    </div>
+                                `;
+                            }).join('')}
+                            <button class="btn btn-sm btn-outline" onclick="App.loadView('conexoes')" style="font-size: 11px; padding: 4px 10px; margin-left: 6px;">
+                                <i class="ph ph-plus"></i> Conectar Outro
+                            </button>
                         </div>
                     </div>
-                    <button class="btn btn-sm btn-outline" onclick="App.loadView('conexoes')" style="font-size: 12px; display: flex; align-items: center; gap: 6px;">
-                        <i class="ph ph-bank"></i> Contas Conectadas
-                    </button>
                 </div>
             ` : '';
 
@@ -90,37 +108,55 @@ window.Views.dashboard = {
             const semDados = lancamentos.length === 0;
 
             content.innerHTML = `
-                ${openFinanceBanner}
                 <div class="grid grid-4 mb-4">
                     <div class="card">
                         <div class="flex justify-between items-center mb-2">
-                            <span class="text-muted">Saldo Atual</span>
-                            <i class="ph ph-wallet text-primary" style="font-size: 24px"></i>
+                            <span class="text-muted" style="font-size: 13px;">${temBancosConectados ? 'Saldo Bancário Consolidado' : 'Saldo Atual'}</span>
+                            <i class="ph ${temBancosConectados ? 'ph-vault' : 'ph-wallet'} text-primary" style="font-size: 24px"></i>
                         </div>
-                        <h2 class="${saldo >= 0 ? 'text-success' : 'text-danger'}" style="font-size: 28px">${App.formatCurrency(saldo)}</h2>
+                        <h2 class="${saldoConsolidado >= 0 ? 'text-success' : 'text-danger'}" style="font-size: 28px">${App.formatCurrency(saldoConsolidado)}</h2>
+                        ${temBancosConectados ? `
+                            <span class="text-muted" style="font-size: 12px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                                <i class="ph ph-bank text-primary"></i> ${bankAccounts.length} ${bankAccounts.length === 1 ? 'conta conectada' : 'contas conectadas'} (${bankConnections.length} ${bankConnections.length === 1 ? 'banco' : 'bancos'})
+                            </span>
+                        ` : ''}
                     </div>
+
                     <div class="card">
                         <div class="flex justify-between items-center mb-2">
-                            <span class="text-muted">Total de Receitas</span>
+                            <span class="text-muted" style="font-size: 13px;">Total de Receitas</span>
                             <i class="ph ph-arrow-circle-up text-success" style="font-size: 24px"></i>
                         </div>
                         <h2 style="font-size: 28px">${App.formatCurrency(receitas)}</h2>
+                        <span class="text-muted" style="font-size: 12px; margin-top: 4px; display: block;">
+                            ${qtdLancamentosOF > 0 ? 'Bancos conectados + manuais' : 'Entradas no período'}
+                        </span>
                     </div>
+
                     <div class="card">
                         <div class="flex justify-between items-center mb-2">
-                            <span class="text-muted">Total de Despesas</span>
+                            <span class="text-muted" style="font-size: 13px;">Total de Despesas</span>
                             <i class="ph ph-arrow-circle-down text-danger" style="font-size: 24px"></i>
                         </div>
                         <h2 style="font-size: 28px">${App.formatCurrency(despesas)}</h2>
+                        <span class="text-muted" style="font-size: 12px; margin-top: 4px; display: block;">
+                            ${qtdLancamentosOF > 0 ? 'Bancos conectados + manuais' : 'Saídas no período'}
+                        </span>
                     </div>
+
                     <div class="card">
                         <div class="flex justify-between items-center mb-2">
-                            <span class="text-muted">Taxa de Economia</span>
+                            <span class="text-muted" style="font-size: 13px;">Taxa de Economia</span>
                             <i class="ph ph-chart-line-up text-primary" style="font-size: 24px"></i>
                         </div>
                         <h2 style="font-size: 28px">${economia}%</h2>
+                        <span class="text-muted" style="font-size: 12px; margin-top: 4px; display: block;">
+                            ${receitas >= despesas ? 'Economia positiva' : 'Despesas superam receitas'}
+                        </span>
                     </div>
                 </div>
+
+                ${bancosBreakdown}
 
                 <div class="grid grid-2">
                     <div class="card">
