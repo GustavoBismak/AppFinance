@@ -363,7 +363,16 @@ window.OpenFinance = {
             .single();
 
         if (connErr) console.warn('[OpenFinance] Erro ao salvar conexão:', connErr);
-        const connectionId = savedConnection?.id;
+        let connectionId = savedConnection?.id;
+        if (!connectionId) {
+            const { data: existingConn } = await supabaseClient
+                .from('bank_connections')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('external_item_id', itemId)
+                .maybeSingle();
+            connectionId = existingConn?.id;
+        }
 
         // 2. Buscar Contas
         const accRes = await fetch(`https://api.pluggy.ai/accounts?itemId=${itemId}`, { headers });
@@ -400,6 +409,15 @@ window.OpenFinance = {
                     .single();
 
                 accountRecordId = savedAcc?.id;
+                if (!accountRecordId) {
+                    const { data: existingAcc } = await supabaseClient
+                        .from('bank_accounts')
+                        .select('id')
+                        .eq('bank_connection_id', connectionId)
+                        .eq('external_account_id', acc.id)
+                        .maybeSingle();
+                    accountRecordId = existingAcc?.id;
+                }
             }
 
             // 3. Buscar Transações usando a API v2 da Pluggy com paginação por cursor

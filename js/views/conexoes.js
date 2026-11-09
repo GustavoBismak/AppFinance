@@ -146,6 +146,23 @@ window.Views.conexoes = {
                 </div>
 
                 <!-- Lista de Instituições Conectadas -->
+                ${temConexoes && transactions.length === 0 ? `
+                    <div class="card mb-4" style="background: rgba(10,147,150,0.12); border: 1px solid var(--primary); padding: 16px 20px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(10,147,150,0.2); display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                                <i class="ph ph-cloud-arrow-down" style="font-size: 24px;"></i>
+                            </div>
+                            <div>
+                                <strong style="display: block; font-size: 15px;">Sincronizar Movimentações Bancárias</strong>
+                                <span class="text-muted" style="font-size: 13px;">Suas contas estão conectadas! Clique abaixo para importar o extrato completo com receitas e despesas.</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" id="btn-quick-sync-banner" style="display: flex; align-items: center; gap: 8px; padding: 10px 20px; font-weight: 600;">
+                            <i class="ph ph-arrows-clockwise"></i> Puxar Movimentações Agora
+                        </button>
+                    </div>
+                ` : ''}
+
                 <div class="flex justify-between items-center mb-3">
                     <h3 style="font-size: 17px; font-weight: 600; margin: 0;">Instituições Conectadas (${connections.length})</h3>
                     <span class="text-muted" style="font-size: 12px;">${totalContas} contas correntes • ${totalCartoes} cartões de crédito</span>
@@ -384,6 +401,39 @@ window.Views.conexoes = {
         // -------------------------------------------------------------
         // Binds de Eventos
         // -------------------------------------------------------------
+        document.getElementById('btn-quick-sync-banner')?.addEventListener('click', async (e) => {
+            const btn = e.currentTarget;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Baixando movimentações...';
+            try {
+                const res = await OpenFinance.sync();
+                Toast.success(`Sincronização concluída! ${res.transactionsSynced || 0} movimentações importadas.`);
+                App.loadView('conexoes');
+            } catch (err) {
+                Toast.error('Erro na sincronização: ' + err.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ph ph-arrows-clockwise"></i> Puxar Movimentações Agora';
+            }
+        });
+
+        // Disparo automático em background se já houver conexões mas nenhuma transação ainda
+        if (temConexoes && transactions.length === 0 && !sessionStorage.getItem('of_auto_synced')) {
+            sessionStorage.setItem('of_auto_synced', 'true');
+            setTimeout(async () => {
+                try {
+                    console.log('[OpenFinance] Disparando auto-sincronização inicial de transações...');
+                    const res = await OpenFinance.sync();
+                    console.log('[OpenFinance] Auto-sync finalizado:', res);
+                    if (res && res.transactionsSynced > 0) {
+                        Toast.success(`${res.transactionsSynced} movimentações importadas com sucesso!`);
+                        App.loadView('conexoes');
+                    }
+                } catch (e) {
+                    console.warn('[OpenFinance] Aviso no auto-sync:', e);
+                }
+            }, 600);
+        }
+
         document.getElementById('btn-open-finance-connect')?.addEventListener('click', () => {
             OpenFinance.connectBank({
                 onSuccess: () => App.loadView('conexoes')
