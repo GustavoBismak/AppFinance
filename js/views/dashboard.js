@@ -6,10 +6,24 @@ window.Views.dashboard = {
             Store.get(KEYS.BANK_CONNECTIONS) || []
         ]);
 
+        // Helper para distinguir conta corrente/poupança de cartão de crédito
+        const isCreditCardAccount = (acc) => {
+            if (!acc) return false;
+            if (acc.type === 'CREDIT' || acc.subtype === 'CREDIT_CARD') return true;
+            const name = (acc.name || '').toLowerCase();
+            return name.includes('gold') || name.includes('ourocard') || name.includes('cartão') || name.includes('cartao') || name.includes('credit card');
+        };
+
         let totalBancario = 0;
+        let totalFaturasCartoes = 0;
         if (bankAccounts && bankAccounts.length > 0) {
             bankAccounts.forEach(acc => {
-                totalBancario += (parseFloat(acc.balance_available) || parseFloat(acc.balance_current) || 0);
+                const bal = parseFloat(acc.balance_available) || parseFloat(acc.balance_current) || 0;
+                if (isCreditCardAccount(acc)) {
+                    totalFaturasCartoes += bal;
+                } else {
+                    totalBancario += bal;
+                }
             });
         }
         
@@ -40,8 +54,9 @@ window.Views.dashboard = {
                 }
             });
 
-            // Se há contas bancárias conectadas via Open Finance, o saldo real é o saldo consolidado de todos os bancos conectados!
-            const temBancosConectados = bankAccounts && bankAccounts.length > 0;
+            // Se há contas bancárias conectadas via Open Finance, o saldo real é o saldo das contas correntes/poupança conectadas!
+            const contasCorrentesConectadas = (bankAccounts || []).filter(a => !isCreditCardAccount(a));
+            const temBancosConectados = contasCorrentesConectadas.length > 0;
             const saldoCalculado = receitas - despesasParaSaldo;
             const saldoConsolidado = temBancosConectados ? totalBancario : saldoCalculado;
             const economia = receitas > 0 ? (((receitas - despesas) / receitas) * 100).toFixed(1) : 0;
@@ -59,18 +74,28 @@ window.Views.dashboard = {
                         <div class="flex items-center gap-2 flex-wrap">
                             ${bankConnections.map(conn => {
                                 const connAccs = bankAccounts.filter(a => a.bank_connection_id === conn.id);
+                                const cashAccs = connAccs.filter(a => !isCreditCardAccount(a));
+                                const cardAccs = connAccs.filter(a => isCreditCardAccount(a));
                                 let connSaldo = 0;
-                                connAccs.forEach(a => connSaldo += (parseFloat(a.balance_available) || parseFloat(a.balance_current) || 0));
+                                let connFatura = 0;
+                                cashAccs.forEach(a => connSaldo += (parseFloat(a.balance_available) || parseFloat(a.balance_current) || 0));
+                                cardAccs.forEach(a => connFatura += (parseFloat(a.balance_available) || parseFloat(a.balance_current) || 0));
+
                                 return `
                                     <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 8px;">
                                         ${conn.institution_logo ? `<img src="${conn.institution_logo}" alt="${conn.institution_name}" style="width: 18px; height: 18px; border-radius: 4px; object-fit: contain;">` : '<i class="ph ph-bank text-primary"></i>'}
                                         <span style="font-size: 12px; color: var(--text-muted);">${conn.institution_name}:</span>
                                         <strong style="font-size: 13px;" class="${connSaldo >= 0 ? 'text-success' : 'text-danger'}">${App.formatCurrency(connSaldo)}</strong>
+                                        ${connFatura > 0 ? `
+                                            <span style="font-size: 11px; color: #e9c46a; margin-left: 2px;" title="Fatura de cartão">
+                                                <i class="ph ph-credit-card"></i> ${App.formatCurrency(connFatura)}
+                                            </span>
+                                        ` : ''}
                                     </div>
                                 `;
                             }).join('')}
                             <button class="btn btn-sm btn-outline" onclick="App.loadView('conexoes')" style="font-size: 11px; padding: 4px 10px; margin-left: 6px;">
-                                <i class="ph ph-plus"></i> Conectar Outro
+                                <i class="ph ph-plus"></i> Gerenciar Bancos
                             </button>
                         </div>
                     </div>
@@ -117,8 +142,13 @@ window.Views.dashboard = {
                         <h2 class="${saldoConsolidado >= 0 ? 'text-success' : 'text-danger'}" style="font-size: 28px">${App.formatCurrency(saldoConsolidado)}</h2>
                         ${temBancosConectados ? `
                             <span class="text-muted" style="font-size: 12px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
-                                <i class="ph ph-bank text-primary"></i> ${bankAccounts.length} ${bankAccounts.length === 1 ? 'conta conectada' : 'contas conectadas'} (${bankConnections.length} ${bankConnections.length === 1 ? 'banco' : 'bancos'})
+                                <i class="ph ph-bank text-primary"></i> ${contasCorrentesConectadas.length} ${contasCorrentesConectadas.length === 1 ? 'conta em banco' : 'contas em bancos'}
                             </span>
+                            ${totalFaturasCartoes > 0 ? `
+                                <span style="font-size: 11px; color: #e9c46a; margin-top: 2px; display: flex; align-items: center; gap: 4px;" title="Total em aberto nos cartões de crédito Open Finance">
+                                    <i class="ph ph-credit-card"></i> Faturas: ${App.formatCurrency(totalFaturasCartoes)}
+                                </span>
+                            ` : ''}
                         ` : ''}
                     </div>
 

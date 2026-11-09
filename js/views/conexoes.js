@@ -15,11 +15,24 @@ window.Views.conexoes = {
             Store.get(KEYS.BANK_TRANSACTIONS) || []
         ]);
 
+        // Helper para distinguir conta corrente/poupança de cartão de crédito
+        const isCardAccount = (acc) => {
+            if (!acc) return false;
+            if (acc.type === 'CREDIT' || acc.subtype === 'CREDIT_CARD') return true;
+            const name = (acc.name || '').toLowerCase();
+            return name.includes('gold') || name.includes('ourocard') || name.includes('cartão') || name.includes('cartao') || name.includes('credit card');
+        };
+
         // Cálculo dos indicadores consolidados
         let totalSaldoConsolidado = 0;
+        let totalFaturasCartoes = 0;
         accounts.forEach(acc => {
             const bal = parseFloat(acc.balance_available) || parseFloat(acc.balance_current) || 0;
-            totalSaldoConsolidado += bal;
+            if (isCardAccount(acc)) {
+                totalFaturasCartoes += bal;
+            } else {
+                totalSaldoConsolidado += bal;
+            }
         });
 
         let totalReceitasImportadas = 0;
@@ -82,26 +95,31 @@ window.Views.conexoes = {
             `;
         } else {
             // Cards de KPIs Consolidados
+            const totalContas = accounts.filter(a => !isCardAccount(a)).length;
+            const totalCartoes = accounts.filter(a => isCardAccount(a)).length;
+
             html += `
                 <div class="grid grid-4 mb-4">
                     <div class="card">
                         <div class="flex justify-between items-center mb-2">
-                            <span class="text-muted" style="font-size: 13px;">Saldo Bancário Consolidado</span>
+                            <span class="text-muted" style="font-size: 13px;">Saldo em Contas (Dinheiro Real)</span>
                             <i class="ph ph-vault text-primary" style="font-size: 22px;"></i>
                         </div>
                         <h2 class="${totalSaldoConsolidado >= 0 ? 'text-success' : 'text-danger'}" style="font-size: 26px; font-weight: 700;">
                             ${App.formatCurrency(totalSaldoConsolidado)}
                         </h2>
+                        <span class="text-muted" style="font-size: 11px;">Contas correntes e poupança</span>
                     </div>
 
                     <div class="card">
                         <div class="flex justify-between items-center mb-2">
-                            <span class="text-muted" style="font-size: 13px;">Instituições Ativas</span>
-                            <i class="ph ph-bank text-primary" style="font-size: 22px;"></i>
+                            <span class="text-muted" style="font-size: 13px;">Faturas de Cartões</span>
+                            <i class="ph ph-credit-card" style="font-size: 22px; color: #e9c46a;"></i>
                         </div>
-                        <h2 style="font-size: 26px; font-weight: 700;">
-                            ${connections.length} <span style="font-size: 14px; font-weight: normal; color: var(--text-muted);">(${accounts.length} contas)</span>
+                        <h2 style="font-size: 26px; font-weight: 700; color: #e9c46a;">
+                            ${App.formatCurrency(totalFaturasCartoes)}
                         </h2>
+                        <span class="text-muted" style="font-size: 11px;">Total faturas em aberto</span>
                     </div>
 
                     <div class="card">
@@ -112,6 +130,7 @@ window.Views.conexoes = {
                         <h2 class="text-success" style="font-size: 26px; font-weight: 700;">
                             ${App.formatCurrency(totalReceitasImportadas)}
                         </h2>
+                        <span class="text-muted" style="font-size: 11px;">Entradas via Open Finance</span>
                     </div>
 
                     <div class="card">
@@ -122,20 +141,28 @@ window.Views.conexoes = {
                         <h2 class="text-danger" style="font-size: 26px; font-weight: 700;">
                             ${App.formatCurrency(totalDespesasImportadas)}
                         </h2>
+                        <span class="text-muted" style="font-size: 11px;">Saídas e compras no cartão</span>
                     </div>
                 </div>
 
                 <!-- Lista de Instituições Conectadas -->
-                <h3 style="font-size: 17px; font-weight: 600; margin: 24px 0 16px 0;">Instituições Conectadas</h3>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 style="font-size: 17px; font-weight: 600; margin: 0;">Instituições Conectadas (${connections.length})</h3>
+                    <span class="text-muted" style="font-size: 12px;">${totalContas} contas correntes • ${totalCartoes} cartões de crédito</span>
+                </div>
                 <div class="grid grid-2 mb-4" style="gap: 16px;">
             `;
 
             connections.forEach(conn => {
                 const connAccounts = accounts.filter(a => a.bank_connection_id === conn.id);
-                let connBalance = 0;
-                connAccounts.forEach(a => {
-                    connBalance += (parseFloat(a.balance_available) || parseFloat(a.balance_current) || 0);
-                });
+                const cashAccounts = connAccounts.filter(a => !isCardAccount(a));
+                const cardAccounts = connAccounts.filter(a => isCardAccount(a));
+
+                let connCashBalance = 0;
+                cashAccounts.forEach(a => connCashBalance += (parseFloat(a.balance_available) || parseFloat(a.balance_current) || 0));
+
+                let connCardBalance = 0;
+                cardAccounts.forEach(a => connCardBalance += (parseFloat(a.balance_available) || parseFloat(a.balance_current) || 0));
 
                 const isOk = conn.status === 'UPDATED';
                 const isSyncing = conn.status === 'UPDATING';
@@ -169,13 +196,42 @@ window.Views.conexoes = {
                                 <div>${statusBadge}</div>
                             </div>
 
-                            <div style="background: rgba(255,255,255,0.02); padding: 12px 14px; border-radius: 8px; margin-bottom: 12px;">
+                            <div style="background: rgba(255,255,255,0.02); padding: 12px 14px; border-radius: 8px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.04);">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-muted" style="font-size: 13px;">Saldo nesta instituição:</span>
-                                    <strong style="font-size: 16px;" class="${connBalance >= 0 ? 'text-success' : 'text-danger'}">${App.formatCurrency(connBalance)}</strong>
+                                    <span class="text-muted" style="font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                                        <i class="ph ph-vault text-primary"></i> Saldo em Conta:
+                                    </span>
+                                    <strong style="font-size: 16px;" class="${connCashBalance >= 0 ? 'text-success' : 'text-danger'}">${App.formatCurrency(connCashBalance)}</strong>
                                 </div>
-                                <div class="mt-2" style="font-size: 12px; color: var(--text-muted);">
-                                    ${connAccounts.map(a => `<div style="display:flex; justify-content:space-between; margin-top:4px;"><span>${a.name} ${a.number ? `(••• ${a.number.slice(-4)})` : ''}</span><span>${App.formatCurrency(a.balance_available || a.balance_current || 0)}</span></div>`).join('')}
+                                ${cardAccounts.length > 0 ? `
+                                    <div class="flex justify-between items-center mt-2 pt-2" style="border-top: 1px dashed rgba(255,255,255,0.06);">
+                                        <span class="text-muted" style="font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                                            <i class="ph ph-credit-card" style="color: #e9c46a;"></i> Fatura de Cartão:
+                                        </span>
+                                        <strong style="font-size: 15px; color: #e9c46a;">${App.formatCurrency(connCardBalance)}</strong>
+                                    </div>
+                                ` : ''}
+
+                                <div class="mt-3 pt-2" style="border-top: 1px solid rgba(255,255,255,0.04);">
+                                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600;">Contas & Cartões</span>
+                                    ${connAccounts.map(a => {
+                                        const isCard = isCardAccount(a);
+                                        const bal = parseFloat(a.balance_available) || parseFloat(a.balance_current) || 0;
+                                        return `
+                                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:12px;">
+                                                <div style="display:flex; align-items:center; gap:6px;">
+                                                    <i class="ph ${isCard ? 'ph-credit-card' : 'ph-bank'}" style="color: ${isCard ? '#e9c46a' : 'var(--primary)'};"></i>
+                                                    <span>${a.name} ${a.number ? `(••• ${a.number.slice(-4)})` : ''}</span>
+                                                    <span class="badge" style="font-size:9px; padding:2px 6px; background:${isCard ? 'rgba(233,196,106,0.15)' : 'rgba(10,147,150,0.15)'}; color:${isCard ? '#e9c46a' : 'var(--primary)'};">
+                                                        ${isCard ? 'Cartão' : 'Conta'}
+                                                    </span>
+                                                </div>
+                                                <strong style="color: ${isCard ? '#e9c46a' : (bal >= 0 ? 'var(--text-main)' : 'var(--danger)')};">
+                                                    ${App.formatCurrency(bal)}
+                                                </strong>
+                                            </div>
+                                        `;
+                                    }).join('')}
                                 </div>
                             </div>
                         </div>

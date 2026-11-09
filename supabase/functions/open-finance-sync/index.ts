@@ -241,22 +241,33 @@ serve(async (req) => {
             continue
           }
 
-          // 3. Buscar Transações dos últimos 90 dias
-          const fromDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-          const toDate = new Date().toISOString().split('T')[0]
+          // 3. Buscar Transações usando a API v2 da Pluggy com paginação por cursor
+          let txUrl = `${pluggyBaseUrl}/v2/transactions?accountId=${acc.id}`
+          const transactions: any[] = []
+          let pageCount = 0
 
-          const txRes = await fetch(
-            `${pluggyBaseUrl}/transactions?accountId=${acc.id}&from=${fromDate}&to=${toDate}&pageSize=500`,
-            { headers: pluggyHeaders }
-          )
-
-          if (!txRes.ok) {
-            console.warn(`[open-finance-sync] Aviso ao buscar transações da conta ${acc.id}: ${txRes.status}`)
-            continue
+          while (txUrl && pageCount < 5) {
+            pageCount++
+            try {
+              const txRes = await fetch(txUrl, { headers: pluggyHeaders })
+              if (!txRes.ok) {
+                console.warn(`[open-finance-sync] Aviso ao buscar transações v2 da conta ${acc.id}: ${txRes.status}`)
+                break
+              }
+              const txData = await txRes.json()
+              if (Array.isArray(txData.results)) {
+                transactions.push(...txData.results)
+              }
+              if (txData.next) {
+                txUrl = `${pluggyBaseUrl}/v2/transactions${txData.next.startsWith('?') ? txData.next : '?' + txData.next}`
+              } else {
+                txUrl = ''
+              }
+            } catch (txErr) {
+              console.error('[open-finance-sync] Erro de rede ao buscar transações:', txErr)
+              break
+            }
           }
-
-          const txData = await txRes.json()
-          const transactions = txData.results || []
 
           for (const tx of transactions) {
             totalTransactionsSynced++

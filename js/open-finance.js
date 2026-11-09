@@ -402,27 +402,64 @@ window.OpenFinance = {
                 accountRecordId = savedAcc?.id;
             }
 
-            // 3. Buscar Transações dos últimos 90 dias
-            const fromDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-            const toDate = new Date().toISOString().split('T')[0];
+            // 3. Buscar Transações usando a API v2 da Pluggy com paginação por cursor
+            console.log(`[OpenFinance] Buscando transações v2 para conta ${acc.name || acc.id}...`);
+            let txUrl = `https://api.pluggy.ai/v2/transactions?accountId=${acc.id}`;
+            let txList = [];
+            let maxPages = 5;
+            let pageNum = 0;
 
-            const txRes = await fetch(`https://api.pluggy.ai/transactions?accountId=${acc.id}&from=${fromDate}&to=${toDate}&pageSize=500`, { headers });
-            if (!txRes.ok) continue;
+            while (txUrl && pageNum < maxPages) {
+                pageNum++;
+                try {
+                    const txRes = await fetch(txUrl, { headers });
+                    if (!txRes.ok) {
+                        const errTxt = await txRes.text();
+                        console.warn(`[OpenFinance] Falha ao buscar transações v2 (${txRes.status}):`, errTxt);
+                        break;
+                    }
+                    const txData = await txRes.json();
+                    if (Array.isArray(txData.results) && txData.results.length > 0) {
+                        txList.push(...txData.results);
+                    }
+                    if (txData.next) {
+                        txUrl = `https://api.pluggy.ai/v2/transactions${txData.next.startsWith('?') ? txData.next : '?' + txData.next}`;
+                    } else {
+                        txUrl = null;
+                    }
+                } catch (fetchErr) {
+                    console.error('[OpenFinance] Erro de rede ao buscar transações:', fetchErr);
+                    break;
+                }
+            }
 
-            const txData = await txRes.json();
-            const txList = txData.results || [];
+            console.log(`[OpenFinance] Total de ${txList.length} transações obtidas para conta ${acc.name || acc.id}`);
+
+            const isCard = acc.subtype === 'CREDIT_CARD' || 
+                           acc.type === 'CREDIT' || 
+                           (acc.name || '').toLowerCase().includes('gold') || 
+                           (acc.name || '').toLowerCase().includes('ourocard') ||
+                           (acc.name || '').toLowerCase().includes('cartão') ||
+                           (acc.name || '').toLowerCase().includes('cartao');
 
             for (const tx of txList) {
                 totalTx++;
-                const isCredit = tx.type === 'CREDIT';
+                const isCredit = tx.type ? (tx.type === 'CREDIT') : (typeof tx.amount === 'number' && tx.amount > 0);
                 const txType = isCredit ? 'receita' : 'despesa';
-                const rawAmount = Math.abs(tx.amount || 0);
-                const txDate = tx.date ? tx.date.split('T')[0] : toDate;
+                const rawAmount = Math.abs(typeof tx.amount === 'number' ? tx.amount : (parseFloat(tx.amount) || 0));
+                const txDate = tx.date ? tx.date.split('T')[0] : new Date().toISOString().split('T')[0];
                 const mappedCat = OpenFinance.mapCategory(tx.category, tx.description);
+
+                const descUpper = (tx.description || '').toUpperCase();
+                const isInternalTransfer = descUpper.includes('TRANSF') || 
+                                           descUpper.includes('TRANSFERENCIA') || 
+                                           descUpper.includes('TED') || 
+                                           descUpper.includes('DOC') || 
+                                           descUpper.includes('ENTRE CONTAS');
 
                 let savedTxId = null;
                 if (accountRecordId) {
-                    const { data: savedTx } = await supabaseClient
+                    const { data: savedTx, error: txErr } = await supabaseClient
                         .from('bank_transactions')
                         .upsert({
                             user_id: user.id,
@@ -434,29 +471,37 @@ window.OpenFinance = {
                             type: tx.type || (isCredit ? 'CREDIT' : 'DEBIT'),
                             category_raw: tx.category || null,
                             category_normalized: mappedCat,
-                            status: tx.status || 'POSTED'
+                            status: tx.status || 'POSTED',
+                            is_internal_transfer: isInternalTransfer
                         }, { onConflict: 'bank_account_id, external_id' })
-                        .select()
-                        .single();
+                        .select('id')
+                        .maybeSingle();
 
-                    savedTxId = savedTx?.id;
+                    if (txErr) {
+                        console.warn('[OpenFinance] Erro ao salvar bank_transaction:', txErr);
+                    } else if (savedTx?.id) {
+                        savedTxId = savedTx.id;
+                    }
                 }
 
-                // Inserir na tabela lancamentos se não existir
-                const { data: existingLanc } = await supabaseClient
-                    .from('lancamentos')
-                    .select('id')
-                    .eq('bank_transaction_id', savedTxId || tx.id)
-                    .maybeSingle();
+                // Inserir na tabela de lançamentos gerais se ainda não foi importado
+                let existingLanc = null;
+                if (savedTxId) {
+                    const { data } = await supabaseClient
+                        .from('lancamentos')
+                        .select('id')
+                        .eq('bank_transaction_id', savedTxId)
+                        .maybeSingle();
+                    existingLanc = data;
+                }
 
                 if (!existingLanc) {
                     let formaPagto = 'Pix';
-                    const descUpper = (tx.description || '').toUpperCase();
-                    if (acc.subtype === 'CREDIT_CARD' || acc.type === 'CREDIT') {
+                    if (isCard) {
                         formaPagto = 'Cartão de Crédito';
                     } else if (descUpper.includes('CARTAO') || descUpper.includes('DEBITO')) {
                         formaPagto = 'Cartão de Débito';
-                    } else if (descUpper.includes('TED') || descUpper.includes('DOC') || descUpper.includes('TRANSF')) {
+                    } else if (descUpper.includes('TED') || descUpper.includes('DOC') || isInternalTransfer) {
                         formaPagto = 'Transferência';
                     }
 
