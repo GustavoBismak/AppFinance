@@ -111,11 +111,20 @@ const App = {
         // Rola conteúdo para o topo
         if (container) container.scrollTop = 0;
 
-        // Estado de carregamento
+        // Estado de carregamento — centralizado na tela
         container.innerHTML = `
-            <div class="text-center text-muted" style="padding: 60px">
-                <i class="ph ph-spinner ph-spin" style="font-size: 40px"></i>
-                <p style="margin-top: 16px">Carregando dados da nuvem...</p>
+            <div style="
+                position: fixed;
+                inset: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                z-index: 999;
+                pointer-events: none;
+            ">
+                <i class="ph ph-spinner ph-spin" style="font-size: 36px; color: var(--primary);"></i>
+                <p style="margin-top: 14px; color: var(--text-muted); font-size: 14px; font-weight: 500;">Carregando dados</p>
             </div>`;
 
         // Chama a view se ela existir
