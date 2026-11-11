@@ -113,8 +113,18 @@ window.Views.relatorios = {
                     animation: { duration: 300 }
                 };
 
+                // Destrói instâncias anteriores para não conflitar com canvas ou outras views
+                window._finappCharts = window._finappCharts || {};
+                const destroyChart = (id) => {
+                    if (window._finappCharts[id]) {
+                        try { window._finappCharts[id].destroy(); } catch (_) {}
+                        delete window._finappCharts[id];
+                    }
+                };
+
                 if (!semDados && document.getElementById('rel-fluxo')) {
-                    new Chart(document.getElementById('rel-fluxo'), {
+                    destroyChart('rel-fluxo');
+                    window._finappCharts['rel-fluxo'] = new Chart(document.getElementById('rel-fluxo'), {
                         type: 'line',
                         data: {
                             labels: labelsEv,
@@ -128,7 +138,8 @@ window.Views.relatorios = {
                 }
 
                 if (catLabels.length > 0 && document.getElementById('rel-categorias')) {
-                    new Chart(document.getElementById('rel-categorias'), {
+                    destroyChart('rel-categorias');
+                    window._finappCharts['rel-categorias'] = new Chart(document.getElementById('rel-categorias'), {
                         type: 'pie',
                         data: {
                             labels: catLabels,
@@ -139,7 +150,8 @@ window.Views.relatorios = {
                 }
 
                 if (cartaoLabels.length > 0 && document.getElementById('rel-cartoes')) {
-                    new Chart(document.getElementById('rel-cartoes'), {
+                    destroyChart('rel-cartoes');
+                    window._finappCharts['rel-cartoes'] = new Chart(document.getElementById('rel-cartoes'), {
                         type: 'bar',
                         data: {
                             labels: cartaoLabels,
@@ -150,7 +162,8 @@ window.Views.relatorios = {
                 }
 
                 if (invLabels.length > 0 && document.getElementById('rel-investimentos')) {
-                    new Chart(document.getElementById('rel-investimentos'), {
+                    destroyChart('rel-investimentos');
+                    window._finappCharts['rel-investimentos'] = new Chart(document.getElementById('rel-investimentos'), {
                         type: 'doughnut',
                         data: {
                             labels: invLabels,
