@@ -5,7 +5,7 @@ window.Views.cartoes = {
         container.innerHTML = `
             <div style="display: flex; align-items: center; justify-content: center; padding: 60px 0;">
                 <i class="ph ph-spinner ph-spin" style="font-size: 36px; color: var(--primary);"></i>
-                <span style="margin-left: 12px; color: var(--text-muted);">Carregando cartões e faturas...</span>
+                <span style="margin-left: 12px; color: var(--text-muted);">Carregando cartões e limites...</span>
             </div>
         `;
 
@@ -52,7 +52,7 @@ window.Views.cartoes = {
         let totalLimites = 0;
         let totalUtilizado = 0;
 
-        // Processa dados dos cartões do Open Finance
+        // Processa dados dos cartões do Open Finance com cálculo inteligente de limites
         const processedOfCards = openFinanceCards.map(acc => {
             const conn = bankConnections.find(c => c.id === acc.bank_connection_id) || {};
             let meta = null;
@@ -60,12 +60,31 @@ window.Views.cartoes = {
                 meta = JSON.parse(localStorage.getItem('of_card_meta_' + acc.id) || 'null');
             } catch (_) {}
 
-            const fatura = parseFloat(acc.balance_available) || parseFloat(acc.balance_current) || 0;
+            // Fatura atual (saldo devedor da fatura do mês)
+            const fatura = Math.abs(parseFloat(acc.balance_current) || parseFloat(acc.balance_available) || 0);
             const customLimit = parseFloat(localStorage.getItem('of_card_custom_limit_' + acc.id) || '0');
             const customVenc = localStorage.getItem('of_card_custom_venc_' + acc.id) || null;
 
-            const limiteTotal = customLimit > 0 ? customLimit : (parseFloat(meta?.creditLimit) || 0);
-            const disponivel = meta?.availableLimit ? parseFloat(meta.availableLimit) : (limiteTotal > 0 ? Math.max(0, limiteTotal - fatura) : 0);
+            // Limite Total: informado pelo usuário ou vindo da API da Pluggy
+            let limiteTotal = customLimit > 0 ? customLimit : (parseFloat(meta?.creditLimit) || 0);
+
+            // Limite Disponível:
+            // 1. Se a Pluggy retornou availableLimit, usa direto
+            // 2. Se temos o Limite Total, calcula: Limite Total - Fatura Atual
+            // 3. Se tiver balance_available diferente da fatura e positivo
+            let disponivel = 0;
+            if (meta?.availableLimit && parseFloat(meta.availableLimit) > 0) {
+                disponivel = parseFloat(meta.availableLimit);
+                if (limiteTotal === 0 && disponivel > 0) {
+                    limiteTotal = disponivel + fatura;
+                }
+            } else if (limiteTotal > 0) {
+                disponivel = Math.max(0, limiteTotal - fatura);
+            } else if (parseFloat(acc.balance_available) > 0 && Math.abs(parseFloat(acc.balance_available) - fatura) > 0.01) {
+                disponivel = parseFloat(acc.balance_available);
+                limiteTotal = disponivel + fatura;
+            }
+
             const vencDia = customVenc || (meta?.balanceDueDate ? new Date(meta.balanceDueDate).getUTCDate() : null);
 
             totalFaturas += fatura;
@@ -153,7 +172,7 @@ window.Views.cartoes = {
                     <!-- Limites e Progresso -->
                     <div style="padding: 16px 20px 0 20px;">
                         <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
-                            <span>Limite Utilizado: <strong style="color: var(--text-main)">${limiteTotal > 0 ? pct + '%' : 'Informar Limite'}</strong></span>
+                            <span>Limite Utilizado: <strong style="color: var(--text-main)">${limiteTotal > 0 ? pct + '%' : 'Limite não definido'}</strong></span>
                             <span>${limiteTotal > 0 ? `${App.formatCurrency(fatura)} / ${App.formatCurrency(limiteTotal)}` : `${App.formatCurrency(fatura)} consumido`}</span>
                         </div>
                         <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
@@ -161,12 +180,15 @@ window.Views.cartoes = {
                         </div>
                     </div>
 
-                    <!-- 3 Métricas -->
+                    <!-- 3 Métricas: Limite Total, Fatura e Disponível -->
                     <div class="cartao-metrics-grid" style="padding: 14px 20px; border-bottom: 1px solid var(--border);">
                         <div>
                             <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 3px;">Limite Total</div>
                             <div style="font-weight: 700; font-size: 14px; color: var(--text-main);">
-                                ${limiteTotal > 0 ? App.formatCurrency(limiteTotal) : '<span style="font-size:12px; color:var(--text-muted);">Não inf.</span>'}
+                                ${limiteTotal > 0 
+                                    ? App.formatCurrency(limiteTotal) 
+                                    : `<button class="btn btn-sm btn-set-limit-of" data-acc-id="${acc.id}" data-current="0" data-venc="${vencDia || ''}" data-name="${acc.name}" style="background: rgba(10,147,150,0.15); color: var(--primary); border: 1px dashed var(--primary); padding: 2px 7px; font-size: 11px; border-radius: 4px; cursor: pointer;">+ Definir</button>`
+                                }
                             </div>
                         </div>
                         <div>
@@ -174,9 +196,14 @@ window.Views.cartoes = {
                             <div style="font-weight: 700; font-size: 14px; color: #e9c46a;">${App.formatCurrency(fatura)}</div>
                         </div>
                         <div>
-                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 3px;">Disponível</div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 3px;">Limite Disponível</div>
                             <div style="font-weight: 700; font-size: 14px; color: #2a9d8f;">
-                                ${limiteTotal > 0 ? App.formatCurrency(disponivel) : '<span style="font-size:12px; color:var(--text-muted);">—</span>'}
+                                ${disponivel > 0 
+                                    ? App.formatCurrency(disponivel) 
+                                    : limiteTotal > 0 
+                                    ? App.formatCurrency(Math.max(0, limiteTotal - fatura)) 
+                                    : `<button class="btn btn-sm btn-set-limit-of" data-acc-id="${acc.id}" data-current="0" data-venc="${vencDia || ''}" data-name="${acc.name}" style="background: rgba(42,157,143,0.15); color: #2a9d8f; border: 1px dashed #2a9d8f; padding: 2px 7px; font-size: 11px; border-radius: 4px; cursor: pointer;">+ Calcular</button>`
+                                }
                             </div>
                         </div>
                     </div>
@@ -623,27 +650,27 @@ window.Views.cartoes = {
             btn.addEventListener('click', async (e) => {
                 const accId = e.currentTarget.dataset.accId;
                 const cardName = e.currentTarget.dataset.name;
-                const currentLimit = e.currentTarget.dataset.current || '0';
+                const currentLimit = parseFloat(e.currentTarget.dataset.current || '0');
                 const currentVenc = e.currentTarget.dataset.venc || '';
 
                 const { value: formValues } = await Swal.fire({
-                    title: `Ajustar Cartão - ${cardName}`,
+                    title: `Ajustar Limite - ${cardName}`,
                     html: `
-                        <div style="text-align: left; font-size: 13px; color: #adb5bd; margin-bottom: 12px;">
-                            Configure o limite total contratado no seu banco e o dia do vencimento da fatura:
+                        <div style="text-align: left; font-size: 13px; color: #adb5bd; margin-bottom: 14px; line-height: 1.4;">
+                            Informe o seu <strong>Limite Total Contratado</strong>. O limite disponível e a barra de uso serão calculados automaticamente:
                         </div>
-                        <div style="margin-bottom: 12px; text-align: left;">
-                            <label style="font-size: 12px; color: #f8f9fa; display: block; margin-bottom: 4px;">Limite Total do Cartão (R$)</label>
-                            <input id="swal-limit" type="number" step="0.01" class="swal2-input" placeholder="Ex: 5000" value="${currentLimit > 0 ? currentLimit : ''}" style="margin: 0; width: 100%; box-sizing: border-box;">
+                        <div style="margin-bottom: 14px; text-align: left;">
+                            <label style="font-size: 12px; font-weight: 600; color: #f8f9fa; display: block; margin-bottom: 5px;">Limite Total do Cartão (R$)</label>
+                            <input id="swal-limit" type="number" step="0.01" class="swal2-input" placeholder="Ex: 5000" value="${currentLimit > 0 ? currentLimit : ''}" style="margin: 0; width: 100%; box-sizing: border-box; font-size: 15px;">
                         </div>
                         <div style="text-align: left;">
-                            <label style="font-size: 12px; color: #f8f9fa; display: block; margin-bottom: 4px;">Dia de Vencimento da Fatura</label>
-                            <input id="swal-venc" type="number" min="1" max="31" class="swal2-input" placeholder="Ex: 10 ou 25" value="${currentVenc}" style="margin: 0; width: 100%; box-sizing: border-box;">
+                            <label style="font-size: 12px; font-weight: 600; color: #f8f9fa; display: block; margin-bottom: 5px;">Dia de Vencimento da Fatura</label>
+                            <input id="swal-venc" type="number" min="1" max="31" class="swal2-input" placeholder="Ex: 10 ou 25" value="${currentVenc}" style="margin: 0; width: 100%; box-sizing: border-box; font-size: 15px;">
                         </div>
                     `,
                     focusConfirm: false,
                     showCancelButton: true,
-                    confirmButtonText: 'Salvar Configuração',
+                    confirmButtonText: 'Salvar e Calcular Limite',
                     cancelButtonText: 'Cancelar',
                     confirmButtonColor: '#0a9396',
                     cancelButtonColor: '#495057',
@@ -669,7 +696,7 @@ window.Views.cartoes = {
                         localStorage.removeItem('of_card_custom_venc_' + accId);
                     }
 
-                    Toast.success('Configurações do cartão salvas com sucesso!');
+                    Toast.success('Limite e vencimento salvos com sucesso!');
                     App.loadView('cartoes');
                 }
             });
@@ -696,5 +723,45 @@ window.Views.cartoes = {
                 Toast.error('Erro ao atualizar faturas: ' + err.message);
             }
         });
+
+        // Busca automática em background de creditData caso ainda não esteja em cache
+        const precisaBuscarMeta = openFinanceCards.some(acc => !localStorage.getItem('of_card_meta_' + acc.id));
+        if (precisaBuscarMeta && bankConnections.length > 0) {
+            setTimeout(async () => {
+                try {
+                    const apiKey = await OpenFinance.getValidApiKey();
+                    let mudou = false;
+                    for (const conn of bankConnections) {
+                        const res = await fetch(`https://api.pluggy.ai/accounts?itemId=${conn.external_item_id}`, {
+                            headers: { 'X-API-KEY': apiKey }
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            for (const acc of (data.results || [])) {
+                                if (isCardAccount(acc) && acc.creditData) {
+                                    const cardMeta = {
+                                        accountId: acc.id,
+                                        creditLimit: acc.creditData.creditLimit || null,
+                                        availableLimit: acc.creditData.availableCreditLimit || null,
+                                        balanceDueDate: acc.creditData.balanceDueDate || null,
+                                        balanceCloseDate: acc.creditData.balanceCloseDate || null,
+                                        brand: acc.creditData.brand || null,
+                                        updatedAt: new Date().toISOString()
+                                    };
+                                    localStorage.setItem('of_card_meta_' + acc.id, JSON.stringify(cardMeta));
+                                    mudou = true;
+                                }
+                            }
+                        }
+                    }
+                    if (mudou && App.currentView === 'cartoes') {
+                        console.log('[Cartões] Metadados de crédito recebidos da Pluggy. Recarregando view...');
+                        App.loadView('cartoes');
+                    }
+                } catch (bgErr) {
+                    console.warn('[Cartões] Aviso na busca em background de creditData:', bgErr);
+                }
+            }, 400);
+        }
     }
 };
