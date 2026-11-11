@@ -421,10 +421,10 @@ window.OpenFinance = {
             }
 
             // 3. Buscar Transações usando a API v2 da Pluggy com paginação por cursor
-            console.log(`[OpenFinance] Buscando transações v2 para conta ${acc.name || acc.id}...`);
-            let txUrl = `https://api.pluggy.ai/v2/transactions?accountId=${acc.id}`;
+            console.log(`[OpenFinance] Buscando transações v2 para conta ${acc.name || acc.id} (ID: ${acc.id})...`);
+            let txUrl = `https://api.pluggy.ai/v2/transactions?accountId=${acc.id}&pageSize=50`;
             let txList = [];
-            let maxPages = 5;
+            let maxPages = 10;
             let pageNum = 0;
 
             while (txUrl && pageNum < maxPages) {
@@ -434,14 +434,35 @@ window.OpenFinance = {
                     if (!txRes.ok) {
                         const errTxt = await txRes.text();
                         console.warn(`[OpenFinance] Falha ao buscar transações v2 (${txRes.status}):`, errTxt);
+                        // Tenta fallback para v1 se v2 falhar
+                        if (txRes.status === 404 || txRes.status === 410) {
+                            console.log(`[OpenFinance] Tentando fallback para API v1 da conta ${acc.id}...`);
+                            const v1Res = await fetch(`https://api.pluggy.ai/transactions?accountId=${acc.id}&pageSize=100`, { headers });
+                            if (v1Res.ok) {
+                                const v1Data = await v1Res.json();
+                                const v1List = v1Data.results || v1Data.transactions || [];
+                                console.log(`[OpenFinance] API v1 retornou ${v1List.length} transações para conta ${acc.name || acc.id}`);
+                                txList.push(...v1List);
+                            } else {
+                                console.warn(`[OpenFinance] API v1 também falhou (${v1Res.status}).`);
+                            }
+                        }
                         break;
                     }
                     const txData = await txRes.json();
+                    console.log(`[OpenFinance] Página ${pageNum} da conta ${acc.name || acc.id}: ${(txData.results || []).length} transações. next: ${txData.next || 'null'}`);
                     if (Array.isArray(txData.results) && txData.results.length > 0) {
                         txList.push(...txData.results);
                     }
                     if (txData.next) {
-                        txUrl = `https://api.pluggy.ai/v2/transactions${txData.next.startsWith('?') ? txData.next : '?' + txData.next}`;
+                        // O campo next pode ser uma URL completa ou só a querystring
+                        if (txData.next.startsWith('http')) {
+                            txUrl = txData.next;
+                        } else if (txData.next.startsWith('?')) {
+                            txUrl = `https://api.pluggy.ai/v2/transactions${txData.next}`;
+                        } else {
+                            txUrl = `https://api.pluggy.ai/v2/transactions?${txData.next}`;
+                        }
                     } else {
                         txUrl = null;
                     }
@@ -545,6 +566,26 @@ window.OpenFinance = {
         };
     },
 
+    // Sincroniza TODAS as conexões ativas via fallback direto (com logs detalhados)
+    syncDirect_all: async () => {
+        const { data: conns } = await supabaseClient.from('bank_connections').select('external_item_id');
+        let totalT = 0;
+        let totalA = 0;
+        if (conns && conns.length > 0) {
+            console.log(`[OpenFinance] Sincronizando ${conns.length} conexão(ões)...`);
+            for (const c of conns) {
+                try {
+                    const res = await OpenFinance.syncDirect(c.external_item_id);
+                    totalA += res.accountsSynced || 0;
+                    totalT += res.transactionsSynced || 0;
+                } catch (err) {
+                    console.error(`[OpenFinance] Erro ao sincronizar item ${c.external_item_id}:`, err);
+                }
+            }
+        }
+        return { success: true, accountsSynced: totalA, transactionsSynced: totalT };
+    },
+
     // Sincroniza uma conexão específica ou todas as ativas
     sync: async (itemId = null) => {
         // Tenta Edge function primeiro
@@ -564,28 +605,22 @@ window.OpenFinance = {
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) return data;
+                    // Edge function retornou erro, usa fallback direto
+                    console.warn('[OpenFinance] Edge function retornou erro, usando sync direto:', data.error);
+                } else {
+                    const errTxt = await response.text().catch(() => '');
+                    console.warn(`[OpenFinance] Edge function retornou ${response.status}, usando sync direto:`, errTxt);
                 }
             }
-        } catch (_) {
-            console.warn('[OpenFinance] Edge function sync indisponível, usando sync direto...');
+        } catch (edgErr) {
+            console.warn('[OpenFinance] Edge function sync indisponível, usando sync direto...', edgErr.message);
         }
 
         // Fallback: Sincronização direta
         if (itemId) {
             return await OpenFinance.syncDirect(itemId);
         } else {
-            // Se sincronizar todos, busca todos os items do banco
-            const { data: conns } = await supabaseClient.from('bank_connections').select('external_item_id');
-            let totalT = 0;
-            let totalA = 0;
-            if (conns && conns.length > 0) {
-                for (const c of conns) {
-                    const res = await OpenFinance.syncDirect(c.external_item_id);
-                    totalA += res.accountsSynced || 0;
-                    totalT += res.transactionsSynced || 0;
-                }
-            }
-            return { success: true, accountsSynced: totalA, transactionsSynced: totalT };
+            return await OpenFinance.syncDirect_all();
         }
     },
 

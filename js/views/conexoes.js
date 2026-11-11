@@ -406,9 +406,17 @@ window.Views.conexoes = {
             btn.disabled = true;
             btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Baixando movimentações...';
             try {
-                const res = await OpenFinance.sync();
-                Toast.success(`Sincronização concluída! ${res.transactionsSynced || 0} movimentações importadas.`);
-                App.loadView('conexoes');
+                // Limpa cooldown para forçar nova tentativa
+                localStorage.removeItem('of_last_auto_sync');
+                const res = await OpenFinance.syncDirect_all();
+                if (res.transactionsSynced > 0) {
+                    Toast.success(`Sincronização concluída! ${res.transactionsSynced} movimentações importadas.`);
+                    App.loadView('conexoes');
+                } else {
+                    Toast.error('Nenhuma transação encontrada. Verifique o console (F12) para diagnóstico.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="ph ph-arrows-clockwise"></i> Tentar Novamente';
+                }
             } catch (err) {
                 Toast.error('Erro na sincronização: ' + err.message);
                 btn.disabled = false;
@@ -417,21 +425,28 @@ window.Views.conexoes = {
         });
 
         // Disparo automático em background se já houver conexões mas nenhuma transação ainda
-        if (temConexoes && transactions.length === 0 && !sessionStorage.getItem('of_auto_synced')) {
-            sessionStorage.setItem('of_auto_synced', 'true');
+        // Usa localStorage (persiste entre sessões) + cooldown de 5 minutos para não spammar
+        const lastAutoSync = parseInt(localStorage.getItem('of_last_auto_sync') || '0', 10);
+        const autoSyncCooldown = 5 * 60 * 1000; // 5 minutos
+        const shouldAutoSync = temConexoes && transactions.length === 0 && (Date.now() - lastAutoSync > autoSyncCooldown);
+
+        if (shouldAutoSync) {
+            localStorage.setItem('of_last_auto_sync', Date.now().toString());
+            console.log('[OpenFinance] Disparando auto-sincronização inicial de transações...');
             setTimeout(async () => {
                 try {
-                    console.log('[OpenFinance] Disparando auto-sincronização inicial de transações...');
-                    const res = await OpenFinance.sync();
+                    const res = await OpenFinance.syncDirect_all();
                     console.log('[OpenFinance] Auto-sync finalizado:', res);
                     if (res && res.transactionsSynced > 0) {
                         Toast.success(`${res.transactionsSynced} movimentações importadas com sucesso!`);
                         App.loadView('conexoes');
+                    } else {
+                        console.warn('[OpenFinance] Auto-sync concluído mas sem transações. Verifique o console para detalhes.');
                     }
                 } catch (e) {
                     console.warn('[OpenFinance] Aviso no auto-sync:', e);
                 }
-            }, 600);
+            }, 800);
         }
 
         document.getElementById('btn-open-finance-connect')?.addEventListener('click', () => {
@@ -445,7 +460,8 @@ window.Views.conexoes = {
             btn.disabled = true;
             btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Sincronizando...';
             try {
-                const res = await OpenFinance.sync();
+                localStorage.removeItem('of_last_auto_sync');
+                const res = await OpenFinance.syncDirect_all();
                 Toast.success(`Sincronização concluída! ${res.transactionsSynced || 0} movimentações atualizadas.`);
                 App.loadView('conexoes');
             } catch (err) {
@@ -463,7 +479,8 @@ window.Views.conexoes = {
                 e.currentTarget.disabled = true;
 
                 try {
-                    const res = await OpenFinance.sync(itemId);
+                    localStorage.removeItem('of_last_auto_sync');
+                    const res = await OpenFinance.syncDirect(itemId);
                     Toast.success(`Banco sincronizado com sucesso! ${res.transactionsSynced || 0} novas movimentações.`);
                     App.loadView('conexoes');
                 } catch (err) {
