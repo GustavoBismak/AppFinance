@@ -62,13 +62,18 @@ window.Views.cartoes = {
             let limiteTotal = customLimit > 0 ? customLimit : (parseFloat(meta?.creditLimit) || 0);
 
             // Limite Disponível:
-            // 1. Se a Pluggy retornou availableLimit, usa direto
-            // 2. Se temos o Limite Total, calcula: Limite Total - Fatura Atual
-            // 3. Se tiver balance_available diferente da fatura e positivo
+            // Prioridade: 1. Limite custom do usuário → calcula disponivel
+            //             2. API retornou availableLimit → usa direto (só se não há custom)
+            //             3. Calcula: limiteTotal - fatura
+            //             4. balance_available como fallback
             let disponivel = 0;
-            if (meta?.availableLimit && parseFloat(meta.availableLimit) > 0) {
+            if (customLimit > 0) {
+                // Usuário definiu o limite manualmente — calcula disponivel com base nisso
+                disponivel = Math.max(0, customLimit - fatura);
+            } else if (meta?.availableLimit && parseFloat(meta.availableLimit) > 0) {
                 disponivel = parseFloat(meta.availableLimit);
                 if (limiteTotal === 0 && disponivel > 0) {
+                    // Infere o limite total a partir do disponivel + fatura
                     limiteTotal = disponivel + fatura;
                 }
             } else if (limiteTotal > 0) {
@@ -96,6 +101,7 @@ window.Views.cartoes = {
         });
 
         // Soma cartões manuais
+        let totalDisponivelManuais = 0;
         cartoesManuais.forEach(c => {
             const lim = parseFloat(c.limite) || 0;
             const uti = parseFloat(c.utilizado) || 0;
@@ -103,9 +109,13 @@ window.Views.cartoes = {
             totalLimites += lim;
             totalUtilizado += uti;
             totalFaturas += fat;
+            totalDisponivelManuais += Math.max(0, lim - uti);
         });
 
-        const totalDisponivel = Math.max(0, totalLimites - totalUtilizado);
+        // Soma o disponivel de cada cartão OF individualmente (evita erro quando
+        // a Pluggy retorna availableLimit diferente do cálculo limite-fatura)
+        const totalDisponivelOF = processedOfCards.reduce((sum, item) => sum + item.disponivel, 0);
+        const totalDisponivel = Math.max(0, totalDisponivelOF + totalDisponivelManuais);
 
         // -------------------------------------------------------------
         // Construtores de Cards HTML
