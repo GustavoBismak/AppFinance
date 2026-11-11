@@ -318,8 +318,49 @@ window.OpenFinance = {
         }
     },
 
-    // Sincronização direta no cliente (fallback quando Edge Function não está implantada)
-    syncDirect: async (itemId) => {
+    // Dispara a sincronização real na instituição financeira via Pluggy (PATCH /items/{id})
+    triggerItemSync: async (itemId) => {
+        let apiKey = await OpenFinance.getValidApiKey();
+        let headers = {
+            'Content-Type': 'application/json',
+            'X-API-KEY': apiKey
+        };
+        try {
+            console.log(`[OpenFinance] Disparando PATCH /items/${itemId} na Pluggy para consultar o banco ao vivo...`);
+            let res = await fetch(`https://api.pluggy.ai/items/${itemId}`, {
+                method: 'PATCH',
+                headers,
+                body: JSON.stringify({})
+            });
+
+            if (res.status === 401 || res.status === 403) {
+                apiKey = await OpenFinance.getValidApiKey(true);
+                headers['X-API-KEY'] = apiKey;
+                res = await fetch(`https://api.pluggy.ai/items/${itemId}`, {
+                    method: 'PATCH',
+                    headers,
+                    body: JSON.stringify({})
+                });
+            }
+
+            if (!res.ok) {
+                const errTxt = await res.text();
+                console.warn(`[OpenFinance] Retorno do PATCH item (${res.status}):`, errTxt);
+                return false;
+            }
+
+            const data = await res.json();
+            console.log(`[OpenFinance] Sincronização bancária aceita pela Pluggy! Status atual: ${data.status}`);
+            return true;
+        } catch (err) {
+            console.error('[OpenFinance] Erro no PATCH triggerItemSync:', err);
+            return false;
+        }
+    },
+
+    // Sincronização direta no cliente com conexão bancária em tempo real
+    syncDirect: async (itemId, options = {}) => {
+        const { forceRemote = true } = options;
         let apiKey = await OpenFinance.getValidApiKey();
         let headers = {
             'Content-Type': 'application/json',
@@ -329,7 +370,36 @@ window.OpenFinance = {
         const user = Auth.user;
         if (!user) throw new Error('Usuário não autenticado');
 
-        // 1. Buscar Item
+        // 1. Força a Pluggy a se conectar com a instituição financeira (Nubank, BB, etc.) para buscar saldos e extratos frescos
+        if (forceRemote) {
+            console.log(`[OpenFinance] Solicitando atualização remota com a instituição para o item ${itemId}...`);
+            await OpenFinance.triggerItemSync(itemId);
+
+            // Aguarda a sincronização do banco (polling suave de até 8s)
+            let attempts = 0;
+            const maxAttempts = 4;
+            while (attempts < maxAttempts) {
+                attempts++;
+                await new Promise(r => setTimeout(r, 2000));
+                try {
+                    const checkRes = await fetch(`https://api.pluggy.ai/items/${itemId}`, { headers });
+                    if (checkRes.ok) {
+                        const checkData = await checkRes.json();
+                        console.log(`[OpenFinance] Polling item ${itemId} (${attempts}/${maxAttempts}): status = ${checkData.status}`);
+                        if (checkData.status === 'UPDATED') {
+                            console.log(`[OpenFinance] Banco finalizou a sincronização com sucesso!`);
+                            break;
+                        }
+                        if (checkData.status === 'WAITING_USER_INPUT' || checkData.status === 'LOGIN_ERROR') {
+                            console.warn(`[OpenFinance] Banco requer ação do usuário: ${checkData.status}`);
+                            break;
+                        }
+                    }
+                } catch (_) {}
+            }
+        }
+
+        // 2. Buscar Item atualizado
         let itemRes = await fetch(`https://api.pluggy.ai/items/${itemId}`, { headers });
         if (itemRes.status === 401 || itemRes.status === 403) {
             apiKey = await OpenFinance.getValidApiKey(true);
@@ -374,7 +444,7 @@ window.OpenFinance = {
             connectionId = existingConn?.id;
         }
 
-        // 2. Buscar Contas
+        // 3. Buscar Contas com saldos frescos em tempo real
         const accRes = await fetch(`https://api.pluggy.ai/accounts?itemId=${itemId}`, { headers });
         if (!accRes.ok) throw new Error(`Erro ao buscar contas: ${accRes.status}`);
         const accData = await accRes.json();
@@ -420,7 +490,7 @@ window.OpenFinance = {
                 }
             }
 
-            // 3. Buscar Transações usando a API v2 da Pluggy com paginação por cursor
+            // 4. Buscar Transações usando a API v2 da Pluggy com paginação por cursor
             console.log(`[OpenFinance] Buscando transações v2 para conta ${acc.name || acc.id} (ID: ${acc.id})...`);
             let txUrl = `https://api.pluggy.ai/v2/transactions?accountId=${acc.id}&pageSize=50`;
             let txList = [];
@@ -443,8 +513,6 @@ window.OpenFinance = {
                                 const v1List = v1Data.results || v1Data.transactions || [];
                                 console.log(`[OpenFinance] API v1 retornou ${v1List.length} transações para conta ${acc.name || acc.id}`);
                                 txList.push(...v1List);
-                            } else {
-                                console.warn(`[OpenFinance] API v1 também falhou (${v1Res.status}).`);
                             }
                         }
                         break;
@@ -455,7 +523,6 @@ window.OpenFinance = {
                         txList.push(...txData.results);
                     }
                     if (txData.next) {
-                        // O campo next pode ser uma URL completa ou só a querystring
                         if (txData.next.startsWith('http')) {
                             txUrl = txData.next;
                         } else if (txData.next.startsWith('?')) {
@@ -498,38 +565,77 @@ window.OpenFinance = {
 
                 let savedTxId = null;
                 if (accountRecordId) {
-                    const { data: savedTx, error: txErr } = await supabaseClient
-                        .from('bank_transactions')
-                        .upsert({
-                            user_id: user.id,
-                            bank_account_id: accountRecordId,
-                            external_id: tx.id,
-                            description: tx.description || 'Movimentação Bancária',
-                            amount: rawAmount,
-                            date: txDate,
-                            type: tx.type || (isCredit ? 'CREDIT' : 'DEBIT'),
-                            category_raw: tx.category || null,
-                            category_normalized: mappedCat,
-                            status: tx.status || 'POSTED',
-                            is_internal_transfer: isInternalTransfer
-                        }, { onConflict: 'bank_account_id, external_id' })
-                        .select('id')
-                        .maybeSingle();
+                    try {
+                        const { data: savedTx, error: txErr } = await supabaseClient
+                            .from('bank_transactions')
+                            .upsert({
+                                user_id: user.id,
+                                bank_account_id: accountRecordId,
+                                external_id: tx.id,
+                                description: tx.description || 'Movimentação Bancária',
+                                amount: rawAmount,
+                                date: txDate,
+                                type: tx.type || (isCredit ? 'CREDIT' : 'DEBIT'),
+                                category_raw: tx.category || null,
+                                category_normalized: mappedCat,
+                                status: tx.status || 'POSTED',
+                                is_internal_transfer: isInternalTransfer
+                            }, { onConflict: 'bank_account_id, external_id' })
+                            .select('id')
+                            .maybeSingle();
 
-                    if (txErr) {
-                        console.warn('[OpenFinance] Erro ao salvar bank_transaction:', txErr);
-                    } else if (savedTx?.id) {
-                        savedTxId = savedTx.id;
+                        if (txErr) {
+                            console.warn('[OpenFinance] Aviso no upsert bank_transaction, aplicando fallback:', txErr.message);
+                            const { data: existingTx } = await supabaseClient
+                                .from('bank_transactions')
+                                .select('id')
+                                .eq('bank_account_id', accountRecordId)
+                                .eq('external_id', tx.id)
+                                .maybeSingle();
+
+                            if (existingTx) {
+                                savedTxId = existingTx.id;
+                            } else {
+                                const { data: newTx } = await supabaseClient.from('bank_transactions').insert([{
+                                    user_id: user.id,
+                                    bank_account_id: accountRecordId,
+                                    external_id: tx.id,
+                                    description: tx.description || 'Movimentação Bancária',
+                                    amount: rawAmount,
+                                    date: txDate,
+                                    type: tx.type || (isCredit ? 'CREDIT' : 'DEBIT'),
+                                    category_raw: tx.category || null,
+                                    category_normalized: mappedCat,
+                                    status: tx.status || 'POSTED',
+                                    is_internal_transfer: isInternalTransfer
+                                }]).select('id').maybeSingle();
+                                if (newTx) savedTxId = newTx.id;
+                            }
+                        } else if (savedTx?.id) {
+                            savedTxId = savedTx.id;
+                        }
+                    } catch (e) {
+                        console.error('[OpenFinance] Erro ao salvar bank_transaction:', e);
                     }
                 }
 
-                // Inserir na tabela de lançamentos gerais se ainda não foi importado
+                // Inserir na tabela de lançamentos gerais com fallback seguro
                 let existingLanc = null;
                 if (savedTxId) {
                     const { data } = await supabaseClient
                         .from('lancamentos')
                         .select('id')
                         .eq('bank_transaction_id', savedTxId)
+                        .maybeSingle();
+                    existingLanc = data;
+                } else {
+                    const { data } = await supabaseClient
+                        .from('lancamentos')
+                        .select('id')
+                        .eq('user_id', user.id)
+                        .eq('data', txDate)
+                        .eq('valor', rawAmount)
+                        .eq('descricao', tx.description || 'Movimentação Bancária')
                         .maybeSingle();
                     existingLanc = data;
                 }
@@ -544,17 +650,25 @@ window.OpenFinance = {
                         formaPagto = 'Transferência';
                     }
 
-                    await supabaseClient.from('lancamentos').insert([{
+                    const lancPayload = {
                         user_id: user.id,
                         data: txDate,
                         descricao: tx.description || 'Movimentação Bancária',
                         categoria: mappedCat,
                         tipo: txType,
                         valor: rawAmount,
-                        forma: formaPagto,
-                        bank_transaction_id: savedTxId || null,
-                        is_open_finance: true
-                    }]);
+                        forma: formaPagto
+                    };
+
+                    if (savedTxId) lancPayload.bank_transaction_id = savedTxId;
+                    lancPayload.is_open_finance = true;
+
+                    const { error: lancErr } = await supabaseClient.from('lancamentos').insert([lancPayload]);
+                    if (lancErr) {
+                        delete lancPayload.bank_transaction_id;
+                        delete lancPayload.is_open_finance;
+                        await supabaseClient.from('lancamentos').insert([lancPayload]);
+                    }
                 }
             }
         }
@@ -566,16 +680,16 @@ window.OpenFinance = {
         };
     },
 
-    // Sincroniza TODAS as conexões ativas via fallback direto (com logs detalhados)
-    syncDirect_all: async () => {
+    // Sincroniza TODAS as conexões ativas forçando atualização remota com as instituições
+    syncDirect_all: async (forceRemote = true) => {
         const { data: conns } = await supabaseClient.from('bank_connections').select('external_item_id');
         let totalT = 0;
         let totalA = 0;
         if (conns && conns.length > 0) {
-            console.log(`[OpenFinance] Sincronizando ${conns.length} conexão(ões)...`);
+            console.log(`[OpenFinance] Sincronizando ${conns.length} conexão(ões) bancárias (remoto=${forceRemote})...`);
             for (const c of conns) {
                 try {
-                    const res = await OpenFinance.syncDirect(c.external_item_id);
+                    const res = await OpenFinance.syncDirect(c.external_item_id, { forceRemote });
                     totalA += res.accountsSynced || 0;
                     totalT += res.transactionsSynced || 0;
                 } catch (err) {

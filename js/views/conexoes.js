@@ -404,20 +404,29 @@ window.Views.conexoes = {
         document.getElementById('btn-quick-sync-banner')?.addEventListener('click', async (e) => {
             const btn = e.currentTarget;
             btn.disabled = true;
-            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Baixando movimentações...';
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Conectando ao banco...';
+
+            Swal.fire({
+                title: 'Consultando seus Bancos',
+                text: 'Conectando à instituição financeira para buscar saldo e movimentações recentes...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading(),
+                background: '#1a1d24',
+                color: '#f8f9fa'
+            });
+
             try {
-                // Limpa cooldown para forçar nova tentativa
                 localStorage.removeItem('of_last_auto_sync');
-                const res = await OpenFinance.syncDirect_all();
+                const res = await OpenFinance.syncDirect_all(true);
+                Swal.close();
                 if (res.transactionsSynced > 0) {
                     Toast.success(`Sincronização concluída! ${res.transactionsSynced} movimentações importadas.`);
-                    App.loadView('conexoes');
                 } else {
-                    Toast.error('Nenhuma transação encontrada. Verifique o console (F12) para diagnóstico.');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="ph ph-arrows-clockwise"></i> Tentar Novamente';
+                    Toast.success(`Saldos atualizados com sucesso via Open Finance!`);
                 }
+                App.loadView('conexoes');
             } catch (err) {
+                Swal.close();
                 Toast.error('Erro na sincronização: ' + err.message);
                 btn.disabled = false;
                 btn.innerHTML = '<i class="ph ph-arrows-clockwise"></i> Puxar Movimentações Agora';
@@ -435,13 +444,13 @@ window.Views.conexoes = {
             console.log('[OpenFinance] Disparando auto-sincronização inicial de transações...');
             setTimeout(async () => {
                 try {
-                    const res = await OpenFinance.syncDirect_all();
+                    const res = await OpenFinance.syncDirect_all(true);
                     console.log('[OpenFinance] Auto-sync finalizado:', res);
                     if (res && res.transactionsSynced > 0) {
                         Toast.success(`${res.transactionsSynced} movimentações importadas com sucesso!`);
                         App.loadView('conexoes');
                     } else {
-                        console.warn('[OpenFinance] Auto-sync concluído mas sem transações. Verifique o console para detalhes.');
+                        console.warn('[OpenFinance] Auto-sync concluído.');
                     }
                 } catch (e) {
                     console.warn('[OpenFinance] Aviso no auto-sync:', e);
@@ -459,12 +468,24 @@ window.Views.conexoes = {
             const btn = e.currentTarget;
             btn.disabled = true;
             btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Sincronizando...';
+
+            Swal.fire({
+                title: 'Sincronizando Bancos',
+                text: 'Solicitando dados atualizados às instituições financeiras...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading(),
+                background: '#1a1d24',
+                color: '#f8f9fa'
+            });
+
             try {
                 localStorage.removeItem('of_last_auto_sync');
-                const res = await OpenFinance.syncDirect_all();
-                Toast.success(`Sincronização concluída! ${res.transactionsSynced || 0} movimentações atualizadas.`);
+                const res = await OpenFinance.syncDirect_all(true);
+                Swal.close();
+                Toast.success(`Sincronização concluída! Saldos atualizados e ${res.transactionsSynced || 0} movimentações.`);
                 App.loadView('conexoes');
             } catch (err) {
+                Swal.close();
                 Toast.error('Erro na sincronização: ' + err.message);
                 btn.disabled = false;
                 btn.innerHTML = '<i class="ph ph-arrows-clockwise"></i> Sincronizar Tudo';
@@ -478,12 +499,23 @@ window.Views.conexoes = {
                 if (icon) icon.className = 'ph ph-spinner ph-spin';
                 e.currentTarget.disabled = true;
 
+                Swal.fire({
+                    title: 'Atualizando Instituição',
+                    text: 'Consultando novos saldos e transações em tempo real...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading(),
+                    background: '#1a1d24',
+                    color: '#f8f9fa'
+                });
+
                 try {
                     localStorage.removeItem('of_last_auto_sync');
-                    const res = await OpenFinance.syncDirect(itemId);
-                    Toast.success(`Banco sincronizado com sucesso! ${res.transactionsSynced || 0} novas movimentações.`);
+                    const res = await OpenFinance.syncDirect(itemId, { forceRemote: true });
+                    Swal.close();
+                    Toast.success(`Banco sincronizado com sucesso! Saldos atualizados e ${res.transactionsSynced || 0} movimentações.`);
                     App.loadView('conexoes');
                 } catch (err) {
+                    Swal.close();
                     Toast.error('Erro ao atualizar: ' + err.message);
                     if (icon) icon.className = 'ph ph-arrows-clockwise';
                     e.currentTarget.disabled = false;
