@@ -69,10 +69,87 @@
         });
     </script>
     
+    <!-- Detecção Instantânea de Sessão para Splash de Dinheiro -->
+    <script>
+        (function() {
+            try {
+                var hasSession = false;
+                for (var key in localStorage) {
+                    if (key.indexOf('auth-token') !== -1 || key === 'finapp_has_session') {
+                        hasSession = true;
+                        break;
+                    }
+                }
+                if (hasSession) {
+                    document.documentElement.classList.add('has-active-session');
+                }
+            } catch(e) {}
+        })();
+    </script>
+    
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=2.9">
+    <link rel="stylesheet" href="style.css?v=3.7">
 </head>
 <body>
+    <!-- Splash & Money Loading Animation (Entrada Financeira) -->
+    <div id="app-splash-loader" class="app-splash-wrapper" style="display: none;">
+        <div class="splash-ambient-glow glow-emerald"></div>
+        <div class="splash-ambient-glow glow-gold"></div>
+
+        <!-- Floating Currency Particles -->
+        <div class="splash-floating-particles" aria-hidden="true">
+            <span class="particle p-1">R$</span>
+            <span class="particle p-2">✦</span>
+            <span class="particle p-3">$</span>
+            <span class="particle p-4">R$</span>
+            <span class="particle p-5">✨</span>
+            <span class="particle p-6">$</span>
+            <span class="particle p-7">✦</span>
+            <span class="particle p-8">R$</span>
+        </div>
+
+        <div class="splash-content">
+            <!-- 3D Coin Animation Container -->
+            <div class="splash-coin-stage">
+                <!-- Concentric Aura Rings -->
+                <div class="splash-aura-ring ring-1"></div>
+                <div class="splash-aura-ring ring-2"></div>
+
+                <!-- 3D Flipping Gold Coin -->
+                <div class="splash-gold-coin">
+                    <div class="coin-face">
+                        <div class="coin-rim"></div>
+                        <div class="coin-inner">
+                            <span class="coin-symbol">R$</span>
+                            <div class="coin-sheen"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Branding & Status -->
+            <div class="splash-brand-block">
+                <div class="splash-brand-title">
+                    <img src="assets/app-icon.png" alt="FinApp" class="splash-mini-logo">
+                    <h2>FinApp</h2>
+                </div>
+                <p class="splash-tagline">INTELIGÊNCIA & GESTÃO FINANCEIRA</p>
+            </div>
+
+            <!-- Status Message & Progress -->
+            <div class="splash-status-block">
+                <span id="splash-status-text" class="splash-status-text">Acessando seu cofre financeiro...</span>
+                <div class="splash-progress-track">
+                    <div id="splash-progress-bar" class="splash-progress-fill"></div>
+                </div>
+            </div>
+
+            <div class="splash-security-badge">
+                <i class="ph ph-shield-check"></i> Conexão Segura Criptografada
+            </div>
+        </div>
+    </div>
+
     <!-- Login Overlay -->
     <div id="login-screen" class="login-wrapper">
         <div class="login-glass-card">
@@ -414,11 +491,13 @@
     <script src="js/views/investimentos.js"></script>
     <script src="js/views/metas.js"></script>
     <script src="js/views/relatorios.js"></script>
-    <script src="js/views/conta.js?v=2.8"></script>
-    <script src="js/views/configuracoes.js?v=2.6"></script>
+    <script src="js/views/conta.js?v=3.7"></script>
+    <script src="js/views/configuracoes.js?v=3.7"></script>
     <script src="js/views/admin.js"></script>
-    <!-- auth.js SEMPRE por último: depende de App, Store e Views -->
-    <script src="js/auth.js"></script>
+    <!-- splash.js: Animação de Entrada e Carregamento Financeiro -->
+    <script src="js/splash.js?v=3.7"></script>
+    <!-- auth.js SEMPRE por último: depende de App, Store, Views e Splash -->
+    <script src="js/auth.js?v=3.7"></script>
 
     <!-- PWA Service Worker & Install Handler -->
     <script>

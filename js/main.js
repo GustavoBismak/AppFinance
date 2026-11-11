@@ -16,9 +16,9 @@ const App = {
         admin: 'Administração SaaS'
     },
 
-    init: () => {
+    init: async () => {
         App.bindNavigation();
-        App.loadView(App.currentView);
+        await App.loadView(App.currentView);
     },
 
     openMobileMenu: () => {

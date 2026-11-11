@@ -65,13 +65,17 @@ window.Auth = {
 
     mostrarApp: async () => {
         // Esconde a tela de login imediatamente
-        document.getElementById('login-screen').style.display = 'none';
+        const loginScreen = document.getElementById('login-screen');
+        if (loginScreen) loginScreen.style.display = 'none';
 
         // Onboarding — envolvido em try/catch para não travar
         try {
             if (window.Onboarding) {
                 const isShowingOnboarding = await Onboarding.check();
-                if (isShowingOnboarding) return;
+                if (isShowingOnboarding) {
+                    if (window.AppSplash) AppSplash.hideImmediate();
+                    return;
+                }
             }
         } catch (e) {
             console.warn('[Auth] Onboarding ignorado por erro:', e.message);
@@ -87,7 +91,8 @@ window.Auth = {
         }
 
         // Exibe o app garantidamente
-        document.getElementById('app-container').style.display = 'flex';
+        const appContainer = document.getElementById('app-container');
+        if (appContainer) appContainer.style.display = 'flex';
 
         // Atualiza avatar do header com a inicial do e-mail do usuário logado
         try {
@@ -117,7 +122,14 @@ window.Auth = {
         }
 
         if (window.App && typeof window.App.init === 'function') {
-            window.App.init();
+            await window.App.init();
+        }
+
+        // Transição suave com a animação de dinheiro
+        if (window.AppSplash) {
+            AppSplash.hide();
+        }
+    },
         }
     },
 
@@ -144,8 +156,13 @@ window.Auth = {
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
             if (error) throw error;
             Auth.user = data.user;
-            Toast.success('Bem-vindo! Carregando seus dados...');
-            setTimeout(Auth.mostrarApp, 800);
+            localStorage.setItem('finapp_has_session', 'true');
+            if (window.AppSplash) {
+                AppSplash.show('Bem-vindo! Acessando seu cofre financeiro...');
+            } else {
+                Toast.success('Bem-vindo! Carregando seus dados...');
+            }
+            setTimeout(Auth.mostrarApp, 400);
         } catch (error) {
             let msg = error.message;
             if (msg.includes('Invalid login credentials')) msg = 'E-mail ou senha incorretos.';
@@ -200,8 +217,13 @@ window.Auth = {
                 Toast.info('Conta criada! Verifique seu e-mail para confirmar.');
                 Auth.showForm('login');
             } else if (data.user) {
-                Toast.success('Conta criada com sucesso! Entrando...');
-                setTimeout(Auth.mostrarApp, 1200);
+                localStorage.setItem('finapp_has_session', 'true');
+                if (window.AppSplash) {
+                    AppSplash.show('Conta criada! Preparando seu império financeiro...');
+                } else {
+                    Toast.success('Conta criada com sucesso! Entrando...');
+                }
+                setTimeout(Auth.mostrarApp, 500);
             }
         } catch (error) {
             let msg = error.message;
@@ -283,28 +305,54 @@ window.Auth = {
 
     checkSession: async () => {
         try {
+            const hasSavedSession = localStorage.getItem('finapp_has_session') === 'true' || 
+                                    Object.keys(localStorage).some(k => k.includes('auth-token'));
+            if (hasSavedSession && window.AppSplash) {
+                AppSplash.show('Acessando seu cofre financeiro...');
+            }
+
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session && session.user) {
                 Auth.user = session.user;
-                Auth.mostrarApp();
+                localStorage.setItem('finapp_has_session', 'true');
+                if (window.AppSplash) {
+                    AppSplash.setProgress(55);
+                }
+                await Auth.mostrarApp();
             } else {
-                supabaseClient.auth.onAuthStateChange((event, session) => {
+                localStorage.removeItem('finapp_has_session');
+                if (window.AppSplash) {
+                    AppSplash.hideImmediate();
+                }
+                const loginScreen = document.getElementById('login-screen');
+                if (loginScreen) loginScreen.style.display = 'flex';
+
+                supabaseClient.auth.onAuthStateChange(async (event, session) => {
                     if (event === 'PASSWORD_RECOVERY') {
                         Auth.showForm('reset');
                     } else if (event === 'SIGNED_IN' && session) {
                         Auth.user = session.user;
-                        Auth.mostrarApp();
+                        localStorage.setItem('finapp_has_session', 'true');
+                        if (window.AppSplash) {
+                            AppSplash.show('Sessão restaurada! Abrindo cofre...');
+                        }
+                        await Auth.mostrarApp();
                     }
                 });
             }
         } catch (e) {
             console.error('Erro ao verificar sessão:', e);
+            localStorage.removeItem('finapp_has_session');
+            if (window.AppSplash) AppSplash.hideImmediate();
+            const loginScreen = document.getElementById('login-screen');
+            if (loginScreen) loginScreen.style.display = 'flex';
         }
     },
 
     confirmLogout: async () => {
         if (confirm('Tem certeza que deseja sair da conta?')) {
             try {
+                localStorage.removeItem('finapp_has_session');
                 await supabaseClient.auth.signOut();
                 Auth.user = null;
                 // Recarregar a página para limpar todo o estado em memória e voltar ao login
