@@ -121,18 +121,19 @@ window.Auth = {
             console.warn('[Auth] Admin check ignorado por erro:', e.message);
         }
 
-        if (window.App && typeof window.App.init === 'function') {
-            await window.App.init();
-        }
-
-        // Transição suave com a animação de dinheiro
-        if (window.AppSplash) {
-            AppSplash.hide();
+        try {
+            if (window.App && typeof window.App.init === 'function') {
+                await window.App.init();
+            }
+        } catch (appErr) {
+            console.error('[Auth] Erro ao inicializar App:', appErr);
+        } finally {
+            // Garante que o splash NUNCA fique travado, mesmo se App.init der erro
+            if (window.AppSplash) {
+                AppSplash.hide();
+            }
         }
     },
-        }
-    },
-
 
     handleLogin: async (e) => {
         e.preventDefault();

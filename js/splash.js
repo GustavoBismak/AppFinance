@@ -1,8 +1,9 @@
-// js/splash.js — Animação de Entrada e Carregamento Financeiro do FinApp
+// js/splash.js — Animação de Entrada e Carregamento Financeiro do FinApp (Ultra Rápida)
 window.AppSplash = {
     startTime: 0,
-    minDisplayMs: 1400,
+    minDisplayMs: 450, // Carregamento ágil, sem enrolação
     timer: null,
+    failsafeTimer: null,
     statusPhrases: [
         'Acessando seu cofre financeiro...',
         'Sincronizando suas contas e saldos...',
@@ -29,12 +30,19 @@ window.AppSplash = {
 
         const bar = document.getElementById('splash-progress-bar');
         if (bar) {
-            bar.style.width = '20%';
-            setTimeout(() => { if (bar) bar.style.width = '60%'; }, 250);
-            setTimeout(() => { if (bar) bar.style.width = '85%'; }, 650);
+            bar.style.width = '35%';
+            setTimeout(() => { if (bar) bar.style.width = '75%'; }, 150);
+            setTimeout(() => { if (bar) bar.style.width = '92%'; }, 350);
         }
 
-        // Rotação suave de frases se a conexão demorar
+        // Failsafe garantido: em hipótese alguma o splash pode ficar mais de 3.5 segundos visível
+        clearTimeout(AppSplash.failsafeTimer);
+        AppSplash.failsafeTimer = setTimeout(() => {
+            console.warn('[AppSplash] Failsafe acionado para liberar o app.');
+            AppSplash.hideImmediate();
+        }, 3500);
+
+        // Rotação suave de frases se a rede oscilar
         let idx = 0;
         clearInterval(AppSplash.timer);
         AppSplash.timer = setInterval(() => {
@@ -44,9 +52,9 @@ window.AppSplash = {
                 setTimeout(() => {
                     statusEl.textContent = AppSplash.statusPhrases[idx];
                     statusEl.style.opacity = '1';
-                }, 180);
+                }, 120);
             }
-        }, 1100);
+        }, 900);
     },
 
     // Define o texto da mensagem
@@ -64,6 +72,7 @@ window.AppSplash = {
     // Esconde suavemente com fade-out após garantir o tempo mínimo de visualização
     hide: (onHidden = null) => {
         clearInterval(AppSplash.timer);
+        clearTimeout(AppSplash.failsafeTimer);
         const splash = document.getElementById('app-splash-loader');
         if (!splash) {
             if (onHidden) onHidden();
@@ -83,7 +92,7 @@ window.AppSplash = {
                 statusEl.style.color = '#2a9d8f';
             }
 
-            // Pausa de 260ms no 100% para o usuário ver a barra completar
+            // Transição rápida para liberar o app sem atrasos
             setTimeout(() => {
                 splash.classList.add('splash-fade-out');
                 setTimeout(() => {
@@ -91,14 +100,15 @@ window.AppSplash = {
                     splash.classList.remove('splash-fade-out');
                     document.documentElement.classList.remove('has-active-session');
                     if (onHidden) onHidden();
-                }, 460);
-            }, 260);
+                }, 280);
+            }, 140);
         }, remaining);
     },
 
-    // Esconde imediatamente (caso usuário não esteja logado)
+    // Esconde imediatamente (caso usuário não esteja logado ou timeout)
     hideImmediate: () => {
         clearInterval(AppSplash.timer);
+        clearTimeout(AppSplash.failsafeTimer);
         const splash = document.getElementById('app-splash-loader');
         if (splash) {
             splash.style.display = 'none';
