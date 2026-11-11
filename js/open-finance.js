@@ -544,9 +544,34 @@ window.OpenFinance = {
             const isCard = acc.subtype === 'CREDIT_CARD' || 
                            acc.type === 'CREDIT' || 
                            (acc.name || '').toLowerCase().includes('gold') || 
-                           (acc.name || '').toLowerCase().includes('ourocard') ||
-                           (acc.name || '').toLowerCase().includes('cartão') ||
+                           (acc.name || '').toLowerCase().includes('ourocard') || 
+                           (acc.name || '').toLowerCase().includes('cartão') || 
                            (acc.name || '').toLowerCase().includes('cartao');
+
+            // Se for cartão de crédito, salva metadados de limite e vencimento para a aba Cartões
+            if (isCard) {
+                try {
+                    const cardMeta = {
+                        accountId: acc.id,
+                        name: acc.name,
+                        number: acc.number,
+                        creditLimit: acc.creditData?.creditLimit || null,
+                        availableLimit: acc.creditData?.availableCreditLimit || null,
+                        balanceDueDate: acc.creditData?.balanceDueDate || null,
+                        balanceCloseDate: acc.creditData?.balanceCloseDate || null,
+                        brand: acc.creditData?.brand || null,
+                        balance: availableBalance,
+                        institutionName: institutionName,
+                        institutionLogo: institutionLogo,
+                        institutionColor: institutionColor,
+                        updatedAt: new Date().toISOString()
+                    };
+                    localStorage.setItem('of_card_meta_' + acc.id, JSON.stringify(cardMeta));
+                    console.log(`[OpenFinance] Metadados de cartão salvos para ${acc.name}:`, cardMeta);
+                } catch (metaErr) {
+                    console.warn('[OpenFinance] Erro ao salvar cardMeta:', metaErr);
+                }
+            }
 
             for (const tx of txList) {
                 totalTx++;
