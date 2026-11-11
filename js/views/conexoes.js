@@ -433,31 +433,6 @@ window.Views.conexoes = {
             }
         });
 
-        // Disparo automático em background se já houver conexões mas nenhuma transação ainda
-        // Usa localStorage (persiste entre sessões) + cooldown de 5 minutos para não spammar
-        const lastAutoSync = parseInt(localStorage.getItem('of_last_auto_sync') || '0', 10);
-        const autoSyncCooldown = 5 * 60 * 1000; // 5 minutos
-        const shouldAutoSync = temConexoes && transactions.length === 0 && (Date.now() - lastAutoSync > autoSyncCooldown);
-
-        if (shouldAutoSync) {
-            localStorage.setItem('of_last_auto_sync', Date.now().toString());
-            console.log('[OpenFinance] Disparando auto-sincronização inicial de transações...');
-            setTimeout(async () => {
-                try {
-                    const res = await OpenFinance.syncDirect_all(true);
-                    console.log('[OpenFinance] Auto-sync finalizado:', res);
-                    if (res && res.transactionsSynced > 0) {
-                        Toast.success(`${res.transactionsSynced} movimentações importadas com sucesso!`);
-                        App.loadView('conexoes');
-                    } else {
-                        console.warn('[OpenFinance] Auto-sync concluído.');
-                    }
-                } catch (e) {
-                    console.warn('[OpenFinance] Aviso no auto-sync:', e);
-                }
-            }, 800);
-        }
-
         document.getElementById('btn-open-finance-connect')?.addEventListener('click', () => {
             OpenFinance.connectBank({
                 onSuccess: () => App.loadView('conexoes')

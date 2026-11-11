@@ -2,13 +2,6 @@
 
 window.Views.cartoes = {
     render: async (container) => {
-        container.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: center; padding: 60px 0;">
-                <i class="ph ph-spinner ph-spin" style="font-size: 36px; color: var(--primary);"></i>
-                <span style="margin-left: 12px; color: var(--text-muted);">Carregando cartões e limites...</span>
-            </div>
-        `;
-
         const [cartoesManuais, bankAccounts, bankConnections] = await Promise.all([
             Store.get(KEYS.CARTOES) || [],
             Store.get(KEYS.BANK_ACCOUNTS) || [],
@@ -723,45 +716,5 @@ window.Views.cartoes = {
                 Toast.error('Erro ao atualizar faturas: ' + err.message);
             }
         });
-
-        // Busca automática em background de creditData caso ainda não esteja em cache
-        const precisaBuscarMeta = openFinanceCards.some(acc => !localStorage.getItem('of_card_meta_' + acc.id));
-        if (precisaBuscarMeta && bankConnections.length > 0) {
-            setTimeout(async () => {
-                try {
-                    const apiKey = await OpenFinance.getValidApiKey();
-                    let mudou = false;
-                    for (const conn of bankConnections) {
-                        const res = await fetch(`https://api.pluggy.ai/accounts?itemId=${conn.external_item_id}`, {
-                            headers: { 'X-API-KEY': apiKey }
-                        });
-                        if (res.ok) {
-                            const data = await res.json();
-                            for (const acc of (data.results || [])) {
-                                if (isCardAccount(acc) && acc.creditData) {
-                                    const cardMeta = {
-                                        accountId: acc.id,
-                                        creditLimit: acc.creditData.creditLimit || null,
-                                        availableLimit: acc.creditData.availableCreditLimit || null,
-                                        balanceDueDate: acc.creditData.balanceDueDate || null,
-                                        balanceCloseDate: acc.creditData.balanceCloseDate || null,
-                                        brand: acc.creditData.brand || null,
-                                        updatedAt: new Date().toISOString()
-                                    };
-                                    localStorage.setItem('of_card_meta_' + acc.id, JSON.stringify(cardMeta));
-                                    mudou = true;
-                                }
-                            }
-                        }
-                    }
-                    if (mudou && App.currentView === 'cartoes') {
-                        console.log('[Cartões] Metadados de crédito recebidos da Pluggy. Recarregando view...');
-                        App.loadView('cartoes');
-                    }
-                } catch (bgErr) {
-                    console.warn('[Cartões] Aviso na busca em background de creditData:', bgErr);
-                }
-            }, 400);
-        }
     }
 };
