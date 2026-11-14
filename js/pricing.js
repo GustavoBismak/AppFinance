@@ -33,8 +33,9 @@ window.Pricing = {
             if (isPro) {
                 featuresHtml = `
                     <li style="margin-bottom: 12px; display: flex; align-items: center;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Tudo do plano Free</li>
+                    <li style="margin-bottom: 12px; display: flex; align-items: center;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Conexão Bancária (Open Finance)</li>
+                    <li style="margin-bottom: 12px; display: flex; align-items: center;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Controle de Cartões com Faturas Automáticas</li>
                     <li style="margin-bottom: 12px; display: flex; align-items: center;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Gestão de Contas a Pagar</li>
-                    <li style="margin-bottom: 12px; display: flex; align-items: center;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Controle de Cartões</li>
                     <li style="margin-bottom: 12px; display: flex; align-items: center;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Gestão de Veículos</li>
                     <li style="margin-bottom: 12px; display: flex; align-items: center;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Carteira de Investimentos</li>
                     <li style="margin-bottom: 12px; display: flex; align-items: center;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Controle de Metas</li>

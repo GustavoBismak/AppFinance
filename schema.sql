@@ -113,7 +113,7 @@ CREATE POLICY "Planos são visíveis para todos" ON plans FOR SELECT USING (acti
 
 INSERT INTO plans (name, slug, description, price, billing_cycle) VALUES
 ('FREE', 'free', 'O básico essencial para organizar suas finanças.', 0.00, 'monthly'),
-('PRO', 'pro', 'Controle total com recursos premium.', 14.90, 'monthly');
+('PRO', 'pro', 'Controle total com recursos premium.', 39.90, 'monthly');
 
 -- SAAS: Tabela de Assinaturas
 CREATE TABLE subscriptions (
