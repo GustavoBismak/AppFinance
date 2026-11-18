@@ -5,3 +5,4 @@ UPDATE public.plans
 SET price = 39.90,
     description = 'Controle total com recursos premium e Open Finance.'
 WHERE slug = 'pro';
+

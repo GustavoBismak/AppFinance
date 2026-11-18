@@ -2,607 +2,908 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FinApp - Finanças Inteligentes</title>
-    <!-- Favicon & PWA Icons -->
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
-    <link rel="icon" type="image/png" href="assets/app-icon.png">
-    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-    <link rel="manifest" href="manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinApp | Organização e Controle Financeiro</title>
+    <meta name="description" content="Organize suas receitas, despesas e planejamento financeiro em um só lugar. Conheça o FinApp e tenha mais controle sobre sua vida financeira.">
+    
+    <!-- Canonical -->
+    <link rel="canonical" href="https://www.finapp.net.br/">
 
-    <!-- Mobile Web App Capable Meta Tags -->
-    <meta name="application-name" content="FinApp">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="FinApp">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0f1115">
-    <!-- Fonts -->
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.finapp.net.br/">
+    <meta property="og:title" content="FinApp | Organização e Controle Financeiro">
+    <meta property="og:description" content="Organize suas receitas, despesas e planejamento financeiro em um só lugar. Conheça o FinApp e tenha mais controle sobre sua vida financeira.">
+    <meta property="og:image" content="https://www.finapp.net.br/assets/screenshots/dashboard.jpg">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://www.finapp.net.br/">
+    <meta name="twitter:title" content="FinApp | Organização e Controle Financeiro">
+    <meta name="twitter:description" content="Organize suas receitas, despesas e planejamento financeiro em um só lugar. Conheça o FinApp e tenha mais controle sobre sua vida financeira.">
+    <meta name="twitter:image" content="https://www.finapp.net.br/assets/screenshots/dashboard.jpg">
+
+    <!-- Favicon & Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" href="/assets/app-icon.png">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <meta name="theme-color" content="#090c11">
+
+    <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Flatpickr (calendário bonito) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
-    <!-- Supabase -->
-    <script src="js/supabase-lib.js"></script>
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <!-- Flatpickr PT-BR init -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            function initDatePickers() {
-                document.querySelectorAll('input[type="date"]:not(.flatpickr-input)').forEach(el => {
-                    flatpickr(el, {
-                        locale: 'pt',
-                        dateFormat: 'Y-m-d',
-                        altInput: true,
-                        altFormat: 'j \\de F \\de Y',
-                        allowInput: false,
-                        disableMobile: true,
-                        defaultDate: el.value || null,
-                        onReady: function(_sel, _str, instance) {
-                            if (instance.altInput) {
-                                // Adiciona as classes sem sobrescrever as classes do Flatpickr
-                                instance.altInput.classList.add('input-control', 'flatpickr-alt-display');
-                                instance.altInput.placeholder = 'Selecione uma data';
-                            }
-                        }
-                    });
-                });
-            }
-            const observer = new MutationObserver(() => {
-                initDatePickers();
-                if (window.CustomSelect) window.CustomSelect.init();
-            });
-            const viewContainer = document.getElementById('view-container');
-            if (viewContainer) {
-                observer.observe(viewContainer, { childList: true, subtree: true });
-            }
-        });
-    </script>
-    
-    <!-- Detecção Instantânea de Sessão para Splash de Dinheiro -->
-    <script>
-        (function() {
-            try {
-                var hasSession = false;
-                for (var key in localStorage) {
-                    if (key.indexOf('auth-token') !== -1 || key === 'finapp_has_session') {
-                        hasSession = true;
-                        break;
-                    }
-                }
-                if (hasSession) {
-                    document.documentElement.classList.add('has-active-session');
-                }
-            } catch(e) {}
-        })();
-    </script>
     
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=3.9">
+    <link rel="stylesheet" href="/landing.css">
 </head>
 <body>
-    <!-- Splash & Money Loading Animation (Entrada Financeira) -->
-    <div id="app-splash-loader" class="app-splash-wrapper" style="display: none;">
-        <div class="splash-ambient-glow glow-emerald"></div>
-        <div class="splash-ambient-glow glow-gold"></div>
+    <!-- Background Glows -->
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+    <div class="ambient-glow glow-3"></div>
 
-        <!-- Floating Currency Particles -->
-        <div class="splash-floating-particles" aria-hidden="true">
-            <span class="particle p-1">R$</span>
-            <span class="particle p-2">✦</span>
-            <span class="particle p-3">$</span>
-            <span class="particle p-4">R$</span>
-            <span class="particle p-5">✨</span>
-            <span class="particle p-6">$</span>
-            <span class="particle p-7">✦</span>
-            <span class="particle p-8">R$</span>
+    <!-- Header / Navbar -->
+    <header class="site-header" id="site-header">
+        <div class="container navbar">
+            <a href="/" class="brand-logo">
+                <img src="/assets/app-icon.png" alt="FinApp Logo">
+                <span>FinApp</span>
+            </a>
+
+            <ul class="nav-links" id="nav-links">
+                <li><a href="#apresentacao" class="nav-link">Visão Geral</a></li>
+                <li><a href="#funcionalidades" class="nav-link">Funcionalidades</a></li>
+                <li><a href="#demonstracao" class="nav-link">Demonstração</a></li>
+                <li><a href="#beneficios" class="nav-link">Benefícios</a></li>
+                <li><a href="#planos" class="nav-link">Planos</a></li>
+                <li><a href="#faq" class="nav-link">FAQ</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <a href="/login" class="btn btn-outline btn-sm" id="nav-btn-login">Entrar</a>
+                <a href="/cadastro" class="btn btn-primary btn-sm" id="nav-btn-cta">Criar minha conta</a>
+                <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Abrir Menu">
+                    <i class="ph ph-list"></i>
+                </button>
+            </div>
         </div>
+    </header>
 
-        <div class="splash-content">
-            <!-- 3D Coin Animation Container -->
-            <div class="splash-coin-stage">
-                <!-- Concentric Aura Rings -->
-                <div class="splash-aura-ring ring-1"></div>
-                <div class="splash-aura-ring ring-2"></div>
+    <!-- ==========================================================================
+       SEÇÃO 1 — HERO
+       ========================================================================== -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="hero-pill">
+                <span class="dot"></span>
+                <span>Plataforma SaaS de Gestão Financeira Pessoal</span>
+            </div>
 
-                <!-- 3D Flipping Gold Coin -->
-                <div class="splash-gold-coin">
-                    <div class="coin-face">
-                        <div class="coin-rim"></div>
-                        <div class="coin-inner">
-                            <span class="coin-symbol">R$</span>
-                            <div class="coin-sheen"></div>
+            <h1 class="hero-title">
+                Tenha o controle da sua <span class="text-gradient-teal">vida financeira</span> em um só lugar.
+            </h1>
+
+            <p class="hero-subtitle">
+                Organize suas finanças, acompanhe seus resultados e tome decisões mais inteligentes com o FinApp.
+            </p>
+
+            <div class="hero-actions">
+                <a href="/cadastro" class="btn btn-primary btn-lg">
+                    <span>Criar minha conta</span>
+                    <i class="ph ph-arrow-right"></i>
+                </a>
+                <a href="/login" class="btn btn-outline btn-lg">
+                    <span>Já tenho uma conta</span>
+                </a>
+            </div>
+
+            <div class="hero-trust-bar">
+                <div class="trust-item">
+                    <i class="ph ph-shield-check"></i>
+                    <span>Criptografia de Ponta a Ponta</span>
+                </div>
+                <div class="trust-item">
+                    <i class="ph ph-bank"></i>
+                    <span>Integração com Open Finance Brasil</span>
+                </div>
+                <div class="trust-item">
+                    <i class="ph ph-lock-key"></i>
+                    <span>Dados 100% Isolados por Usuário</span>
+                </div>
+                <div class="trust-item">
+                    <i class="ph ph-devices"></i>
+                    <span>Acesso Web & Mobile PWA</span>
+                </div>
+            </div>
+
+            <!-- Mockup Showcase com Captura Real da Interface -->
+            <div class="mockup-wrapper">
+                <div class="mockup-window">
+                    <div class="mockup-header">
+                        <div class="mockup-dots">
+                            <span class="mockup-dot dot-red"></span>
+                            <span class="mockup-dot dot-yellow"></span>
+                            <span class="mockup-dot dot-green"></span>
+                        </div>
+                        <div class="mockup-address">
+                            <i class="ph ph-lock-simple"></i> https://www.finapp.net.br/app
+                        </div>
+                    </div>
+                    <div class="mockup-screen">
+                        <img src="/assets/screenshots/dashboard.jpg" alt="Dashboard Principal do FinApp com Indicadores Financeiros">
+                        
+                        <!-- Floating Pills -->
+                        <div class="mockup-pill pill-left">
+                            <div class="pill-icon green">
+                                <i class="ph ph-trend-up"></i>
+                            </div>
+                            <div class="pill-text">
+                                <div class="pill-label">Saldo Bancário Consolidado</div>
+                                <div class="pill-val">R$ 648,15</div>
+                            </div>
+                        </div>
+
+                        <div class="mockup-pill pill-right">
+                            <div class="pill-icon blue">
+                                <i class="ph ph-arrows-clockwise"></i>
+                            </div>
+                            <div class="pill-text">
+                                <div class="pill-label">Open Finance Brasil</div>
+                                <div class="pill-val">Sincronizado ao Vivo</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <!-- Branding & Status -->
-            <div class="splash-brand-block">
-                <div class="splash-brand-title">
-                    <img src="assets/app-icon.png" alt="FinApp" class="splash-mini-logo">
-                    <h2>FinApp</h2>
-                </div>
-                <p class="splash-tagline">INTELIGÊNCIA & GESTÃO FINANCEIRA</p>
+    <!-- ==========================================================================
+       SEÇÃO 2 — APRESENTAÇÃO DO SISTEMA
+       ========================================================================== -->
+    <section class="section-pad" id="apresentacao">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Apresentação</span>
+                <h2 class="section-title">Mais clareza para cuidar do seu dinheiro.</h2>
+                <p class="section-subtitle">
+                    O FinApp reúne suas movimentações, faturas de cartões, contas pendentes e patrimônio em uma interface limpa, rápida e objetiva.
+                </p>
             </div>
 
-            <!-- Status Message & Progress -->
-            <div class="splash-status-block">
-                <span id="splash-status-text" class="splash-status-text">Acessando seu cofre financeiro...</span>
-                <div class="splash-progress-track">
-                    <div id="splash-progress-bar" class="splash-progress-fill"></div>
-                </div>
-            </div>
+            <div class="overview-grid">
+                <div class="overview-text">
+                    <h3>Uma plataforma completa desenvolvida para a sua rotina</h3>
+                    <p style="margin-bottom: 20px;">
+                        Chega de planilhas manuais desatualizadas e aplicativos confusos. O FinApp oferece a estrutura ideal para você saber exatamente quanto entra, quanto sai e quanto sobra no final do mês.
+                    </p>
 
-            <div class="splash-security-badge">
-                <i class="ph ph-shield-check"></i> Conexão Segura Criptografada
+                    <ul class="overview-list">
+                        <li class="overview-item">
+                            <i class="ph ph-check-circle"></i>
+                            <div>
+                                <strong style="color: var(--text-main);">Visão 360° do seu patrimônio</strong>
+                                <p style="font-size: 14px;">Acompanhe contas bancárias, contas a pagar, cartões de crédito e carteira de investimentos em um painel unificado.</p>
+                            </div>
+                        </li>
+                        <li class="overview-item">
+                            <i class="ph ph-check-circle"></i>
+                            <div>
+                                <strong style="color: var(--text-main);">Categorização inteligente</strong>
+                                <p style="font-size: 14px;">Classifique receitas e gastos por categorias para identificar gargalos e oportunidades reais de economia.</p>
+                            </div>
+                        </li>
+                        <li class="overview-item">
+                            <i class="ph ph-check-circle"></i>
+                            <div>
+                                <strong style="color: var(--text-main);">Previsibilidade e tranquilidade</strong>
+                                <p style="font-size: 14px;">Monitore o fluxo de caixa mensal e nunca mais seja surpreendido pelo vencimento de contas ou faturas.</p>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <a href="/cadastro" class="btn btn-primary">
+                        <span>Experimentar o FinApp</span>
+                        <i class="ph ph-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="overview-media">
+                    <img src="/assets/screenshots/relatorios.png" alt="Fluxo de Caixa e Relatórios Financeiros do FinApp">
+                </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Login Overlay -->
-    <div id="login-screen" class="login-wrapper">
-        <div class="login-glass-card">
-            <div class="text-center mb-4 login-header">
-                <img src="assets/app-icon.png" alt="FinApp" class="login-brand-icon">
-                <h2>FinApp</h2>
-                <p class="text-muted" style="margin-top: 8px;" id="login-subtitle">Acesse seu império financeiro</p>
+    <!-- ==========================================================================
+       SEÇÃO 3 — FUNCIONALIDADES
+       ========================================================================== -->
+    <section class="section-pad" id="funcionalidades" style="background: rgba(15, 19, 26, 0.4); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Recursos Disponíveis</span>
+                <h2 class="section-title">Tudo o que você precisa para assumir o controle</h2>
+                <p class="section-subtitle">
+                    Ferramentas práticas e intuitivas, projetadas para simplificar seu planejamento financeiro diário.
+                </p>
             </div>
-            
-            <!-- Login Form -->
-            <form id="login-form" style="display: block;">
-                <div class="form-group">
-                    <label>E-mail</label>
-                    <input type="email" id="login-email" class="input-control login-input" placeholder="seu@email.com" required>
-                </div>
-                <div class="form-group mb-2">
-                    <label>Senha</label>
-                    <input type="password" id="login-password" class="input-control login-input" placeholder="••••••••" required>
-                </div>
-                <div class="text-right mb-4">
-                    <a href="#" id="link-forgot" style="font-size: 13px; color: var(--primary);">Esqueci minha senha</a>
-                </div>
-                
-                <button type="submit" class="btn btn-primary login-btn" id="btn-entrar">Entrar</button>
-                <div class="text-center mt-4">
-                    <span class="text-muted" style="font-size: 14px;">Não tem uma conta?</span>
-                    <a href="#" id="link-register" style="font-size: 14px; color: var(--primary); margin-left: 4px;">Criar Conta</a>
-                </div>
-            </form>
 
-            <!-- Register Form -->
-            <form id="register-form" style="display: none;">
-                <div class="form-group">
-                    <label>E-mail</label>
-                    <input type="email" id="register-email" class="input-control login-input" placeholder="seu@email.com" required>
+            <div class="features-grid">
+                <!-- 1. Dashboard -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <i class="ph ph-squares-four"></i>
+                    </div>
+                    <h4>Dashboard Financeiro</h4>
+                    <p>Visualize sua situação financeira em tempo real com saldos consolidados, receitas, despesas, taxa de economia e evolução mensal.</p>
                 </div>
-                <div class="form-group">
-                    <label>CPF (Apenas números)</label>
-                    <input type="text" id="register-cpf" class="input-control login-input" placeholder="00000000000" maxlength="11" required>
-                </div>
-                <div class="form-group">
-                    <label>Senha</label>
-                    <input type="password" id="register-password" class="input-control login-input" placeholder="Mínimo 6 caracteres" required>
-                </div>
-                <div class="form-group mb-4">
-                    <label>Confirmar Senha</label>
-                    <input type="password" id="register-password-confirm" class="input-control login-input" placeholder="Repita a senha" required>
-                </div>
-                
-                <button type="submit" class="btn btn-primary login-btn" id="btn-create-account">Criar Conta</button>
-                <div class="text-center mt-4">
-                    <span class="text-muted" style="font-size: 14px;">Já tem uma conta?</span>
-                    <a href="#" id="link-back-login" style="font-size: 14px; color: var(--primary); margin-left: 4px;">Fazer Login</a>
-                </div>
-            </form>
 
-            <!-- Forgot Password Form -->
-            <form id="forgot-form" style="display: none;">
-                <div class="form-group mb-4">
-                    <label>E-mail cadastrado</label>
-                    <input type="email" id="forgot-email" class="input-control login-input" placeholder="seu@email.com" required>
-                    <p class="text-muted mt-2" style="font-size: 12px;">Enviaremos um link para você redefinir sua senha.</p>
+                <!-- 2. Controle de Receitas -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <i class="ph ph-arrow-circle-up-right"></i>
+                    </div>
+                    <h4>Controle de Receitas</h4>
+                    <p>Organize seus ganhos salariais, rendimentos extras e acompanhe suas entradas financeiras com data e forma de recebimento.</p>
                 </div>
-                
-                <button type="submit" class="btn btn-primary login-btn" id="btn-send-reset">Enviar Link</button>
-                <div class="text-center mt-4">
-                    <a href="#" id="link-back-login-2" style="font-size: 14px; color: var(--text-muted);">Voltar para o login</a>
-                </div>
-            </form>
 
-            <!-- Reset Password Form (shown from email link) -->
-            <form id="reset-form" style="display: none;">
-                <div class="form-group">
-                    <label>Nova Senha</label>
-                    <input type="password" id="reset-password" class="input-control login-input" placeholder="Mínimo 6 caracteres" required>
+                <!-- 3. Controle de Despesas -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <i class="ph ph-arrow-circle-down-left"></i>
+                    </div>
+                    <h4>Controle de Despesas</h4>
+                    <p>Registre seus gastos do dia a dia, analise padrões de consumo e entenda com precisão para onde seu dinheiro está indo.</p>
                 </div>
-                <div class="form-group mb-4">
-                    <label>Confirmar Nova Senha</label>
-                    <input type="password" id="reset-password-confirm" class="input-control login-input" placeholder="Repita a senha" required>
-                </div>
-                
-                <button type="submit" class="btn btn-primary login-btn" id="btn-update-password">Atualizar Senha</button>
-            </form>
-        </div>
-    </div>
 
-    <!-- Onboarding Overlay -->
-    <div id="onboarding-screen" class="login-wrapper" style="display: none;">
-        <div class="login-glass-card" style="max-width: 500px;">
-            <!-- Step 1 -->
-            <div id="onboarding-step-1" class="text-center">
-                <i class="ph-fill ph-rocket" style="font-size: 48px; color: var(--primary); margin-bottom: 16px;"></i>
-                <h2 class="mb-2">Bem-vindo ao FinApp!</h2>
-                <p class="text-muted mb-4">Vamos configurar sua conta rapidamente para você começar a organizar sua vida financeira.</p>
-                <button class="btn btn-primary login-btn" onclick="Onboarding.next(2)">Começar</button>
-            </div>
-            
-            <!-- Step 2 -->
-            <div id="onboarding-step-2" style="display: none;">
-                <h3 class="mb-4 text-center" style="font-size: 18px;">Qual é o seu principal objetivo?</h3>
-                <div class="grid gap-2 mb-4" style="grid-template-columns: 1fr;">
-                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Organizar minhas despesas')">Organizar minhas despesas</button>
-                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Economizar dinheiro')">Economizar dinheiro</button>
-                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Sair das dívidas')">Sair das dívidas</button>
-                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Controlar minha família')">Controlar minha família</button>
-                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Acompanhar meus investimentos')">Acompanhar meus investimentos</button>
-                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Apenas quero organizar minhas finanças')">Apenas quero organizar minhas finanças</button>
+                <!-- 4. Planejamento Financeiro -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <i class="ph ph-calendar-check"></i>
+                    </div>
+                    <h4>Contas a Pagar</h4>
+                    <p>Mantenha seus compromissos e boletos em dia, com alertas visuais de status (paga, pendente ou atrasada) e datas de vencimento.</p>
                 </div>
-                <button class="btn btn-primary login-btn" id="btn-onb-2" disabled onclick="Onboarding.next(3)">Continuar</button>
-            </div>
-            
-            <!-- Step 3 -->
-            <div id="onboarding-step-3" style="display: none;">
-                <h3 class="mb-4 text-center" style="font-size: 18px;">Qual é aproximadamente sua renda mensal?</h3>
-                <div class="form-group mb-4">
-                    <input type="number" id="onboarding-income" class="input-control login-input" placeholder="R$ 0,00">
+
+                <!-- 5. Relatórios Financeiros -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <i class="ph ph-chart-line-up"></i>
+                    </div>
+                    <h4>Relatórios e Gráficos</h4>
+                    <p>Tenha uma visão organizada do seu histórico financeiro com gráficos de fluxo de caixa mensal e distribuição de gastos por categoria.</p>
                 </div>
-                <div class="flex gap-2">
-                    <button class="btn login-btn-outline" onclick="Onboarding.next(2)">Voltar</button>
-                    <button class="btn btn-primary login-btn" onclick="Onboarding.next(4)">Continuar</button>
+
+                <!-- 6. Categorização -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <i class="ph ph-tag"></i>
+                    </div>
+                    <h4>Organização por Categorias</h4>
+                    <p>Classifique movimentações em Moradia, Alimentação, Lazer, Transporte, Saúde e tarifas para obter diagnósticos financeiros precisos.</p>
                 </div>
-            </div>
-            
-            <!-- Step 4 -->
-            <div id="onboarding-step-4" style="display: none;">
-                <h3 class="mb-4 text-center" style="font-size: 18px;">Como você conheceu o FinApp?</h3>
-                <div class="grid gap-2 mb-4" style="grid-template-columns: 1fr;">
-                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'Instagram')">Instagram</button>
-                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'TikTok')">TikTok</button>
-                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'Google')">Google</button>
-                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'Indicação')">Indicação</button>
-                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'WhatsApp')">WhatsApp</button>
-                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'Outro')">Outro</button>
+
+                <!-- 7. Open Finance Bancário -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <i class="ph ph-bank"></i>
+                    </div>
+                    <h4>Conexão Open Finance</h4>
+                    <p>Conecte contas do Banco do Brasil, Nubank, Caixa, Inter e Itaú de forma segura para importar transações e saldos atualizados.</p>
                 </div>
-                <div class="flex gap-2">
-                    <button class="btn login-btn-outline" onclick="Onboarding.next(3)">Voltar</button>
-                    <button class="btn btn-primary login-btn" id="btn-onb-4" disabled onclick="Onboarding.next(5)">Continuar</button>
+
+                <!-- 8. Gestão de Cartões -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <i class="ph ph-credit-card"></i>
+                    </div>
+                    <h4>Gestão de Cartões</h4>
+                    <p>Acompanhe faturas abertas do mês, limites totais contratados e limite disponível livre para novas compras em cada cartão.</p>
                 </div>
-            </div>
-            
-            <!-- Step 5 -->
-            <div id="onboarding-step-5" style="display: none;" class="text-center">
-                <i class="ph-fill ph-check-circle" style="font-size: 48px; color: var(--success); margin-bottom: 16px;"></i>
-                <h2 class="mb-2">Pronto!</h2>
-                <p class="text-muted mb-4">Sua conta está configurada.</p>
-                <button class="btn btn-primary login-btn" id="btn-onb-finish" onclick="Onboarding.finish()">Ir para meu Dashboard</button>
+
+                <!-- 9. Metas Financeiras -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <i class="ph ph-target"></i>
+                    </div>
+                    <h4>Controle de Metas</h4>
+                    <p>Defina objetivos de vida, prazos e acompanhe o percentual acumulado rumo à sua reserva de emergência ou próximo projeto.</p>
+                </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Premium Modal -->
-    <div id="premium-modal" class="login-wrapper" style="display: none; z-index: 9999;">
-        <div class="login-glass-card text-center" style="max-width: 450px;">
-            <i class="ph-fill ph-crown" style="font-size: 56px; color: #f5cb5c; margin-bottom: 16px;"></i>
-            <h2 class="mb-2">Recurso Premium</h2>
-            <p class="text-muted mb-4">Esta funcionalidade é exclusiva para assinantes do FinApp PRO.</p>
-            <ul class="text-left mb-4" style="list-style: none; padding: 0; display: inline-block; text-align: left;">
-                <li style="margin-bottom: 8px;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Open Finance e Sincronização Bancária</li>
-                <li style="margin-bottom: 8px;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Acesso a Cartões e Veículos</li>
-                <li style="margin-bottom: 8px;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Metas e Investimentos</li>
-                <li style="margin-bottom: 8px;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Contas a Pagar Fixas</li>
-                <li style="margin-bottom: 8px;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Relatórios Avançados</li>
-            </ul>
-            <div class="flex gap-2">
-                <button class="btn login-btn-outline" onclick="document.getElementById('premium-modal').style.display='none'">Fechar</button>
-                <button class="btn btn-primary login-btn" style="background: #f5cb5c; color: #111; font-weight: 600; border: none;" onclick="Pricing.open()">Conhecer o PRO</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pricing Overlay -->
-    <div id="pricing-screen" class="login-wrapper" style="display: none; align-items: flex-start; overflow-y: auto; padding: 40px 20px;">
-        <div style="max-width: 900px; width: 100%; margin: 0 auto;">
-            <div class="text-center mb-4">
-                <i class="ph-fill ph-wallet" style="font-size: 48px; color: var(--primary);"></i>
-                <h2 style="font-size: 32px; margin: 16px 0;">Escolha o plano ideal</h2>
-                <p class="text-muted" style="font-size: 18px;">Tenha o controle total sobre sua vida financeira.</p>
+    <!-- ==========================================================================
+       SEÇÃO 4 — DEMONSTRAÇÃO VISUAL / SHOWCASE
+       ========================================================================== -->
+    <section class="section-pad" id="demonstracao">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Demonstração Visual</span>
+                <h2 class="section-title">Conheça o sistema por dentro</h2>
+                <p class="section-subtitle">
+                    Imagens reais da plataforma FinApp em funcionamento. Navegue pelas telas abaixo e veja a elegância e clareza da interface.
+                </p>
             </div>
 
-            <div class="grid grid-2" style="gap: 24px; margin-top: 40px;" id="pricing-cards-container">
-                <!-- Cards injectados via JS -->
-                <div class="text-center" style="width: 100%; grid-column: 1 / -1;">
-                    <i class="ph ph-spinner ph-spin" style="font-size: 32px; color: var(--primary);"></i>
-                    <p class="text-muted mt-2">Carregando planos...</p>
-                </div>
-            </div>
-            
-            <div class="text-center" style="margin-top: 40px;">
-                <button class="btn login-btn-outline" onclick="Pricing.close()">Voltar ao App</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- App Container (Escondido até login) -->
-    <div class="app-container" id="app-container" style="display: none;">
-        <!-- Backdrop para fechar menu no mobile -->
-        <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
-
-        <!-- Sidebar (Menu Lateral / Drawer no mobile) -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-brand">
-                    <img src="assets/app-icon.png" alt="FinApp" class="sidebar-brand-icon">
-                    <h2>FinApp</h2>
-                </div>
-                <button id="btn-close-sidebar" class="btn-close-sidebar" aria-label="Fechar Menu">
-                    <i class="ph ph-x"></i>
-                </button>
-            </div>
-            <nav class="sidebar-nav">
-                <button class="nav-item active" data-view="dashboard">
+            <!-- Tabs de Navegação -->
+            <div class="showcase-tabs">
+                <button class="tab-btn active" data-target="showcase-dashboard">
                     <i class="ph ph-squares-four"></i> Dashboard
                 </button>
-                <button class="nav-item" data-view="lancamentos">
+                <button class="tab-btn" data-target="showcase-lancamentos">
                     <i class="ph ph-list-dashes"></i> Lançamentos
                 </button>
-                <button class="nav-item" data-view="conexoes">
-                    <i class="ph ph-bank"></i> Contas Conectadas
+                <button class="tab-btn" data-target="showcase-contas">
+                    <i class="ph ph-receipt"></i> Contas a Pagar
                 </button>
-                <button class="nav-item" data-view="contas">
-                    <i class="ph ph-calendar-check"></i> Contas a Pagar
+                <button class="tab-btn" data-target="showcase-investimentos">
+                    <i class="ph ph-chart-pie-slice"></i> Investimentos
                 </button>
-                <button class="nav-item" data-view="cartoes">
-                    <i class="ph ph-credit-card"></i> Cartões
-                </button>
-                <button class="nav-item" data-view="veiculo">
-                    <i class="ph ph-car"></i> Veículo
-                </button>
-                <button class="nav-item" data-view="investimentos">
-                    <i class="ph ph-chart-line-up"></i> Investimentos
-                </button>
-                <button class="nav-item" data-view="metas">
+                <button class="tab-btn" data-target="showcase-metas">
                     <i class="ph ph-target"></i> Metas
                 </button>
-                <button class="nav-item" data-view="relatorios">
-                    <i class="ph ph-chart-pie-slice"></i> Relatórios
-                </button>
-                <button class="nav-item" data-view="conta">
-                    <i class="ph ph-user"></i> Minha Conta
-                </button>
-                <button class="nav-item" data-view="configuracoes">
-                    <i class="ph ph-gear"></i> Configurações
-                </button>
-                <button class="nav-item" data-view="admin" id="nav-admin" style="display: none; color: #f5cb5c; border-top: 1px solid var(--border); margin-top: 16px; margin-bottom: 8px;">
-                    <i class="ph ph-shield-check"></i> Administração
-                </button>
-            </nav>
-            <div class="sidebar-footer">
-                <button class="sidebar-footer-btn logout-btn" onclick="Auth.confirmLogout()">
-                    <i class="ph ph-sign-out"></i> Sair da Conta
+                <button class="tab-btn" data-target="showcase-relatorios">
+                    <i class="ph ph-chart-line"></i> Relatórios
                 </button>
             </div>
-        </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <header class="top-header">
-                <div class="header-left">
-                    <button id="btn-mobile-menu" class="btn-mobile-menu" aria-label="Abrir Menu">
-                        <i class="ph ph-list"></i>
-                    </button>
-                    <div class="mobile-brand-pill">
-                        <img src="assets/app-icon.png" class="mobile-brand-icon" alt="FinApp">
-                        <span class="mobile-brand-name">FinApp</span>
-                    </div>
-                    <h1 id="page-title">Dashboard</h1>
-                </div>
-                <div class="header-actions">
-                    <button id="btn-header-install" class="btn-header-install" onclick="installPWA()" title="Instalar aplicativo no celular" style="display: none;">
-                        <i class="ph ph-download-simple"></i>
-                        <span>Instalar App</span>
-                    </button>
-                    <div class="user-profile" onclick="App.loadView('conta')" title="Minha Conta" style="cursor: pointer;">
-                        <img id="header-avatar" src="https://ui-avatars.com/api/?name=Admin&background=0a9396&color=fff" alt="Perfil">
-                    </div>
-                </div>
-            </header>
-
-            <div id="view-container" class="view-container">
-                <!-- PWA Install Banner (Dismissible) -->
-                <div id="pwa-install-banner" class="pwa-install-banner" style="display: none;">
-                    <div class="pwa-banner-left">
-                        <img src="assets/app-icon.png" alt="FinApp" class="pwa-banner-img">
+            <!-- Display de Telas -->
+            <div class="showcase-display">
+                <!-- 1. Dashboard -->
+                <div class="showcase-item active" id="showcase-dashboard">
+                    <div class="showcase-info">
                         <div>
-                            <strong>Instale o FinApp</strong>
-                            <p>Adicione à tela inicial do celular para usar como aplicativo completo!</p>
+                            <h4>Dashboard Principal</h4>
+                            <p>Visão consolidada do saldo bancário, receitas, despesas, saldos por instituição e gráficos comparativos.</p>
                         </div>
+                        <a href="/cadastro" class="btn btn-outline btn-sm">Criar conta</a>
                     </div>
-                    <div class="pwa-banner-right">
-                        <button class="btn btn-primary btn-sm" onclick="installPWA()">Instalar</button>
-                        <button class="btn-icon-subtle" onclick="dismissPWABanner()" title="Fechar"><i class="ph ph-x"></i></button>
+                    <div class="showcase-image-box">
+                        <img src="/assets/screenshots/dashboard.jpg" alt="Dashboard FinApp">
                     </div>
                 </div>
-                <!-- Views will be injected here via JS -->
-            </div>
-        </main>
 
-        <!-- Bottom Navigation Bar (Celular / Mobile Web) -->
-        <nav class="bottom-nav" id="bottom-nav">
-            <button class="bottom-nav-item active" data-view="dashboard">
-                <i class="ph ph-squares-four"></i>
-                <span>Início</span>
+                <!-- 2. Lançamentos -->
+                <div class="showcase-item" id="showcase-lancamentos">
+                    <div class="showcase-info">
+                        <div>
+                            <h4>Lançamentos Financeiros</h4>
+                            <p>Registro rápido de novas receitas e despesas com descrição, valor, data, categoria e forma de pagamento.</p>
+                        </div>
+                        <a href="/cadastro" class="btn btn-outline btn-sm">Criar conta</a>
+                    </div>
+                    <div class="showcase-image-box">
+                        <img src="/assets/screenshots/lancamentos.png" alt="Tela de Lançamentos FinApp">
+                    </div>
+                </div>
+
+                <!-- 3. Contas a Pagar -->
+                <div class="showcase-item" id="showcase-contas">
+                    <div class="showcase-info">
+                        <div>
+                            <h4>Contas a Pagar</h4>
+                            <p>Controle de contas com filtros por mês, ano e palavra-chave, com indicação visual de status pago ou pendente.</p>
+                        </div>
+                        <a href="/cadastro" class="btn btn-outline btn-sm">Criar conta</a>
+                    </div>
+                    <div class="showcase-image-box">
+                        <img src="/assets/screenshots/contas.png" alt="Tela de Contas a Pagar FinApp">
+                    </div>
+                </div>
+
+                <!-- 4. Investimentos -->
+                <div class="showcase-item" id="showcase-investimentos">
+                    <div class="showcase-info">
+                        <div>
+                            <h4>Carteira de Investimentos</h4>
+                            <p>Acompanhamento de aportes, patrimônio atualizado, rentabilidade e gráfico de distribuição da sua carteira.</p>
+                        </div>
+                        <a href="/cadastro" class="btn btn-outline btn-sm">Criar conta</a>
+                    </div>
+                    <div class="showcase-image-box">
+                        <img src="/assets/screenshots/investimentos.png" alt="Tela de Investimentos FinApp">
+                    </div>
+                </div>
+
+                <!-- 5. Metas -->
+                <div class="showcase-item" id="showcase-metas">
+                    <div class="showcase-info">
+                        <div>
+                            <h4>Metas Financeiras</h4>
+                            <p>Simulação e acompanhamento de objetivos com barras de progresso, prazos e percentual de realização.</p>
+                        </div>
+                        <a href="/cadastro" class="btn btn-outline btn-sm">Criar conta</a>
+                    </div>
+                    <div class="showcase-image-box">
+                        <img src="/assets/screenshots/metas.png" alt="Tela de Metas FinApp">
+                    </div>
+                </div>
+
+                <!-- 6. Relatórios -->
+                <div class="showcase-item" id="showcase-relatorios">
+                    <div class="showcase-info">
+                        <div>
+                            <h4>Relatórios Analíticos</h4>
+                            <p>Curvas suaves de fluxo de caixa mensal (Receitas x Despesas) e gráfico em rosca de gastos por categoria.</p>
+                        </div>
+                        <a href="/cadastro" class="btn btn-outline btn-sm">Criar conta</a>
+                    </div>
+                    <div class="showcase-image-box">
+                        <img src="/assets/screenshots/relatorios.png" alt="Tela de Relatórios FinApp">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================================================
+       SEÇÃO 5 — BENEFÍCIOS
+       ========================================================================== -->
+    <section class="section-pad" id="beneficios">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Por Que Escolher</span>
+                <h2 class="section-title">Uma maneira mais inteligente de organizar suas finanças.</h2>
+                <p class="section-subtitle">
+                    Benefícios reais que você sente desde a primeira semana de utilização.
+                </p>
+            </div>
+
+            <div class="benefits-grid">
+                <div class="benefit-box">
+                    <div class="benefit-icon">
+                        <i class="ph ph-unite"></i>
+                    </div>
+                    <div class="benefit-content">
+                        <h4>Centralização das Informações</h4>
+                        <p>Elimine a fragmentação entre vários extratos e cartões. Tenha todas as suas informações reunidas em um único ponto focal.</p>
+                    </div>
+                </div>
+
+                <div class="benefit-box">
+                    <div class="benefit-icon">
+                        <i class="ph ph-eye"></i>
+                    </div>
+                    <div class="benefit-content">
+                        <h4>Melhor Visualização Financeira</h4>
+                        <p>Entenda seus números rapidamente através de gráficos limpos e indicadores visuais que mostram sua saúde financeira sem rodeios.</p>
+                    </div>
+                </div>
+
+                <div class="benefit-box">
+                    <div class="benefit-icon">
+                        <i class="ph ph-trend-up"></i>
+                    </div>
+                    <div class="benefit-content">
+                        <h4>Acompanhamento da Evolução</h4>
+                        <p>Compare seu desempenho financeiro mês a mês, monitore o aumento da sua taxa de economia e acompanhe seu crescimento patrimonial.</p>
+                    </div>
+                </div>
+
+                <div class="benefit-box">
+                    <div class="benefit-icon">
+                        <i class="ph ph-calendar-star"></i>
+                    </div>
+                    <div class="benefit-content">
+                        <h4>Mais Organização no Dia a Dia</h4>
+                        <p>Crie o hábito saudável de registrar seus gastos em segundos e saiba exatamente quanto dinheiro você tem disponível para compras.</p>
+                    </div>
+                </div>
+
+                <div class="benefit-box">
+                    <div class="benefit-icon">
+                        <i class="ph ph-device-mobile-camera"></i>
+                    </div>
+                    <div class="benefit-content">
+                        <h4>Acesso em Qualquer Dispositivo</h4>
+                        <p>Acesse pelo computador, tablet ou smartphone. Instale o aplicativo PWA no Android ou iOS para ter suas finanças sempre no bolso.</p>
+                    </div>
+                </div>
+
+                <div class="benefit-box">
+                    <div class="benefit-icon">
+                        <i class="ph ph-shield-checkered"></i>
+                    </div>
+                    <div class="benefit-content">
+                        <h4>Segurança e Isolamento RLS</h4>
+                        <p>Seus dados são protegidos por Row Level Security no Supabase. Nenhuma outra conta consegue ler ou modificar suas informações.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================================================
+       SEÇÃO 6 — PLANOS
+       ========================================================================== -->
+    <section class="section-pad" id="planos" style="background: rgba(15, 19, 26, 0.4); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Planos e Preços</span>
+                <h2 class="section-title">Escolha o plano ideal para você</h2>
+                <p class="section-subtitle">
+                    Comece gratuitamente ou desbloqueie todo o poder da automação financeira com o plano PRO.
+                </p>
+            </div>
+
+            <div class="pricing-grid">
+                <!-- FREE -->
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Plano FREE</h3>
+                        <p>O básico essencial para organizar suas contas diárias.</p>
+                    </div>
+
+                    <div class="pricing-amount">
+                        <span class="currency">R$</span>0<span class="period">/mês</span>
+                    </div>
+
+                    <ul class="pricing-features">
+                        <li><i class="ph ph-check"></i> Dashboard financeiro resumo</li>
+                        <li><i class="ph ph-check"></i> Registro de receitas e despesas</li>
+                        <li><i class="ph ph-check"></i> Categorização básica</li>
+                        <li><i class="ph ph-check"></i> Visualização mensal</li>
+                        <li style="opacity: 0.5;"><i class="ph ph-x" style="color: var(--text-subtle);"></i> Sem conexão bancária Open Finance</li>
+                        <li style="opacity: 0.5;"><i class="ph ph-x" style="color: var(--text-subtle);"></i> Sem controle avançado de cartões</li>
+                    </ul>
+
+                    <a href="/cadastro" class="btn btn-outline btn-block">Criar Conta Grátis</a>
+                </div>
+
+                <!-- PRO -->
+                <div class="pricing-card featured">
+                    <span class="pricing-badge">Mais Popular</span>
+                    
+                    <div class="pricing-header">
+                        <h3>FinApp PRO</h3>
+                        <p>Controle total com recursos premium e automação bancária.</p>
+                    </div>
+
+                    <div class="pricing-amount">
+                        <span class="currency">R$</span>39,90<span class="period">/mês</span>
+                    </div>
+
+                    <ul class="pricing-features">
+                        <li><i class="ph ph-check"></i> <strong>Tudo do plano Free</strong></li>
+                        <li><i class="ph ph-check"></i> <strong>Conexão Bancária (Open Finance)</strong></li>
+                        <li><i class="ph ph-check"></i> <strong>Controle de Cartões com Faturas Automáticas</strong></li>
+                        <li><i class="ph ph-check"></i> Gestão completa de Contas a Pagar</li>
+                        <li><i class="ph ph-check"></i> Gestão de Veículos e manutenções</li>
+                        <li><i class="ph ph-check"></i> Carteira de Investimentos</li>
+                        <li><i class="ph ph-check"></i> Controle de Metas de Vida</li>
+                        <li><i class="ph ph-check"></i> Relatórios Analíticos e Fluxo de Caixa</li>
+                    </ul>
+
+                    <a href="/cadastro" class="btn btn-gold btn-block">
+                        <span>Assinar FinApp PRO</span>
+                        <i class="ph ph-crown"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================================================
+       SEÇÃO 7 — CHAMADA PARA CADASTRO (CTA)
+       ========================================================================== -->
+    <section class="section-pad">
+        <div class="container">
+            <div class="cta-box">
+                <span class="section-tag" style="color: #94d2bd;">Dê o primeiro passo</span>
+                <h3>Comece a organizar suas finanças hoje.</h3>
+                <p>
+                    Tenha suas informações financeiras organizadas em uma plataforma criada para simplificar sua rotina e transformar seus resultados.
+                </p>
+                <a href="/cadastro" class="btn btn-primary btn-lg">
+                    <span>Criar minha conta</span>
+                    <i class="ph ph-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================================================
+       SEÇÃO 8 — PERGUNTAS FREQUENTES (FAQ)
+       ========================================================================== -->
+    <section class="section-pad" id="faq">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Dúvidas Frequentes</span>
+                <h2 class="section-title">Perguntas Frequentes</h2>
+                <p class="section-subtitle">
+                    Tudo o que você precisa saber sobre o FinApp antes de começar.
+                </p>
+            </div>
+
+            <div class="faq-wrap">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>O que é o FinApp?</span>
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        O FinApp é uma plataforma SaaS moderna de organização e gestão financeira pessoal. Ele reúne receitas, despesas, contas a pagar, faturas de cartões, investimentos e relatórios analíticos em um único ambiente seguro e acessível.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Como faço para criar minha conta?</span>
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Basta clicar no botão <a href="/cadastro" style="color: var(--primary-light); font-weight: 600;">Criar minha conta</a>, preencher seu nome, e-mail, CPF e definir uma senha segura. Em menos de um minuto seu ambiente financeiro estará pronto.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Posso acessar pelo celular?</span>
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Sim! O FinApp é totalmente responsivo e foi desenvolvido com tecnologia PWA (Progressive Web App). Você pode utilizá-lo pelo navegador ou adicioná-lo à tela inicial do seu smartphone (Android ou iPhone), funcionando de forma idêntica a um aplicativo nativo.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Meus dados financeiros ficam separados dos outros usuários?</span>
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Sim, com rigor absoluto. O FinApp utiliza a tecnologia Row Level Security (RLS) diretamente nas tabelas do banco de dados Supabase. Cada registro é criptografado e vinculado exclusivamente ao seu identificador de usuário autenticado.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Como faço para acessar minha conta novamente?</span>
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Basta acessar a página de <a href="/login" style="color: var(--primary-light); font-weight: 600;">Login</a> e digitar seu e-mail e senha cadastrados. Se tiver esquecido a senha, utilize a opção "Esqueci minha senha" para receber um link de redefinição imediato.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Como funciona a assinatura do plano PRO?</span>
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        O FinApp PRO tem o valor de R$ 39,90 por mês e oferece acesso irrestrito ao Open Finance, gestão de cartões de crédito com cálculo de faturas e limites, carteira de investimentos, metas e relatórios avançados. Os pagamentos são processados com total segurança via Cartão de Crédito ou PIX através do gateway Asaas.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>É seguro conectar minhas contas bancárias via Open Finance?</span>
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Totalmente seguro. A tecnologia Open Finance opera sob as normas e diretrizes de segurança do Banco Central do Brasil. O FinApp tem acesso estritamente de leitura para consultar saldos e faturas autorizadas, sendo impossível realizar transferências ou transações financeiras.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================================================
+       SEÇÃO 9 — RODAPÉ
+       ========================================================================== -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <div class="brand-logo">
+                        <img src="/assets/app-icon.png" alt="FinApp Logo">
+                        <span>FinApp</span>
+                    </div>
+                    <p>Plataforma moderna de gestão financeira pessoal e empresarial. Controle receitas, despesas, faturas e investimentos com máxima clareza e segurança.</p>
+                </div>
+
+                <div class="footer-col">
+                    <h5>Navegação</h5>
+                    <ul>
+                        <li><a href="/">Início</a></li>
+                        <li><a href="#apresentacao">Visão Geral</a></li>
+                        <li><a href="#funcionalidades">Funcionalidades</a></li>
+                        <li><a href="#demonstracao">Demonstração</a></li>
+                        <li><a href="#planos">Planos & Preços</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h5>Acesso</h5>
+                    <ul>
+                        <li><a href="/login">Fazer Login</a></li>
+                        <li><a href="/cadastro">Criar Conta</a></li>
+                        <li><a href="/app">Área do Usuário</a></li>
+                        <li><a href="#" id="footer-link-terms">Termos de Uso</a></li>
+                        <li><a href="#" id="footer-link-privacy">Política de Privacidade</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h5>Contato & Suporte</h5>
+                    <p style="font-size: 13.5px; margin-bottom: 12px; color: var(--text-muted);">
+                        Precisa de ajuda ou tem dúvidas sobre a plataforma?
+                    </p>
+                    <a href="mailto:suporte@finapp.net.br" style="color: var(--primary-light); font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                        <i class="ph ph-envelope-simple"></i> suporte@finapp.net.br
+                    </a>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div>
+                    © 2026 FinApp. Todos os direitos reservados.
+                </div>
+                <div>
+                    Desenvolvido com tecnologia e segurança de nível bancário.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modais de Termos e Privacidade -->
+    <div id="modal-terms" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('modal-terms')">
+                <i class="ph ph-x"></i>
             </button>
-            <button class="bottom-nav-item" data-view="lancamentos">
-                <i class="ph ph-list-dashes"></i>
-                <span>Lançamentos</span>
-            </button>
-            <button class="bottom-nav-item" data-view="cartoes">
-                <i class="ph ph-credit-card"></i>
-                <span>Cartões</span>
-            </button>
-            <button class="bottom-nav-item" data-view="metas">
-                <i class="ph ph-target"></i>
-                <span>Metas</span>
-            </button>
-            <button class="bottom-nav-item" id="btn-bottom-menu">
-                <i class="ph ph-dots-three-outline"></i>
-                <span>Menu</span>
-            </button>
-        </nav>
+            <h3 style="margin-bottom: 16px;">Termos de Uso do FinApp</h3>
+            <div class="modal-body">
+                <p>Ao utilizar o FinApp (https://www.finapp.net.br/), você concorda expressamente com os seguintes termos e condições:</p>
+                <h4>1. Sobre a Plataforma</h4>
+                <p>O FinApp é uma solução de software como serviço (SaaS) destinada à organização, categorização e acompanhamento financeiro pessoal do usuário.</p>
+                <h4>2. Cadastro e Senha</h4>
+                <p>O usuário é inteiramente responsável pela veracidade dos dados cadastrais informados e pela preservação do sigilo de sua senha de acesso.</p>
+                <h4>3. Proteção e Isolamento dos Dados</h4>
+                <p>Os dados financeiros de cada usuário são rigidamente isolados e protegidos por políticas de segurança no nível de banco de dados (Row Level Security). Nenhum usuário tem acesso às informações de outro.</p>
+                <h4>4. Sincronização Open Finance</h4>
+                <p>A sincronização bancária via Open Finance é realizada sob os padrões de segurança do Banco Central do Brasil, em modo de leitura estritamente autorizado pelo usuário.</p>
+            </div>
+        </div>
     </div>
 
-    <!-- Scripts (a ordem importa!) -->
-    <script src="js/supabase.js"></script>
-    <script src="js/store.js"></script>
-    <script src="js/main.js?v=3.0"></script>
-    <script src="js/custom-select.js?v=2.7"></script>
-    <script src="js/onboarding.js"></script>
-    <script src="js/subscription.js?v=2.9"></script>
-    <script src="js/pricing.js?v=3.0"></script>
-    <!-- SDK Oficial Pluggy Connect (Open Finance) -->
-    <script src="https://cdn.jsdelivr.net/npm/pluggy-connect-sdk@latest/dist/main.js"></script>
-    <script src="js/open-finance.js?v=4.0"></script>
-    <script src="js/views/dashboard.js?v=4.0"></script>
-    <script src="js/views/lancamentos.js?v=4.0"></script>
-    <script src="js/views/conexoes.js?v=4.3"></script>
-    <script src="js/views/contas.js"></script>
-    <script src="js/views/cartoes.js?v=4.4"></script>
-    <script src="js/views/veiculo.js"></script>
-    <script src="js/views/investimentos.js"></script>
-    <script src="js/views/metas.js?v=3.9"></script>
-    <script src="js/views/relatorios.js?v=3.9"></script>
-    <script src="js/views/conta.js?v=3.7"></script>
-    <script src="js/views/configuracoes.js?v=3.7"></script>
-    <script src="js/views/admin.js"></script>
-    <!-- splash.js: Animação de Entrada e Carregamento Financeiro -->
-    <script src="js/splash.js?v=3.9"></script>
-    <!-- auth.js SEMPRE por último: depende de App, Store, Views e Splash -->
-    <script src="js/auth.js?v=3.9"></script>
+    <div id="modal-privacy" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('modal-privacy')">
+                <i class="ph ph-x"></i>
+            </button>
+            <h3 style="margin-bottom: 16px;">Política de Privacidade do FinApp</h3>
+            <div class="modal-body">
+                <p>Sua privacidade é prioridade absoluta no FinApp. Esta política detalha como suas informações são tratadas:</p>
+                <h4>1. Coleta de Informações</h4>
+                <p>Coletamos apenas os dados necessários para o funcionamento da plataforma: nome, e-mail, identificador cadastral e as movimentações financeiras inseridas ou autorizadas pelo usuário.</p>
+                <h4>2. Uso e Finalidade</h4>
+                <p>Seus dados são utilizados exclusivamente para gerar seus relatórios, gráficos, dashboards e fornecer as ferramentas de gestão financeira contratadas.</p>
+                <h4>3. Não Compartilhamento</h4>
+                <p>Não vendemos, alugamos ou comercializamos seus dados financeiros com terceiros para quaisquer finalidades publicitárias.</p>
+                <h4>4. Criptografia</h4>
+                <p>Todas as comunicações com os servidores são criptografadas em trânsito com protocolo TLS/HTTPS e em repouso nos bancos de dados do Supabase.</p>
+            </div>
+        </div>
+    </div>
 
-    <!-- PWA Service Worker & Install Handler -->
+    <!-- Scripts de Interatividade -->
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('FinApp PWA registrado:', reg.scope))
-                    .catch(err => console.log('Erro PWA SW:', err));
-            });
+        // Modal helpers
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
         }
 
-        window.isAppInstalled = () => {
-            return window.matchMedia('(display-mode: standalone)').matches ||
-                   window.navigator.standalone === true ||
-                   document.referrer.includes('android-app://') ||
-                   localStorage.getItem('finapp_installed') === 'true';
-        };
-
-        const updateInstalledUI = () => {
-            if (window.isAppInstalled()) {
-                document.body.classList.add('is-standalone-app');
-                const banner = document.getElementById('pwa-install-banner');
-                if (banner) banner.style.display = 'none';
-                const btnHeader = document.getElementById('btn-header-install');
-                if (btnHeader) btnHeader.style.display = 'none';
-                document.querySelectorAll('.pwa-install-element, .btn-header-install, #pwa-install-banner, #btn-sidebar-install').forEach(el => {
-                    el.style.display = 'none';
-                });
-            }
-        };
-
-        window.addEventListener('appinstalled', () => {
-            localStorage.setItem('finapp_installed', 'true');
-            updateInstalledUI();
-        });
-
-        // Executar verificação imediatamente
-        updateInstalledUI();
-
-        let deferredPrompt = null;
-        window.addEventListener('beforeinstallprompt', (e) => {
+        document.getElementById('footer-link-terms')?.addEventListener('click', (e) => {
             e.preventDefault();
-            deferredPrompt = e;
-            if (window.isAppInstalled()) return;
-            const banner = document.getElementById('pwa-install-banner');
-            const btnHeader = document.getElementById('btn-header-install');
-            if (banner && !sessionStorage.getItem('dismiss_pwa_banner') && window.innerWidth <= 768) {
-                banner.style.display = 'flex';
-            }
-            if (btnHeader && !window.isAppInstalled()) btnHeader.style.display = 'inline-flex';
+            openModal('modal-terms');
+        });
+        document.getElementById('footer-link-privacy')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal('modal-privacy');
         });
 
-        // Se NÃO estiver instalado, pode agendar exibição do banner
-        if (!window.isAppInstalled()) {
-            setTimeout(() => {
-                const banner = document.getElementById('pwa-install-banner');
-                if (banner && !sessionStorage.getItem('dismiss_pwa_banner') && window.innerWidth <= 768 && !window.isAppInstalled()) {
-                    banner.style.display = 'flex';
-                }
-            }, 2500);
-        }
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.remove('active');
+            });
+        });
 
-        window.dismissPWABanner = () => {
-            const banner = document.getElementById('pwa-install-banner');
-            if (banner) banner.style.display = 'none';
-            sessionStorage.setItem('dismiss_pwa_banner', 'true');
-        };
-
-        window.installPWA = async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    localStorage.setItem('finapp_installed', 'true');
-                    updateInstalledUI();
-                }
-                deferredPrompt = null;
-            } else {
-                Swal.fire({
-                    title: '<span style="color:#ffd700">Instalar FinApp</span>',
-                    html: `
-                        <div style="text-align: left; font-size: 14px; line-height: 1.6; color: #cdd5e0;">
-                            <div style="margin-bottom: 14px; padding: 14px; background: rgba(255,215,0,0.06); border: 1px solid rgba(255,215,0,0.25); border-radius: 12px;">
-                                <strong style="color: #ffd700; display: block; margin-bottom: 6px;">📱 No iPhone / Safari:</strong>
-                                1. Toque no ícone de <strong>Compartilhar</strong> <i class="ph ph-export" style="color: #ffd700;"></i> (barra inferior do Safari).<br>
-                                2. Role para baixo e selecione <strong>"Adicionar à Tela de Início"</strong> <i class="ph ph-plus-square" style="color: #ffd700;"></i>.<br>
-                                3. Toque em <strong>Adicionar</strong> no topo direito.<br>
-                                <em>O FinApp ficará salvo no celular como um app independente!</em>
-                            </div>
-                            <div style="padding: 14px; background: rgba(10,147,150,0.08); border: 1px solid rgba(10,147,150,0.25); border-radius: 12px;">
-                                <strong style="color: #0a9396; display: block; margin-bottom: 6px;">🤖 No Android / Chrome:</strong>
-                                1. Toque nos <strong>três pontinhos ⋮</strong> no canto superior direito.<br>
-                                2. Toque em <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.
-                            </div>
-                        </div>
-                    `,
-                    icon: 'info',
-                    confirmButtonText: 'Entendi, vou instalar!',
-                    confirmButtonColor: '#ffd700',
-                    background: '#161920',
-                    color: '#f8f9fa'
+        // FAQ Accordion
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                const item = question.parentElement;
+                const isActive = item.classList.contains('active');
+                
+                // Fecha outros
+                document.querySelectorAll('.faq-item').forEach(other => {
+                    other.classList.remove('active');
                 });
+
+                if (!isActive) {
+                    item.classList.add('active');
+                }
+            });
+        });
+
+        // Showcase Tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.getAttribute('data-target');
+
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.showcase-item').forEach(item => item.classList.remove('active'));
+
+                btn.classList.add('active');
+                const targetItem = document.getElementById(targetId);
+                if (targetItem) {
+                    targetItem.classList.add('active');
+                }
+            });
+        });
+
+        // Mobile Menu Toggle
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        const navLinks = document.getElementById('nav-links');
+        menuBtn?.addEventListener('click', () => {
+            navLinks.classList.toggle('open');
+            const icon = menuBtn.querySelector('i');
+            if (navLinks.classList.contains('open')) {
+                icon.className = 'ph ph-x';
+            } else {
+                icon.className = 'ph ph-list';
             }
-        };
+        });
+
+        // Fecha menu mobile ao clicar em um link
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('open');
+                if (menuBtn) {
+                    menuBtn.querySelector('i').className = 'ph ph-list';
+                }
+            });
+        });
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('site-header');
+            if (window.scrollY > 20) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Se o usuário já tiver sessão ativa, atualiza os botões da navbar para ir ao app
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const hasSession = localStorage.getItem('finapp_has_session') === 'true';
+                if (hasSession) {
+                    const ctaBtn = document.getElementById('nav-btn-cta');
+                    const loginBtn = document.getElementById('nav-btn-login');
+                    if (ctaBtn) {
+                        ctaBtn.href = '/app';
+                        ctaBtn.innerHTML = '<span>Acessar Meu Painel</span> <i class="ph ph-arrow-right"></i>';
+                    }
+                    if (loginBtn) {
+                        loginBtn.style.display = 'none';
+                    }
+
+                    // Se estiver em modo PWA standalone no celular, redireciona direto para o app
+                    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+                        window.location.href = '/app';
+                    }
+                }
+            } catch (_) {}
+        });
     </script>
 </body>
 </html>

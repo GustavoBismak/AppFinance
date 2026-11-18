@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Criar Conta | FinApp</title>
+    <meta name="description" content="Crie sua conta no FinApp e comece a transformar sua gestão financeira hoje mesmo.">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" href="/assets/app-icon.png">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <meta name="theme-color" content="#090c11">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/landing.css">
+</head>
+<body>
+    <div class="ambient-glow glow-1"></div>
+
+    <div class="auth-page">
+        <a href="/" class="auth-header-nav">
+            <i class="ph ph-arrow-left"></i> Voltar ao site
+        </a>
+
+        <div class="auth-card" style="max-width: 480px;">
+            <div class="auth-card-header">
+                <a href="/">
+                    <img src="/assets/app-icon.png" alt="FinApp" class="auth-card-logo">
+                </a>
+                <h2>Crie sua conta no FinApp</h2>
+                <p>Comece a organizar sua vida financeira com precisão</p>
+            </div>
+
+            <!-- Alerta dinâmico de erro/sucesso -->
+            <div id="auth-alert" class="auth-alert"></div>
+
+            <form id="form-register" class="auth-form">
+                <div class="form-field">
+                    <label class="form-label" for="reg-name">Nome Completo</label>
+                    <div class="input-wrap">
+                        <input type="text" id="reg-name" class="auth-input" placeholder="Seu nome" required autocomplete="name">
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label" for="reg-email">E-mail</label>
+                    <div class="input-wrap">
+                        <input type="email" id="reg-email" class="auth-input" placeholder="seu@email.com" required autocomplete="email">
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label" for="reg-cpf">CPF (Apenas números)</label>
+                    <div class="input-wrap">
+                        <input type="tel" inputmode="numeric" id="reg-cpf" class="auth-input" placeholder="000.000.000-00" maxlength="14" required>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label" for="reg-password">Senha</label>
+                    <div class="input-wrap">
+                        <input type="password" id="reg-password" class="auth-input" placeholder="Mínimo de 6 caracteres" required minlength="6" autocomplete="new-password">
+                        <button type="button" class="input-toggle-pwd" data-target="reg-password" title="Visualizar senha">
+                            <i class="ph ph-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label" for="reg-confirm">Confirmar Senha</label>
+                    <div class="input-wrap">
+                        <input type="password" id="reg-confirm" class="auth-input" placeholder="Repita a senha" required minlength="6" autocomplete="new-password">
+                        <button type="button" class="input-toggle-pwd" data-target="reg-confirm" title="Visualizar senha">
+                            <i class="ph ph-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <label class="checkbox-wrap">
+                    <input type="checkbox" id="reg-terms" required>
+                    <span>
+                        Concordo com os <a href="#" id="link-terms" style="color: var(--primary-light);">Termos de Uso</a> e a <a href="#" id="link-privacy" style="color: var(--primary-light);">Política de Privacidade</a> do FinApp.
+                    </span>
+                </label>
+
+                <button type="submit" class="btn btn-primary btn-block" id="btn-submit-register" style="margin-top: 8px;">
+                    <span>Criar Minha Conta</span>
+                    <i class="ph ph-arrow-right"></i>
+                </button>
+
+                <div class="auth-footer-text">
+                    Já possui uma conta? <a href="/login">Fazer login</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Termos de Uso -->
+    <div id="modal-terms" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('modal-terms')">
+                <i class="ph ph-x"></i>
+            </button>
+            <h3 style="margin-bottom: 16px;">Termos de Uso do FinApp</h3>
+            <div class="modal-body">
+                <p>Ao utilizar o FinApp, você concorda com os seguintes termos e condições:</p>
+                <h4>1. Sobre o Serviço</h4>
+                <p>O FinApp é uma plataforma de organização e gestão financeira pessoal criada para auxiliar o usuário no controle de receitas, despesas, cartões, investimentos e planejamento financeiro.</p>
+                <h4>2. Cadastro e Segurança</h4>
+                <p>O usuário é inteiramente responsável pela confidencialidade de sua senha e pelos acessos efetuados em sua conta. Não compartilhe suas credenciais com terceiros.</p>
+                <h4>3. Proteção e Isolamento dos Dados</h4>
+                <p>Os dados financeiros de cada usuário são rigidamente isolados e protegidos por políticas de segurança no nível de banco de dados (Row Level Security). Nenhum usuário tem acesso às informações de outro.</p>
+                <h4>4. Open Finance</h4>
+                <p>A sincronização bancária via Open Finance é realizada sob os padrões de segurança do Banco Central do Brasil, em modo de leitura estritamente autorizado pelo usuário.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Política de Privacidade -->
+    <div id="modal-privacy" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('modal-privacy')">
+                <i class="ph ph-x"></i>
+            </button>
+            <h3 style="margin-bottom: 16px;">Política de Privacidade do FinApp</h3>
+            <div class="modal-body">
+                <p>Sua privacidade é prioridade absoluta no FinApp. Esta política detalha como suas informações são tratadas:</p>
+                <h4>1. Coleta de Informações</h4>
+                <p>Coletamos apenas os dados necessários para o funcionamento da plataforma: nome, e-mail, identificador cadastral e as movimentações financeiras inseridas ou autorizadas pelo usuário.</p>
+                <h4>2. Uso e Finalidade</h4>
+                <p>Seus dados são utilizados exclusivamente para gerar seus relatórios, gráficos, dashboards e fornecer as ferramentas de gestão financeira contratadas.</p>
+                <h4>3. Não Compartilhamento</h4>
+                <p>Não vendemos, alugamos ou compartilhamos seus dados financeiros pessoais com terceiros para fins de publicidade ou marketing.</p>
+                <h4>4. Criptografia e Armazenamento</h4>
+                <p>Todas as comunicações com os servidores são criptografadas em trânsito com protocolo TLS/HTTPS e em repouso nos bancos de dados do Supabase.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts Supabase -->
+    <script src="/js/supabase-lib.js"></script>
+    <script src="/js/supabase.js"></script>
+
+    <script>
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        document.getElementById('link-terms')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal('modal-terms');
+        });
+        document.getElementById('link-privacy')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal('modal-privacy');
+        });
+
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.remove('active');
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const formRegister = document.getElementById('form-register');
+            const alertBox = document.getElementById('auth-alert');
+            const cpfInput = document.getElementById('reg-cpf');
+
+            function showAlert(msg, type = 'error') {
+                alertBox.className = `auth-alert ${type}`;
+                alertBox.innerHTML = `<i class="ph ${type === 'error' ? 'ph-warning-circle' : 'ph-check-circle'}"></i> <span>${msg}</span>`;
+                alertBox.style.display = 'flex';
+            }
+
+            function clearAlert() {
+                alertBox.style.display = 'none';
+                alertBox.innerHTML = '';
+            }
+
+            // Máscara amigável de CPF
+            cpfInput.addEventListener('input', (e) => {
+                let v = e.target.value.replace(/\D/g, '');
+                if (v.length > 11) v = v.slice(0, 11);
+                if (v.length > 9) {
+                    v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+                } else if (v.length > 6) {
+                    v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                } else if (v.length > 3) {
+                    v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+                }
+                e.target.value = v;
+            });
+
+            // Alternar visibilidade de senha
+            document.querySelectorAll('.input-toggle-pwd').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.getAttribute('data-target');
+                    const input = document.getElementById(targetId);
+                    const icon = btn.querySelector('i');
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.className = 'ph ph-eye-slash';
+                    } else {
+                        input.type = 'password';
+                        icon.className = 'ph ph-eye';
+                    }
+                });
+            });
+
+            // Verificar se o usuário já possui sessão ativa
+            try {
+                if (window.supabaseClient) {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session && session.user) {
+                        localStorage.setItem('finapp_has_session', 'true');
+                        showAlert('Você já possui uma sessão ativa. Redirecionando...', 'success');
+                        setTimeout(() => { window.location.href = '/app'; }, 600);
+                        return;
+                    }
+                }
+            } catch (_) {}
+
+            // Submit Cadastro
+            formRegister.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearAlert();
+
+                const name = document.getElementById('reg-name').value.trim();
+                const email = document.getElementById('reg-email').value.trim();
+                const cpfRaw = cpfInput.value.replace(/\D/g, '');
+                const password = document.getElementById('reg-password').value;
+                const confirm = document.getElementById('reg-confirm').value;
+                const terms = document.getElementById('reg-terms').checked;
+                const btn = document.getElementById('btn-submit-register');
+
+                if (!name) {
+                    showAlert('Por favor, informe seu nome completo.');
+                    return;
+                }
+
+                if (!email) {
+                    showAlert('Por favor, informe um e-mail válido.');
+                    return;
+                }
+
+                if (cpfRaw.length !== 11) {
+                    showAlert('Por favor, informe um CPF válido com 11 dígitos.');
+                    return;
+                }
+
+                if (password.length < 6) {
+                    showAlert('A senha precisa ter no mínimo 6 caracteres.');
+                    return;
+                }
+
+                if (password !== confirm) {
+                    showAlert('As senhas digitadas não coincidem.');
+                    return;
+                }
+
+                if (!terms) {
+                    showAlert('Você precisa aceitar os Termos de Uso e Política de Privacidade.');
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Criando conta...';
+
+                try {
+                    const { data, error } = await supabaseClient.auth.signUp({
+                        email,
+                        password,
+                        options: {
+                            data: {
+                                full_name: name,
+                                cpfCnpj: cpfRaw
+                            }
+                        }
+                    });
+
+                    if (error) throw error;
+
+                    if (data.user && !data.session) {
+                        showAlert('Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail. Por favor, confirme para acessar.', 'success');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="ph ph-check-circle"></i> Verifique seu E-mail';
+                    } else if (data.user) {
+                        localStorage.setItem('finapp_has_session', 'true');
+                        showAlert('Conta criada com sucesso! Preparando seu cofre financeiro...', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/app';
+                        }, 700);
+                    }
+                } catch (err) {
+                    let msg = err.message || 'Erro ao criar conta.';
+                    if (msg.includes('User already registered')) {
+                        msg = 'Este e-mail já está cadastrado. Tente fazer login.';
+                    } else if (msg.includes('Password should be')) {
+                        msg = 'A senha informada é fraca. Utilize números e letras.';
+                    }
+                    showAlert(msg, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>Criar Minha Conta</span> <i class="ph ph-arrow-right"></i>';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

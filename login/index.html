@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Entrar | FinApp</title>
+    <meta name="description" content="Acesse sua conta no FinApp para gerenciar suas receitas, despesas e investimentos.">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" href="/assets/app-icon.png">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <meta name="theme-color" content="#090c11">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/landing.css">
+</head>
+<body>
+    <div class="ambient-glow glow-1"></div>
+
+    <div class="auth-page">
+        <a href="/" class="auth-header-nav">
+            <i class="ph ph-arrow-left"></i> Voltar ao site
+        </a>
+
+        <div class="auth-card">
+            <div class="auth-card-header">
+                <a href="/">
+                    <img src="/assets/app-icon.png" alt="FinApp" class="auth-card-logo">
+                </a>
+                <h2 id="auth-title">Acesse sua conta</h2>
+                <p id="auth-desc">Entre para gerenciar suas finanças no FinApp</p>
+            </div>
+
+            <!-- Alerta dinâmico de erro/sucesso -->
+            <div id="auth-alert" class="auth-alert"></div>
+
+            <!-- Formulário de Login -->
+            <form id="form-login" class="auth-form">
+                <div class="form-field">
+                    <label class="form-label" for="login-email">E-mail</label>
+                    <div class="input-wrap">
+                        <input type="email" id="login-email" class="auth-input" placeholder="seu@email.com" required autocomplete="email">
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label class="form-label" for="login-password">Senha</label>
+                        <a href="#" id="btn-show-forgot" style="font-size: 12.5px; color: var(--primary-light);">Esqueci minha senha</a>
+                    </div>
+                    <div class="input-wrap">
+                        <input type="password" id="login-password" class="auth-input" placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" class="input-toggle-pwd" data-target="login-password" title="Visualizar senha">
+                            <i class="ph ph-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="btn-submit-login" style="margin-top: 8px;">
+                    <span>Entrar no FinApp</span>
+                    <i class="ph ph-arrow-right"></i>
+                </button>
+
+                <div class="auth-footer-text">
+                    Ainda não possui uma conta? <a href="/cadastro">Criar cadastro</a>
+                </div>
+            </form>
+
+            <!-- Formulário de Recuperação de Senha -->
+            <form id="form-forgot" class="auth-form" style="display: none;">
+                <div class="form-field">
+                    <label class="form-label" for="forgot-email">E-mail cadastrado</label>
+                    <div class="input-wrap">
+                        <input type="email" id="forgot-email" class="auth-input" placeholder="seu@email.com" required autocomplete="email">
+                    </div>
+                    <span style="font-size: 12px; color: var(--text-subtle); margin-top: 4px;">
+                        Enviaremos um link de redefinição para o seu e-mail.
+                    </span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="btn-submit-forgot" style="margin-top: 8px;">
+                    <span>Enviar Link de Recuperação</span>
+                </button>
+
+                <div class="auth-footer-text">
+                    <a href="#" id="btn-back-to-login">← Voltar para o login</a>
+                </div>
+            </form>
+
+            <!-- Formulário de Nova Senha (quando vem do link com token) -->
+            <form id="form-reset" class="auth-form" style="display: none;">
+                <div class="form-field">
+                    <label class="form-label" for="reset-password">Nova Senha</label>
+                    <div class="input-wrap">
+                        <input type="password" id="reset-password" class="auth-input" placeholder="Mínimo 6 caracteres" required minlength="6">
+                        <button type="button" class="input-toggle-pwd" data-target="reset-password" title="Visualizar senha">
+                            <i class="ph ph-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label" for="reset-password-confirm">Confirmar Nova Senha</label>
+                    <div class="input-wrap">
+                        <input type="password" id="reset-password-confirm" class="auth-input" placeholder="Repita a nova senha" required minlength="6">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="btn-submit-reset" style="margin-top: 8px;">
+                    <span>Salvar Nova Senha</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts Supabase -->
+    <script src="/js/supabase-lib.js"></script>
+    <script src="/js/supabase.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const formLogin = document.getElementById('form-login');
+            const formForgot = document.getElementById('form-forgot');
+            const formReset = document.getElementById('form-reset');
+            const authTitle = document.getElementById('auth-title');
+            const authDesc = document.getElementById('auth-desc');
+            const alertBox = document.getElementById('auth-alert');
+
+            function showAlert(msg, type = 'error') {
+                alertBox.className = `auth-alert ${type}`;
+                alertBox.innerHTML = `<i class="ph ${type === 'error' ? 'ph-warning-circle' : 'ph-check-circle'}"></i> <span>${msg}</span>`;
+                alertBox.style.display = 'flex';
+            }
+
+            function clearAlert() {
+                alertBox.style.display = 'none';
+                alertBox.innerHTML = '';
+            }
+
+            // Alternar visibilidade de senha
+            document.querySelectorAll('.input-toggle-pwd').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.getAttribute('data-target');
+                    const input = document.getElementById(targetId);
+                    const icon = btn.querySelector('i');
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.className = 'ph ph-eye-slash';
+                    } else {
+                        input.type = 'password';
+                        icon.className = 'ph ph-eye';
+                    }
+                });
+            });
+
+            // Verificar se o usuário já possui sessão ativa
+            try {
+                if (window.supabaseClient) {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session && session.user && !window.location.hash.includes('type=recovery')) {
+                        localStorage.setItem('finapp_has_session', 'true');
+                        showAlert('Você já está conectado. Redirecionando para o app...', 'success');
+                        setTimeout(() => { window.location.href = '/app'; }, 600);
+                        return;
+                    }
+                }
+            } catch (_) {}
+
+            // Detectar link de recuperação de senha no hash da URL
+            if (window.location.hash.includes('type=recovery') || window.location.search.includes('reset=true')) {
+                formLogin.style.display = 'none';
+                formForgot.style.display = 'none';
+                formReset.style.display = 'flex';
+                authTitle.textContent = 'Defina sua nova senha';
+                authDesc.textContent = 'Digite sua nova senha abaixo para recuperar o acesso';
+            }
+
+            // Navegação entre formulários
+            document.getElementById('btn-show-forgot')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                clearAlert();
+                formLogin.style.display = 'none';
+                formReset.style.display = 'none';
+                formForgot.style.display = 'flex';
+                authTitle.textContent = 'Recuperar Senha';
+                authDesc.textContent = 'Informe seu e-mail para receber as instruções';
+            });
+
+            document.getElementById('btn-back-to-login')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                clearAlert();
+                formForgot.style.display = 'none';
+                formReset.style.display = 'none';
+                formLogin.style.display = 'flex';
+                authTitle.textContent = 'Acesse sua conta';
+                authDesc.textContent = 'Entre para gerenciar suas finanças no FinApp';
+            });
+
+            // Submit Login
+            formLogin.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearAlert();
+
+                const email = document.getElementById('login-email').value.trim();
+                const password = document.getElementById('login-password').value;
+                const btn = document.getElementById('btn-submit-login');
+
+                if (!email || !password) {
+                    showAlert('Preencha seu e-mail e senha.');
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Entrando...';
+
+                try {
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                    if (error) throw error;
+
+                    localStorage.setItem('finapp_has_session', 'true');
+                    showAlert('Login realizado com sucesso! Redirecionando...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/app';
+                    }, 500);
+                } catch (err) {
+                    let msg = err.message || 'Erro ao efetuar login.';
+                    if (msg.includes('Invalid login credentials')) {
+                        msg = 'E-mail ou senha incorretos. Por favor, verifique seus dados.';
+                    } else if (msg.includes('Email not confirmed')) {
+                        msg = 'Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada.';
+                    }
+                    showAlert(msg, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>Entrar no FinApp</span> <i class="ph ph-arrow-right"></i>';
+                }
+            });
+
+            // Submit Recuperação
+            formForgot.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearAlert();
+
+                const email = document.getElementById('forgot-email').value.trim();
+                const btn = document.getElementById('btn-submit-forgot');
+
+                if (!email) {
+                    showAlert('Informe seu e-mail.');
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Enviando...';
+
+                try {
+                    const redirectUrl = window.location.origin + '/login?reset=true';
+                    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                        redirectTo: redirectUrl
+                    });
+                    if (error) throw error;
+
+                    showAlert('Link de recuperação enviado! Verifique sua caixa de entrada.', 'success');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>Link Enviado com Sucesso</span>';
+                } catch (err) {
+                    showAlert('Erro ao solicitar redefinição: ' + err.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>Enviar Link de Recuperação</span>';
+                }
+            });
+
+            // Submit Redefinição de Senha
+            formReset.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearAlert();
+
+                const password = document.getElementById('reset-password').value;
+                const confirm = document.getElementById('reset-password-confirm').value;
+                const btn = document.getElementById('btn-submit-reset');
+
+                if (password.length < 6) {
+                    showAlert('A senha deve ter pelo menos 6 caracteres.');
+                    return;
+                }
+
+                if (password !== confirm) {
+                    showAlert('As senhas não coincidem.');
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Atualizando...';
+
+                try {
+                    const { error } = await supabaseClient.auth.updateUser({ password });
+                    if (error) throw error;
+
+                    showAlert('Senha atualizada com sucesso! Redirecionando para o app...', 'success');
+                    history.replaceState(null, null, '/login');
+                    setTimeout(() => {
+                        window.location.href = '/app';
+                    }, 1200);
+                } catch (err) {
+                    showAlert('Erro ao atualizar senha: ' + err.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>Salvar Nova Senha</span>';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

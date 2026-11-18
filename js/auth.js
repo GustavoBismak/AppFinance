@@ -325,6 +325,13 @@ window.Auth = {
                 if (window.AppSplash) {
                     AppSplash.hideImmediate();
                 }
+                
+                // Se o usuário tentar acessar a área interna /app sem estar autenticado, redireciona para login
+                if (window.location.pathname.includes('/app')) {
+                    window.location.href = '/login';
+                    return;
+                }
+
                 const loginScreen = document.getElementById('login-screen');
                 if (loginScreen) loginScreen.style.display = 'flex';
 
@@ -345,6 +352,10 @@ window.Auth = {
             console.error('Erro ao verificar sessão:', e);
             localStorage.removeItem('finapp_has_session');
             if (window.AppSplash) AppSplash.hideImmediate();
+            if (window.location.pathname.includes('/app')) {
+                window.location.href = '/login';
+                return;
+            }
             const loginScreen = document.getElementById('login-screen');
             if (loginScreen) loginScreen.style.display = 'flex';
         }
@@ -356,8 +367,8 @@ window.Auth = {
                 localStorage.removeItem('finapp_has_session');
                 await supabaseClient.auth.signOut();
                 Auth.user = null;
-                // Recarregar a página para limpar todo o estado em memória e voltar ao login
-                window.location.reload();
+                // Redireciona para o login de forma limpa
+                window.location.href = '/login';
             } catch (error) {
                 Toast.error('Erro ao tentar sair: ' + error.message);
             }

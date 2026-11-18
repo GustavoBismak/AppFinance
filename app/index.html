@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>FinApp - Finanças Inteligentes</title>
+    <!-- Favicon & PWA Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" href="/assets/app-icon.png">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Mobile Web App Capable Meta Tags -->
+    <meta name="application-name" content="FinApp">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FinApp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f1115">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Flatpickr (calendário bonito) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+    <!-- Supabase -->
+    <script src="/js/supabase-lib.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Flatpickr PT-BR init -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            function initDatePickers() {
+                document.querySelectorAll('input[type="date"]:not(.flatpickr-input)').forEach(el => {
+                    flatpickr(el, {
+                        locale: 'pt',
+                        dateFormat: 'Y-m-d',
+                        altInput: true,
+                        altFormat: 'j \\de F \\de Y',
+                        allowInput: false,
+                        disableMobile: true,
+                        defaultDate: el.value || null,
+                        onReady: function(_sel, _str, instance) {
+                            if (instance.altInput) {
+                                // Adiciona as classes sem sobrescrever as classes do Flatpickr
+                                instance.altInput.classList.add('input-control', 'flatpickr-alt-display');
+                                instance.altInput.placeholder = 'Selecione uma data';
+                            }
+                        }
+                    });
+                });
+            }
+            const observer = new MutationObserver(() => {
+                initDatePickers();
+                if (window.CustomSelect) window.CustomSelect.init();
+            });
+            const viewContainer = document.getElementById('view-container');
+            if (viewContainer) {
+                observer.observe(viewContainer, { childList: true, subtree: true });
+            }
+        });
+    </script>
+    
+    <!-- Detecção Instantânea de Sessão para Splash de Dinheiro -->
+    <script>
+        (function() {
+            try {
+                var hasSession = false;
+                for (var key in localStorage) {
+                    if (key.indexOf('auth-token') !== -1 || key === 'finapp_has_session') {
+                        hasSession = true;
+                        break;
+                    }
+                }
+                if (hasSession) {
+                    document.documentElement.classList.add('has-active-session');
+                }
+            } catch(e) {}
+        })();
+    </script>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css?v=3.9">
+</head>
+<body>
+    <!-- Splash & Money Loading Animation (Entrada Financeira) -->
+    <div id="app-splash-loader" class="app-splash-wrapper" style="display: none;">
+        <div class="splash-ambient-glow glow-emerald"></div>
+        <div class="splash-ambient-glow glow-gold"></div>
+
+        <!-- Floating Currency Particles -->
+        <div class="splash-floating-particles" aria-hidden="true">
+            <span class="particle p-1">R$</span>
+            <span class="particle p-2">✦</span>
+            <span class="particle p-3">$</span>
+            <span class="particle p-4">R$</span>
+            <span class="particle p-5">✨</span>
+            <span class="particle p-6">$</span>
+            <span class="particle p-7">✦</span>
+            <span class="particle p-8">R$</span>
+        </div>
+
+        <div class="splash-content">
+            <!-- 3D Coin Animation Container -->
+            <div class="splash-coin-stage">
+                <!-- Concentric Aura Rings -->
+                <div class="splash-aura-ring ring-1"></div>
+                <div class="splash-aura-ring ring-2"></div>
+
+                <!-- 3D Flipping Gold Coin -->
+                <div class="splash-gold-coin">
+                    <div class="coin-face">
+                        <div class="coin-rim"></div>
+                        <div class="coin-inner">
+                            <span class="coin-symbol">R$</span>
+                            <div class="coin-sheen"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Branding & Status -->
+            <div class="splash-brand-block">
+                <div class="splash-brand-title">
+                    <img src="/assets/app-icon.png" alt="FinApp" class="splash-mini-logo">
+                    <h2>FinApp</h2>
+                </div>
+                <p class="splash-tagline">INTELIGÊNCIA & GESTÃO FINANCEIRA</p>
+            </div>
+
+            <!-- Status Message & Progress -->
+            <div class="splash-status-block">
+                <span id="splash-status-text" class="splash-status-text">Acessando seu cofre financeiro...</span>
+                <div class="splash-progress-track">
+                    <div id="splash-progress-bar" class="splash-progress-fill"></div>
+                </div>
+            </div>
+
+            <div class="splash-security-badge">
+                <i class="ph ph-shield-check"></i> Conexão Segura Criptografada
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Overlay -->
+    <div id="login-screen" class="login-wrapper">
+        <div class="login-glass-card">
+            <div class="text-center mb-4 login-header">
+                <img src="/assets/app-icon.png" alt="FinApp" class="login-brand-icon">
+                <h2>FinApp</h2>
+                <p class="text-muted" style="margin-top: 8px;" id="login-subtitle">Acesse seu império financeiro</p>
+            </div>
+            
+            <!-- Login Form -->
+            <form id="login-form" style="display: block;">
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="login-email" class="input-control login-input" placeholder="seu@email.com" required>
+                </div>
+                <div class="form-group mb-2">
+                    <label>Senha</label>
+                    <input type="password" id="login-password" class="input-control login-input" placeholder="••••••••" required>
+                </div>
+                <div class="text-right mb-4">
+                    <a href="#" id="link-forgot" style="font-size: 13px; color: var(--primary);">Esqueci minha senha</a>
+                </div>
+                
+                <button type="submit" class="btn btn-primary login-btn" id="btn-entrar">Entrar</button>
+                <div class="text-center mt-4">
+                    <span class="text-muted" style="font-size: 14px;">Não tem uma conta?</span>
+                    <a href="#" id="link-register" style="font-size: 14px; color: var(--primary); margin-left: 4px;">Criar Conta</a>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" style="display: none;">
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="register-email" class="input-control login-input" placeholder="seu@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>CPF (Apenas números)</label>
+                    <input type="text" id="register-cpf" class="input-control login-input" placeholder="00000000000" maxlength="11" required>
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="register-password" class="input-control login-input" placeholder="Mínimo 6 caracteres" required>
+                </div>
+                <div class="form-group mb-4">
+                    <label>Confirmar Senha</label>
+                    <input type="password" id="register-password-confirm" class="input-control login-input" placeholder="Repita a senha" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary login-btn" id="btn-create-account">Criar Conta</button>
+                <div class="text-center mt-4">
+                    <span class="text-muted" style="font-size: 14px;">Já tem uma conta?</span>
+                    <a href="#" id="link-back-login" style="font-size: 14px; color: var(--primary); margin-left: 4px;">Fazer Login</a>
+                </div>
+            </form>
+
+            <!-- Forgot Password Form -->
+            <form id="forgot-form" style="display: none;">
+                <div class="form-group mb-4">
+                    <label>E-mail cadastrado</label>
+                    <input type="email" id="forgot-email" class="input-control login-input" placeholder="seu@email.com" required>
+                    <p class="text-muted mt-2" style="font-size: 12px;">Enviaremos um link para você redefinir sua senha.</p>
+                </div>
+                
+                <button type="submit" class="btn btn-primary login-btn" id="btn-send-reset">Enviar Link</button>
+                <div class="text-center mt-4">
+                    <a href="#" id="link-back-login-2" style="font-size: 14px; color: var(--text-muted);">Voltar para o login</a>
+                </div>
+            </form>
+
+            <!-- Reset Password Form (shown from email link) -->
+            <form id="reset-form" style="display: none;">
+                <div class="form-group">
+                    <label>Nova Senha</label>
+                    <input type="password" id="reset-password" class="input-control login-input" placeholder="Mínimo 6 caracteres" required>
+                </div>
+                <div class="form-group mb-4">
+                    <label>Confirmar Nova Senha</label>
+                    <input type="password" id="reset-password-confirm" class="input-control login-input" placeholder="Repita a senha" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary login-btn" id="btn-update-password">Atualizar Senha</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Onboarding Overlay -->
+    <div id="onboarding-screen" class="login-wrapper" style="display: none;">
+        <div class="login-glass-card" style="max-width: 500px;">
+            <!-- Step 1 -->
+            <div id="onboarding-step-1" class="text-center">
+                <i class="ph-fill ph-rocket" style="font-size: 48px; color: var(--primary); margin-bottom: 16px;"></i>
+                <h2 class="mb-2">Bem-vindo ao FinApp!</h2>
+                <p class="text-muted mb-4">Vamos configurar sua conta rapidamente para você começar a organizar sua vida financeira.</p>
+                <button class="btn btn-primary login-btn" onclick="Onboarding.next(2)">Começar</button>
+            </div>
+            
+            <!-- Step 2 -->
+            <div id="onboarding-step-2" style="display: none;">
+                <h3 class="mb-4 text-center" style="font-size: 18px;">Qual é o seu principal objetivo?</h3>
+                <div class="grid gap-2 mb-4" style="grid-template-columns: 1fr;">
+                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Organizar minhas despesas')">Organizar minhas despesas</button>
+                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Economizar dinheiro')">Economizar dinheiro</button>
+                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Sair das dívidas')">Sair das dívidas</button>
+                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Controlar minha família')">Controlar minha família</button>
+                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Acompanhar meus investimentos')">Acompanhar meus investimentos</button>
+                    <button class="btn btn-outline onboarding-option" onclick="Onboarding.selectObjective(this, 'Apenas quero organizar minhas finanças')">Apenas quero organizar minhas finanças</button>
+                </div>
+                <button class="btn btn-primary login-btn" id="btn-onb-2" disabled onclick="Onboarding.next(3)">Continuar</button>
+            </div>
+            
+            <!-- Step 3 -->
+            <div id="onboarding-step-3" style="display: none;">
+                <h3 class="mb-4 text-center" style="font-size: 18px;">Qual é aproximadamente sua renda mensal?</h3>
+                <div class="form-group mb-4">
+                    <input type="number" id="onboarding-income" class="input-control login-input" placeholder="R$ 0,00">
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn login-btn-outline" onclick="Onboarding.next(2)">Voltar</button>
+                    <button class="btn btn-primary login-btn" onclick="Onboarding.next(4)">Continuar</button>
+                </div>
+            </div>
+            
+            <!-- Step 4 -->
+            <div id="onboarding-step-4" style="display: none;">
+                <h3 class="mb-4 text-center" style="font-size: 18px;">Como você conheceu o FinApp?</h3>
+                <div class="grid gap-2 mb-4" style="grid-template-columns: 1fr;">
+                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'Instagram')">Instagram</button>
+                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'TikTok')">TikTok</button>
+                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'Google')">Google</button>
+                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'Indicação')">Indicação</button>
+                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'WhatsApp')">WhatsApp</button>
+                    <button class="btn btn-outline onboarding-option-source" onclick="Onboarding.selectSource(this, 'Outro')">Outro</button>
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn login-btn-outline" onclick="Onboarding.next(3)">Voltar</button>
+                    <button class="btn btn-primary login-btn" id="btn-onb-4" disabled onclick="Onboarding.next(5)">Continuar</button>
+                </div>
+            </div>
+            
+            <!-- Step 5 -->
+            <div id="onboarding-step-5" style="display: none;" class="text-center">
+                <i class="ph-fill ph-check-circle" style="font-size: 48px; color: var(--success); margin-bottom: 16px;"></i>
+                <h2 class="mb-2">Pronto!</h2>
+                <p class="text-muted mb-4">Sua conta está configurada.</p>
+                <button class="btn btn-primary login-btn" id="btn-onb-finish" onclick="Onboarding.finish()">Ir para meu Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Premium Modal -->
+    <div id="premium-modal" class="login-wrapper" style="display: none; z-index: 9999;">
+        <div class="login-glass-card text-center" style="max-width: 450px;">
+            <i class="ph-fill ph-crown" style="font-size: 56px; color: #f5cb5c; margin-bottom: 16px;"></i>
+            <h2 class="mb-2">Recurso Premium</h2>
+            <p class="text-muted mb-4">Esta funcionalidade é exclusiva para assinantes do FinApp PRO.</p>
+            <ul class="text-left mb-4" style="list-style: none; padding: 0; display: inline-block; text-align: left;">
+                <li style="margin-bottom: 8px;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Open Finance e Sincronização Bancária</li>
+                <li style="margin-bottom: 8px;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Acesso a Cartões e Veículos</li>
+                <li style="margin-bottom: 8px;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Metas e Investimentos</li>
+                <li style="margin-bottom: 8px;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Contas a Pagar Fixas</li>
+                <li style="margin-bottom: 8px;"><i class="ph ph-check" style="color: var(--primary); margin-right: 8px;"></i> Relatórios Avançados</li>
+            </ul>
+            <div class="flex gap-2">
+                <button class="btn login-btn-outline" onclick="document.getElementById('premium-modal').style.display='none'">Fechar</button>
+                <button class="btn btn-primary login-btn" style="background: #f5cb5c; color: #111; font-weight: 600; border: none;" onclick="Pricing.open()">Conhecer o PRO</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Overlay -->
+    <div id="pricing-screen" class="login-wrapper" style="display: none; align-items: flex-start; overflow-y: auto; padding: 40px 20px;">
+        <div style="max-width: 900px; width: 100%; margin: 0 auto;">
+            <div class="text-center mb-4">
+                <i class="ph-fill ph-wallet" style="font-size: 48px; color: var(--primary);"></i>
+                <h2 style="font-size: 32px; margin: 16px 0;">Escolha o plano ideal</h2>
+                <p class="text-muted" style="font-size: 18px;">Tenha o controle total sobre sua vida financeira.</p>
+            </div>
+
+            <div class="grid grid-2" style="gap: 24px; margin-top: 40px;" id="pricing-cards-container">
+                <!-- Cards injectados via JS -->
+                <div class="text-center" style="width: 100%; grid-column: 1 / -1;">
+                    <i class="ph ph-spinner ph-spin" style="font-size: 32px; color: var(--primary);"></i>
+                    <p class="text-muted mt-2">Carregando planos...</p>
+                </div>
+            </div>
+            
+            <div class="text-center" style="margin-top: 40px;">
+                <button class="btn login-btn-outline" onclick="Pricing.close()">Voltar ao App</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Container (Escondido até login) -->
+    <div class="app-container" id="app-container" style="display: none;">
+        <!-- Backdrop para fechar menu no mobile -->
+        <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
+        <!-- Sidebar (Menu Lateral / Drawer no mobile) -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <img src="/assets/app-icon.png" alt="FinApp" class="sidebar-brand-icon">
+                    <h2>FinApp</h2>
+                </div>
+                <button id="btn-close-sidebar" class="btn-close-sidebar" aria-label="Fechar Menu">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="dashboard">
+                    <i class="ph ph-squares-four"></i> Dashboard
+                </button>
+                <button class="nav-item" data-view="lancamentos">
+                    <i class="ph ph-list-dashes"></i> Lançamentos
+                </button>
+                <button class="nav-item" data-view="conexoes">
+                    <i class="ph ph-bank"></i> Contas Conectadas
+                </button>
+                <button class="nav-item" data-view="contas">
+                    <i class="ph ph-calendar-check"></i> Contas a Pagar
+                </button>
+                <button class="nav-item" data-view="cartoes">
+                    <i class="ph ph-credit-card"></i> Cartões
+                </button>
+                <button class="nav-item" data-view="veiculo">
+                    <i class="ph ph-car"></i> Veículo
+                </button>
+                <button class="nav-item" data-view="investimentos">
+                    <i class="ph ph-chart-line-up"></i> Investimentos
+                </button>
+                <button class="nav-item" data-view="metas">
+                    <i class="ph ph-target"></i> Metas
+                </button>
+                <button class="nav-item" data-view="relatorios">
+                    <i class="ph ph-chart-pie-slice"></i> Relatórios
+                </button>
+                <button class="nav-item" data-view="conta">
+                    <i class="ph ph-user"></i> Minha Conta
+                </button>
+                <button class="nav-item" data-view="configuracoes">
+                    <i class="ph ph-gear"></i> Configurações
+                </button>
+                <button class="nav-item" data-view="admin" id="nav-admin" style="display: none; color: #f5cb5c; border-top: 1px solid var(--border); margin-top: 16px; margin-bottom: 8px;">
+                    <i class="ph ph-shield-check"></i> Administração
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="sidebar-footer-btn logout-btn" onclick="Auth.confirmLogout()">
+                    <i class="ph ph-sign-out"></i> Sair da Conta
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-left">
+                    <button id="btn-mobile-menu" class="btn-mobile-menu" aria-label="Abrir Menu">
+                        <i class="ph ph-list"></i>
+                    </button>
+                    <div class="mobile-brand-pill">
+                        <img src="/assets/app-icon.png" class="mobile-brand-icon" alt="FinApp">
+                        <span class="mobile-brand-name">FinApp</span>
+                    </div>
+                    <h1 id="page-title">Dashboard</h1>
+                </div>
+                <div class="header-actions">
+                    <button id="btn-header-install" class="btn-header-install" onclick="installPWA()" title="Instalar aplicativo no celular" style="display: none;">
+                        <i class="ph ph-download-simple"></i>
+                        <span>Instalar App</span>
+                    </button>
+                    <div class="user-profile" onclick="App.loadView('conta')" title="Minha Conta" style="cursor: pointer;">
+                        <img id="header-avatar" src="https://ui-avatars.com/api/?name=Admin&background=0a9396&color=fff" alt="Perfil">
+                    </div>
+                </div>
+            </header>
+
+            <div id="view-container" class="view-container">
+                <!-- PWA Install Banner (Dismissible) -->
+                <div id="pwa-install-banner" class="pwa-install-banner" style="display: none;">
+                    <div class="pwa-banner-left">
+                        <img src="/assets/app-icon.png" alt="FinApp" class="pwa-banner-img">
+                        <div>
+                            <strong>Instale o FinApp</strong>
+                            <p>Adicione à tela inicial do celular para usar como aplicativo completo!</p>
+                        </div>
+                    </div>
+                    <div class="pwa-banner-right">
+                        <button class="btn btn-primary btn-sm" onclick="installPWA()">Instalar</button>
+                        <button class="btn-icon-subtle" onclick="dismissPWABanner()" title="Fechar"><i class="ph ph-x"></i></button>
+                    </div>
+                </div>
+                <!-- Views will be injected here via JS -->
+            </div>
+        </main>
+
+        <!-- Bottom Navigation Bar (Celular / Mobile Web) -->
+        <nav class="bottom-nav" id="bottom-nav">
+            <button class="bottom-nav-item active" data-view="dashboard">
+                <i class="ph ph-squares-four"></i>
+                <span>Início</span>
+            </button>
+            <button class="bottom-nav-item" data-view="lancamentos">
+                <i class="ph ph-list-dashes"></i>
+                <span>Lançamentos</span>
+            </button>
+            <button class="bottom-nav-item" data-view="cartoes">
+                <i class="ph ph-credit-card"></i>
+                <span>Cartões</span>
+            </button>
+            <button class="bottom-nav-item" data-view="metas">
+                <i class="ph ph-target"></i>
+                <span>Metas</span>
+            </button>
+            <button class="bottom-nav-item" id="btn-bottom-menu">
+                <i class="ph ph-dots-three-outline"></i>
+                <span>Menu</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Scripts (a ordem importa!) -->
+    <script src="/js/supabase.js"></script>
+    <script src="/js/store.js"></script>
+    <script src="/js/main.js?v=3.0"></script>
+    <script src="/js/custom-select.js?v=2.7"></script>
+    <script src="/js/onboarding.js"></script>
+    <script src="/js/subscription.js?v=2.9"></script>
+    <script src="/js/pricing.js?v=3.0"></script>
+    <!-- SDK Oficial Pluggy Connect (Open Finance) -->
+    <script src="https://cdn.jsdelivr.net/npm/pluggy-connect-sdk@latest/dist/main.js"></script>
+    <script src="/js/open-finance.js?v=4.0"></script>
+    <script src="/js/views/dashboard.js?v=4.0"></script>
+    <script src="/js/views/lancamentos.js?v=4.0"></script>
+    <script src="/js/views/conexoes.js?v=4.3"></script>
+    <script src="/js/views/contas.js"></script>
+    <script src="/js/views/cartoes.js?v=4.4"></script>
+    <script src="/js/views/veiculo.js"></script>
+    <script src="/js/views/investimentos.js"></script>
+    <script src="/js/views/metas.js?v=3.9"></script>
+    <script src="/js/views/relatorios.js?v=3.9"></script>
+    <script src="/js/views/conta.js?v=3.7"></script>
+    <script src="/js/views/configuracoes.js?v=3.7"></script>
+    <script src="/js/views/admin.js"></script>
+    <!-- splash.js: Animação de Entrada e Carregamento Financeiro -->
+    <script src="/js/splash.js?v=3.9"></script>
+    <!-- auth.js SEMPRE por último: depende de App, Store, Views e Splash -->
+    <script src="/js/auth.js?v=3.9"></script>
+
+    <!-- PWA Service Worker & Install Handler -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('FinApp PWA registrado:', reg.scope))
+                    .catch(err => console.log('Erro PWA SW:', err));
+            });
+        }
+
+        window.isAppInstalled = () => {
+            return window.matchMedia('(display-mode: standalone)').matches ||
+                   window.navigator.standalone === true ||
+                   document.referrer.includes('android-app://') ||
+                   localStorage.getItem('finapp_installed') === 'true';
+        };
+
+        const updateInstalledUI = () => {
+            if (window.isAppInstalled()) {
+                document.body.classList.add('is-standalone-app');
+                const banner = document.getElementById('pwa-install-banner');
+                if (banner) banner.style.display = 'none';
+                const btnHeader = document.getElementById('btn-header-install');
+                if (btnHeader) btnHeader.style.display = 'none';
+                document.querySelectorAll('.pwa-install-element, .btn-header-install, #pwa-install-banner, #btn-sidebar-install').forEach(el => {
+                    el.style.display = 'none';
+                });
+            }
+        };
+
+        window.addEventListener('appinstalled', () => {
+            localStorage.setItem('finapp_installed', 'true');
+            updateInstalledUI();
+        });
+
+        // Executar verificação imediatamente
+        updateInstalledUI();
+
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (window.isAppInstalled()) return;
+            const banner = document.getElementById('pwa-install-banner');
+            const btnHeader = document.getElementById('btn-header-install');
+            if (banner && !sessionStorage.getItem('dismiss_pwa_banner') && window.innerWidth <= 768) {
+                banner.style.display = 'flex';
+            }
+            if (btnHeader && !window.isAppInstalled()) btnHeader.style.display = 'inline-flex';
+        });
+
+        // Se NÃO estiver instalado, pode agendar exibição do banner
+        if (!window.isAppInstalled()) {
+            setTimeout(() => {
+                const banner = document.getElementById('pwa-install-banner');
+                if (banner && !sessionStorage.getItem('dismiss_pwa_banner') && window.innerWidth <= 768 && !window.isAppInstalled()) {
+                    banner.style.display = 'flex';
+                }
+            }, 2500);
+        }
+
+        window.dismissPWABanner = () => {
+            const banner = document.getElementById('pwa-install-banner');
+            if (banner) banner.style.display = 'none';
+            sessionStorage.setItem('dismiss_pwa_banner', 'true');
+        };
+
+        window.installPWA = async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    localStorage.setItem('finapp_installed', 'true');
+                    updateInstalledUI();
+                }
+                deferredPrompt = null;
+            } else {
+                Swal.fire({
+                    title: '<span style="color:#ffd700">Instalar FinApp</span>',
+                    html: `
+                        <div style="text-align: left; font-size: 14px; line-height: 1.6; color: #cdd5e0;">
+                            <div style="margin-bottom: 14px; padding: 14px; background: rgba(255,215,0,0.06); border: 1px solid rgba(255,215,0,0.25); border-radius: 12px;">
+                                <strong style="color: #ffd700; display: block; margin-bottom: 6px;">📱 No iPhone / Safari:</strong>
+                                1. Toque no ícone de <strong>Compartilhar</strong> <i class="ph ph-export" style="color: #ffd700;"></i> (barra inferior do Safari).<br>
+                                2. Role para baixo e selecione <strong>"Adicionar à Tela de Início"</strong> <i class="ph ph-plus-square" style="color: #ffd700;"></i>.<br>
+                                3. Toque em <strong>Adicionar</strong> no topo direito.<br>
+                                <em>O FinApp ficará salvo no celular como um app independente!</em>
+                            </div>
+                            <div style="padding: 14px; background: rgba(10,147,150,0.08); border: 1px solid rgba(10,147,150,0.25); border-radius: 12px;">
+                                <strong style="color: #0a9396; display: block; margin-bottom: 6px;">🤖 No Android / Chrome:</strong>
+                                1. Toque nos <strong>três pontinhos ⋮</strong> no canto superior direito.<br>
+                                2. Toque em <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.
+                            </div>
+                        </div>
+                    `,
+                    icon: 'info',
+                    confirmButtonText: 'Entendi, vou instalar!',
+                    confirmButtonColor: '#ffd700',
+                    background: '#161920',
+                    color: '#f8f9fa'
+                });
+            }
+        };
+    </script>
+</body>
+</html>
