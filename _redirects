@@ -1,5 +1,0 @@
-# Cloudflare Pages / Netlify Redirect Rules
-/cadastro    /cadastro/index.html    200
-/login       /login/index.html       200
-/app         /app/index.html         200
-/app/*       /app/index.html         200
