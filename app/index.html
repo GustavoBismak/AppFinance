@@ -363,6 +363,10 @@
                 <button class="nav-item active" data-view="dashboard">
                     <i class="ph ph-squares-four"></i> Dashboard
                 </button>
+                <button class="nav-item nav-item-intelligence" data-view="intelligence">
+                    <i class="ph-fill ph-sparkle"></i> FinApp Intelligence
+                    <span style="margin-left: auto; font-size: 10px; background: rgba(245, 203, 92, 0.15); color: #f5cb5c; border: 1px solid rgba(245, 203, 92, 0.3); border-radius: 99px; padding: 2px 7px; font-weight: 700;">NOVO</span>
+                </button>
                 <button class="nav-item" data-view="lancamentos">
                     <i class="ph ph-list-dashes"></i> Lançamentos
                 </button>
@@ -418,6 +422,9 @@
                     <h1 id="page-title">Dashboard</h1>
                 </div>
                 <div class="header-actions">
+                    <button class="btn-icon-subtle" onclick="App.loadView('intelligence')" title="FinApp Intelligence - Assistente Financeiro" style="margin-right: 4px; color: #f5cb5c; font-size: 20px;">
+                        <i class="ph-fill ph-sparkle"></i>
+                    </button>
                     <button id="btn-header-install" class="btn-header-install" onclick="installPWA()" title="Instalar aplicativo no celular" style="display: none;">
                         <i class="ph ph-download-simple"></i>
                         <span>Instalar App</span>
@@ -495,6 +502,9 @@
     <script src="/js/views/conta.js?v=3.7"></script>
     <script src="/js/views/configuracoes.js?v=3.7"></script>
     <script src="/js/views/admin.js"></script>
+    <!-- FinApp Intelligence: Motor NLP e Interface -->
+    <script src="/js/intelligence-engine.js?v=1.0"></script>
+    <script src="/js/views/intelligence.js?v=1.0"></script>
     <!-- splash.js: Animação de Entrada e Carregamento Financeiro -->
     <script src="/js/splash.js?v=3.9"></script>
     <!-- auth.js SEMPRE por último: depende de App, Store, Views e Splash -->

@@ -3,6 +3,7 @@ const App = {
 
     titulos: {
         dashboard: 'Dashboard',
+        intelligence: 'FinApp Intelligence',
         lancamentos: 'Lançamentos',
         conexoes: 'Contas Conectadas',
         contas: 'Contas a Pagar',
