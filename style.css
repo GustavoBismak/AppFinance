@@ -23,6 +23,252 @@
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* =============================================
+   LIGHT MODE THEME
+   Ativado via: body.light-mode
+   ============================================= */
+:root.light-mode,
+body.light-mode {
+    --bg-dark: #f0f2f5;
+    --bg-panel: #ffffff;
+    --bg-panel-hover: #e8eaed;
+    
+    --primary: #0a9396;
+    --primary-light: #16b5b8;
+    --primary-dark: #005f73;
+    
+    --success: #2a9d8f;
+    --danger: #e63946;
+    --warning: #d4a017;
+    
+    --text-main: #0d1117;
+    --text-muted: #5a6473;
+    
+    --border: rgba(0, 0, 0, 0.1);
+}
+
+/* Light mode overrides para elementos que usam cores hardcoded */
+body.light-mode .sidebar {
+    background-color: #ffffff;
+    border-right: 1px solid rgba(0,0,0,0.1);
+}
+
+body.light-mode .nav-item:hover,
+body.light-mode .bottom-nav-item:hover {
+    background: rgba(10, 147, 150, 0.1);
+}
+
+body.light-mode .nav-item.active,
+body.light-mode .bottom-nav-item.active {
+    background: rgba(10, 147, 150, 0.15);
+    color: var(--primary);
+}
+
+body.light-mode .top-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+}
+
+body.light-mode .card {
+    background: #ffffff;
+    border-color: rgba(0,0,0,0.08);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+body.light-mode .input-control {
+    background-color: #f7f8fa;
+    border-color: rgba(0,0,0,0.12);
+    color: var(--text-main);
+}
+
+body.light-mode .input-control:focus {
+    background-color: #ffffff;
+}
+
+body.light-mode .user-bubble {
+    background: linear-gradient(135deg, rgba(10, 147, 150, 0.2) 0%, rgba(240, 242, 245, 0.95) 100%);
+    border: 1px solid rgba(10, 147, 150, 0.4);
+    color: #0d1117;
+}
+
+body.light-mode .bot-bubble {
+    background: #ffffff;
+    border-color: rgba(0,0,0,0.1);
+    color: var(--text-main);
+}
+
+body.light-mode .intelligence-wrapper {
+    background: rgba(240, 242, 245, 0.8);
+    border-color: rgba(0,0,0,0.1);
+}
+
+body.light-mode .intelligence-header,
+body.light-mode .intelligence-footer {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0,0,0,0.1);
+}
+
+body.light-mode .intelligence-welcome-card {
+    background: #ffffff;
+    border-color: rgba(0,0,0,0.08);
+}
+
+body.light-mode .welcome-chip {
+    background: rgba(0,0,0,0.03);
+    border-color: rgba(0,0,0,0.1);
+    color: var(--text-main);
+}
+
+body.light-mode .welcome-chip:hover {
+    background: rgba(10, 147, 150, 0.1);
+    border-color: rgba(10, 147, 150, 0.4);
+}
+
+body.light-mode .ia-response-box p,
+body.light-mode .ia-response-box {
+    color: var(--text-main);
+}
+
+body.light-mode .ia-breakdown-list {
+    background: rgba(0,0,0,0.03);
+    border-color: rgba(0,0,0,0.08);
+}
+
+body.light-mode .ia-rank-row {
+    background: rgba(0,0,0,0.02);
+    border-color: rgba(0,0,0,0.08);
+}
+
+body.light-mode .ia-mini-card,
+body.light-mode .ia-kpi-card {
+    background: rgba(0,0,0,0.02);
+    border-color: rgba(0,0,0,0.08);
+}
+
+body.light-mode .ia-chip {
+    background: rgba(0,0,0,0.04);
+    border-color: rgba(0,0,0,0.12);
+    color: var(--text-muted);
+}
+
+body.light-mode .ia-chip:hover {
+    background: rgba(10, 147, 150, 0.12);
+    border-color: rgba(10, 147, 150, 0.35);
+    color: var(--text-main);
+}
+
+body.light-mode .intelligence-input-wrapper {
+    background: #f7f8fa;
+    border-color: rgba(0,0,0,0.12);
+}
+
+body.light-mode .typing-bubble {
+    background: #ffffff;
+    border-color: rgba(0,0,0,0.1);
+}
+
+body.light-mode table th {
+    background: rgba(0,0,0,0.04);
+    color: var(--text-muted);
+}
+
+body.light-mode table td {
+    border-color: rgba(0,0,0,0.06);
+}
+
+body.light-mode .badge {
+    background: rgba(0,0,0,0.06);
+}
+
+body.light-mode .login-wrapper,
+body.light-mode .login-container {
+    background: rgba(255,255,255,0.95);
+    border-color: rgba(0,0,0,0.1);
+}
+
+/* Botão de alternância de tema no header */
+.btn-theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 18px;
+    margin-right: 4px;
+}
+
+.btn-theme-toggle:hover {
+    background: rgba(10, 147, 150, 0.12);
+    border-color: rgba(10, 147, 150, 0.35);
+    color: var(--primary);
+}
+
+body.light-mode .btn-theme-toggle {
+    color: #d4a017;
+}
+
+/* Custom Select & Datepicker no Light Mode */
+body.light-mode .custom-select-trigger {
+    background-color: #f7f8fa;
+    border-color: rgba(0, 0, 0, 0.12);
+    color: var(--text-main);
+}
+
+body.light-mode .custom-select-trigger:hover {
+    background-color: #ffffff;
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+body.light-mode .custom-select-dropdown,
+body.light-mode .custom-select-sheet {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.12);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+body.light-mode .custom-select-sheet-title {
+    color: var(--text-main);
+}
+
+body.light-mode .custom-select-sheet-drag {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+body.light-mode .custom-select-sheet-close {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-main);
+}
+
+body.light-mode .custom-select-search-input {
+    background: #f0f2f5;
+    border-color: rgba(0, 0, 0, 0.1);
+    color: var(--text-main);
+}
+
+body.light-mode .custom-select-option-item:hover,
+body.light-mode .custom-select-option-item:active {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .custom-select-option-badge {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .flatpickr-calendar {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+body.light-mode .bottom-nav {
+    box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.08);
+}
+
 * {
     margin: 0;
     padding: 0;

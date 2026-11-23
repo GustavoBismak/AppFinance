@@ -126,12 +126,15 @@ window.FinAppIntelligence = (() => {
             return null;
         },
 
-        extractCategory: (normText, userCategories = []) => {
-            // 1. Testa categorias do usuário
+        extractCategory: (text, userCategories = []) => {
+            const normText = languageParser.normalize(text || '');
+            // 1. Testa categorias do usuário (suporta array de strings ou objetos)
             for (const cat of userCategories) {
-                const normCat = languageParser.normalize(cat.nome);
+                const catNome = (typeof cat === 'string') ? cat : (cat && (cat.nome || cat.name));
+                if (!catNome) continue;
+                const normCat = languageParser.normalize(catNome);
                 if (normText.includes(normCat)) {
-                    return cat.nome;
+                    return catNome;
                 }
             }
             // 2. Testa catálogo de sinônimos
@@ -196,6 +199,10 @@ window.FinAppIntelligence = (() => {
             Object.assign(ctx, patch);
             ctx.turnCount += 1;
             return ctx;
+        },
+
+        resetContext: (userId) => {
+            delete contextStore[userId];
         },
 
         resolveEllipsis: (normText, context, userCategories) => {
@@ -297,7 +304,8 @@ window.FinAppIntelligence = (() => {
     };
 
     const intentDetector = {
-        detect: (text, normText, context, userCategories) => {
+        detect: (text, normTextParam, context, userCategories = []) => {
+            const normText = normTextParam || languageParser.normalize(text || '');
             // 1. Filtro estrito de fora de escopo
             for (const item of PERGUNTAS_FORA_DE_ESCOPO) {
                 const reg = new RegExp(`\\b${item}\\b`, 'i');
@@ -356,8 +364,8 @@ window.FinAppIntelligence = (() => {
 
             // 6. Simulação de Redução percentual ("Se reduzir meus gastos em 10%, quanto economizarei?")
             if (
-                (normText.includes('se reduzir') || normText.includes('se eu reduzir') || normText.includes('cortar')) &&
-                (normText.includes('%') || normText.includes('por cento'))
+                (normText.includes('reduzir') || normText.includes('reducao') || normText.includes('cortar') || normText.includes('corte') || normText.includes('diminuir')) &&
+                (text.includes('%') || normText.includes('por cento') || normText.includes('economizarei') || normText.includes('quanto economizo') || normText.includes('quanto economizarei') || /\d+/.test(normText))
             ) {
                 return INTENCOES.SIMULACAO_REDUCAO;
             }
@@ -523,6 +531,17 @@ window.FinAppIntelligence = (() => {
                 return null;
             }
 
+            const k = (typeof KEYS !== 'undefined' && KEYS) || (window.KEYS) || {
+                LANCAMENTOS: 'lancamentos',
+                CONTAS: 'contas',
+                BANK_ACCOUNTS: 'bank_accounts',
+                BANK_CONNECTIONS: 'bank_connections',
+                METAS: 'metas',
+                INVESTIMENTOS: 'investimentos',
+                CARTOES: 'cartoes',
+                CATEGORIAS: 'categorias'
+            };
+
             const [
                 todosLancamentos,
                 todasContas,
@@ -533,14 +552,14 @@ window.FinAppIntelligence = (() => {
                 cartoes,
                 categorias
             ] = await Promise.all([
-                Store.get(KEYS.LANCAMENTOS) || [],
-                Store.get(KEYS.CONTAS) || [],
-                Store.get(KEYS.BANK_ACCOUNTS) || [],
-                Store.get(KEYS.BANK_CONNECTIONS) || [],
-                Store.get(KEYS.METAS) || [],
-                Store.get(KEYS.INVESTIMENTOS) || [],
-                Store.get(KEYS.CARTOES) || [],
-                Store.get(KEYS.CATEGORIAS) || []
+                Store.get(k.LANCAMENTOS) || [],
+                Store.get(k.CONTAS) || [],
+                Store.get(k.BANK_ACCOUNTS) || [],
+                Store.get(k.BANK_CONNECTIONS) || [],
+                Store.get(k.METAS) || [],
+                Store.get(k.INVESTIMENTOS) || [],
+                Store.get(k.CARTOES) || [],
+                Store.get(k.CATEGORIAS) || []
             ]);
 
             return {
@@ -1369,6 +1388,7 @@ window.FinAppIntelligence = (() => {
             contextManager.updateContext(userId, {
                 lastIntent: INTENCOES.GASTO_CATEGORIA,
                 lastCategory: catNome,
+                lastComparativePeriod: (context.lastPeriod && (context.lastPeriod.mes !== periodo.mes || context.lastPeriod.ano !== periodo.ano)) ? context.lastPeriod : context.lastComparativePeriod,
                 lastPeriod: periodo,
                 lastResult: { totalCat, pctCat }
             });
@@ -1380,17 +1400,33 @@ window.FinAppIntelligence = (() => {
         if (intencao === INTENCOES.VARIACAO_CATEGORIA) {
             const catNome = context.lastCategory || languageParser.extractCategory(norm, dados.categorias) || (metrics.rankingCategorias[0]?.categoria);
 
-            let mesAnt = periodo.mes === 0 ? 11 : periodo.mes - 1;
-            let anoAnt = periodo.mes === 0 ? periodo.ano - 1 : periodo.ano;
-            const periodoAnt = { mes: mesAnt, ano: anoAnt, label: `${languageParser.MESES_NOMES[mesAnt]} de ${anoAnt}` };
+            let perA = periodo;
+            let perB;
 
-            const catComp = financialAnalyzer.compareCategoryAcrossPeriods(dados, catNome, periodo, periodoAnt);
+            if (context.lastComparativePeriod && context.lastPeriod) {
+                // Se o usuário alternou períodos na conversa (ex: perguntou Novembro e depois "E no mês passado?")
+                const dtA = new Date(context.lastComparativePeriod.ano, context.lastComparativePeriod.mes, 1);
+                const dtB = new Date(context.lastPeriod.ano, context.lastPeriod.mes, 1);
+                if (dtA > dtB) {
+                    perA = context.lastComparativePeriod;
+                    perB = context.lastPeriod;
+                } else {
+                    perA = context.lastPeriod;
+                    perB = context.lastComparativePeriod;
+                }
+            } else {
+                let mesAnt = periodo.mes === 0 ? 11 : periodo.mes - 1;
+                let anoAnt = periodo.mes === 0 ? periodo.ano - 1 : periodo.ano;
+                perB = { mes: mesAnt, ano: anoAnt, label: `${languageParser.MESES_NOMES[mesAnt]} de ${anoAnt}` };
+            }
+
+            const catComp = financialAnalyzer.compareCategoryAcrossPeriods(dados, catNome, perA, perB);
 
             contextManager.updateContext(userId, {
                 lastIntent: INTENCOES.VARIACAO_CATEGORIA,
                 lastCategory: catNome,
-                lastPeriod: periodo,
-                lastComparativePeriod: periodoAnt
+                lastPeriod: perA,
+                lastComparativePeriod: perB
             });
 
             return responseValidator.sanitizeOutput(responseGenerator.variacaoCategoria(catComp));
@@ -1463,9 +1499,12 @@ window.FinAppIntelligence = (() => {
         // H. SIMULAÇÃO DE REDUÇÃO ("Se reduzir meus gastos em 10%?")
         if (intencao === INTENCOES.SIMULACAO_REDUCAO) {
             const pct = languageParser.extractPercentage(perguntaOriginal) || 10;
-            const sim = financialPlanner.simulateSavings(metrics, 12, pct);
+            const hoje = new Date();
+            const metricsAtual = financialEngine.computePeriodMetrics(dados, { mes: hoje.getMonth(), ano: hoje.getFullYear(), label: `${languageParser.MESES_NOMES[hoje.getMonth()]} de ${hoje.getFullYear()}` });
+            const baseMetrics = metricsAtual.despesas > 0 ? metricsAtual : metrics;
+            const sim = financialPlanner.simulateSavings(baseMetrics, 12, pct);
 
-            return responseValidator.sanitizeOutput(responseGenerator.simulacaoReducao(sim, metrics.despesas));
+            return responseValidator.sanitizeOutput(responseGenerator.simulacaoReducao(sim, baseMetrics.despesas));
         }
 
         // I. SIMULAÇÃO DE ECONOMIA FUTURA ("Quanto consigo economizar até dezembro?")
@@ -1475,7 +1514,9 @@ window.FinAppIntelligence = (() => {
             const mesAlvo = periodo.mes > mesAtual ? periodo.mes : 11;
             const mesesRestantes = Math.max(1, (mesAlvo - mesAtual) + 1);
 
-            const sim = financialPlanner.simulateSavings(metrics, mesesRestantes);
+            const metricsAtual = financialEngine.computePeriodMetrics(dados, { mes: hoje.getMonth(), ano: hoje.getFullYear(), label: `${languageParser.MESES_NOMES[hoje.getMonth()]} de ${hoje.getFullYear()}` });
+            const baseMetrics = (metricsAtual.receitas > 0 || metricsAtual.despesas > 0) ? metricsAtual : metrics;
+            const sim = financialPlanner.simulateSavings(baseMetrics, mesesRestantes);
 
             return responseValidator.sanitizeOutput(`
                 <div class="ia-response-box">
@@ -1729,6 +1770,11 @@ window.FinAppIntelligence = (() => {
         return recommendationEngine.getProactiveInsights(dados);
     };
 
+    const resetContext = (userId) => {
+        const uid = userId || (Auth.user ? Auth.user.id : 'anon');
+        contextManager.resetContext(uid);
+    };
+
     return {
         languageParser,
         contextManager,
@@ -1741,6 +1787,7 @@ window.FinAppIntelligence = (() => {
         responseValidator,
         processarPergunta,
         obterInsightsProativos,
+        resetContext,
         INTENCOES
     };
 })();

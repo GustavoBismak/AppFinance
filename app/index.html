@@ -83,6 +83,9 @@
                 if (hasSession) {
                     document.documentElement.classList.add('has-active-session');
                 }
+                if (localStorage.getItem('finapp_theme') === 'light') {
+                    document.documentElement.classList.add('light-mode');
+                }
             } catch(e) {}
         })();
     </script>
@@ -425,6 +428,9 @@
                     <button class="btn-icon-subtle" onclick="App.loadView('intelligence')" title="FinApp Intelligence - Assistente Financeiro" style="margin-right: 4px; color: #f5cb5c; font-size: 20px;">
                         <i class="ph-fill ph-sparkle"></i>
                     </button>
+                    <button id="btn-theme-toggle" class="btn-theme-toggle" title="Alternar Tema" onclick="AppTheme.toggle()">
+                        <i class="ph ph-moon" id="theme-icon"></i>
+                    </button>
                     <button id="btn-header-install" class="btn-header-install" onclick="installPWA()" title="Instalar aplicativo no celular" style="display: none;">
                         <i class="ph ph-download-simple"></i>
                         <span>Instalar App</span>
@@ -482,6 +488,7 @@
     <!-- Scripts (a ordem importa!) -->
     <script src="/js/supabase.js"></script>
     <script src="/js/store.js"></script>
+    <script src="/js/theme.js?v=1.0"></script>
     <script src="/js/main.js?v=3.0"></script>
     <script src="/js/custom-select.js?v=2.7"></script>
     <script src="/js/onboarding.js"></script>

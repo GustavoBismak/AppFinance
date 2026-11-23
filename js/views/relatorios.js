@@ -104,12 +104,17 @@ window.Views.relatorios = {
             `;
 
             setTimeout(() => {
+                const isLight = document.body.classList.contains('light-mode');
+                const chartTextColor = isLight ? '#0d1117' : '#f8f9fa';
+                const chartGridColor = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)';
+                const chartTickColor = isLight ? '#5a6473' : '#adb5bd';
+
                 const chartDefaults = {
                     scales: {
-                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#adb5bd' } },
-                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#adb5bd' } }
+                        y: { grid: { color: chartGridColor }, ticks: { color: chartTickColor } },
+                        x: { grid: { color: chartGridColor }, ticks: { color: chartTickColor } }
                     },
-                    plugins: { legend: { labels: { color: '#f8f9fa' } } },
+                    plugins: { legend: { labels: { color: chartTextColor } } },
                     animation: { duration: 300 }
                 };
 
@@ -145,7 +150,7 @@ window.Views.relatorios = {
                             labels: catLabels,
                             datasets: [{ data: catData, backgroundColor: catColors.slice(0, catLabels.length), borderWidth: 0 }]
                         },
-                        options: { responsive: true, plugins: { legend: { position: 'right', labels: { color: '#f8f9fa' } } }, animation: { duration: 300 } }
+                        options: { responsive: true, plugins: { legend: { position: 'right', labels: { color: chartTextColor } } }, animation: { duration: 300 } }
                     });
                 }
 
@@ -169,7 +174,7 @@ window.Views.relatorios = {
                             labels: invLabels,
                             datasets: [{ data: invData, backgroundColor: catColors.slice(0, invLabels.length), borderWidth: 0 }]
                         },
-                        options: { responsive: true, plugins: { legend: { position: 'right', labels: { color: '#f8f9fa' } } }, animation: { duration: 300 } }
+                        options: { responsive: true, plugins: { legend: { position: 'right', labels: { color: chartTextColor } } }, animation: { duration: 300 } }
                     });
                 }
             }, 50);

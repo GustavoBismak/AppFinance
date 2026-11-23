@@ -54,9 +54,9 @@ window.Views.configuracoes = {
                     
                     <div class="mb-4">
                         <label style="display: block; margin-bottom: 8px" class="text-muted">Tema Visual</label>
-                        <select class="input-control" style="width: 100%">
-                            <option>Dark Mode Premium (Padrão)</option>
-                            <option disabled>Light Mode (Em breve)</option>
+                        <select id="select-tema-config" class="input-control" style="width: 100%">
+                            <option value="dark">Dark Mode Premium (Padrão)</option>
+                            <option value="light">Light Mode (Modo Claro)</option>
                         </select>
                     </div>
                 </div>
@@ -95,5 +95,16 @@ window.Views.configuracoes = {
                 }
             });
         });
+        // Alternância de Tema Visual
+        const selectTema = document.getElementById('select-tema-config');
+        if (selectTema && window.AppTheme) {
+            selectTema.value = AppTheme.current();
+            selectTema.addEventListener('change', (e) => {
+                AppTheme.apply(e.target.value);
+                if (window.Toast) {
+                    Toast.info(e.target.value === 'light' ? 'Modo Claro ativado' : 'Modo Escuro (Padrão) ativado');
+                }
+            });
+        }
     }
 };
