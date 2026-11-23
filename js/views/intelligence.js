@@ -92,7 +92,7 @@ window.Views.intelligence = {
         };
 
         // Renderiza mensagem de boas-vindas se não houver histórico
-        const renderWelcomeScreen = () => {
+        const renderWelcomeScreen = async () => {
             const userName = user?.user_metadata?.nome || user?.email?.split('@')[0] || 'Usuário';
             messagesContainer.innerHTML = `
                 <div class="intelligence-welcome-card">
@@ -100,8 +100,13 @@ window.Views.intelligence = {
                         <i class="ph-fill ph-sparkle"></i>
                     </div>
                     <h3>Olá, ${userName}! Como posso ajudar suas finanças hoje?</h3>
-                    <p>Eu sou o <strong>FinApp Intelligence</strong>. Analiso suas receitas, despesas, contas pendentes e metas em tempo real para responder suas dúvidas com precisão.</p>
+                    <p>Eu sou o <strong>FinApp Intelligence Expert</strong>. Analiso suas receitas, despesas, contas pendentes e metas em tempo real para responder suas dúvidas com precisão e simular cenários.</p>
                     
+                    <div id="welcome-proactive-insights" class="welcome-insights-wrapper" style="display: none;">
+                        <span class="welcome-chips-title"><i class="ph-fill ph-lightbulb text-warning"></i> Insights Proativos do Momento:</span>
+                        <div id="welcome-insights-container" class="welcome-insights-list"></div>
+                    </div>
+
                     <div class="welcome-chips-section">
                         <span class="welcome-chips-title">Sugestões de perguntas rápidas:</span>
                         <div class="welcome-chips-grid">
@@ -120,6 +125,12 @@ window.Views.intelligence = {
                             <button class="welcome-chip" onclick="FinAppIntelligenceUI.enviarSugestao('Quais contas tenho para pagar?')">
                                 <i class="ph ph-calendar-check"></i> Quais contas tenho para pagar?
                             </button>
+                            <button class="welcome-chip" onclick="FinAppIntelligenceUI.enviarSugestao('Posso comprar algo de R$ 500?')">
+                                <i class="ph ph-shopping-cart"></i> Posso comprar algo de R$ 500?
+                            </button>
+                            <button class="welcome-chip" onclick="FinAppIntelligenceUI.enviarSugestao('Se reduzir gastos em 10%, quanto economizarei?')">
+                                <i class="ph ph-trend-up"></i> Simular economia de 10%
+                            </button>
                             <button class="welcome-chip" onclick="FinAppIntelligenceUI.enviarSugestao('Quanto ganhei e gastei no mês passado?')">
                                 <i class="ph ph-clock-counter-clockwise"></i> Como foi meu mês passado?
                             </button>
@@ -127,6 +138,31 @@ window.Views.intelligence = {
                     </div>
                 </div>
             `;
+
+            // Carrega insights proativos em tempo real
+            try {
+                if (window.FinAppIntelligence && FinAppIntelligence.obterInsightsProativos) {
+                    const insights = await FinAppIntelligence.obterInsightsProativos();
+                    const wrapper = document.getElementById('welcome-proactive-insights');
+                    const container = document.getElementById('welcome-insights-container');
+                    if (wrapper && container && Array.isArray(insights) && insights.length > 0) {
+                        container.innerHTML = insights.slice(0, 3).map(item => `
+                            <div class="welcome-insight-item ${item.impacto === 'critico' ? 'insight-critico' : item.impacto === 'alerta' ? 'insight-alerta' : 'insight-positivo'}">
+                                <div class="insight-icon">
+                                    <i class="ph-fill ${item.impacto === 'critico' ? 'ph-warning-circle' : item.impacto === 'alerta' ? 'ph-bell-ringing' : 'ph-check-circle'}"></i>
+                                </div>
+                                <div class="insight-body">
+                                    <strong>${item.titulo}</strong>
+                                    <p>${item.descricao}</p>
+                                </div>
+                            </div>
+                        `).join('');
+                        wrapper.style.display = 'block';
+                    }
+                }
+            } catch (err) {
+                console.warn('Insights proativos não carregados:', err);
+            }
         };
 
         // Renderiza todo o histórico salvo
@@ -243,6 +279,9 @@ window.Views.intelligence = {
             try {
                 localStorage.removeItem(storageKey);
             } catch (_) {}
+            if (window.FinAppIntelligence && FinAppIntelligence.resetContext) {
+                FinAppIntelligence.resetContext(userId);
+            }
             renderWelcomeScreen();
             input.focus();
         });

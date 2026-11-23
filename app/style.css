@@ -2409,6 +2409,77 @@ html.has-active-session #login-screen {
     line-height: 1.6;
 }
 
+/* Proactive Insights on Welcome */
+.welcome-insights-wrapper {
+    text-align: left;
+    margin: 20px 0 24px 0;
+}
+
+.welcome-insights-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.welcome-insight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.welcome-insight-item.insight-critico {
+    background: rgba(230, 57, 70, 0.08);
+    border-color: rgba(230, 57, 70, 0.3);
+}
+
+.welcome-insight-item.insight-critico .insight-icon {
+    color: var(--danger);
+}
+
+.welcome-insight-item.insight-alerta {
+    background: rgba(245, 203, 92, 0.08);
+    border-color: rgba(245, 203, 92, 0.3);
+}
+
+.welcome-insight-item.insight-alerta .insight-icon {
+    color: #f5cb5c;
+}
+
+.welcome-insight-item.insight-positivo {
+    background: rgba(42, 157, 143, 0.08);
+    border-color: rgba(42, 157, 143, 0.3);
+}
+
+.welcome-insight-item.insight-positivo .insight-icon {
+    color: #2a9d8f;
+}
+
+.welcome-insight-item .insight-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.welcome-insight-item .insight-body strong {
+    display: block;
+    font-size: 13.5px;
+    margin-bottom: 2px;
+    color: var(--text-main);
+}
+
+.welcome-insight-item .insight-body p {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--text-muted);
+}
+
 .welcome-chips-section {
     text-align: left;
 }
