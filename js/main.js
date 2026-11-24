@@ -476,6 +476,7 @@ const App = {
     },
 
     bindFilters: (callback) => {
+        App.currentFilterCallback = callback;
         document.getElementById('btn-apply-filter')?.addEventListener('click', () => {
             App.globalFilters.mes = document.getElementById('filter-mes').value;
             App.globalFilters.ano = document.getElementById('filter-ano').value;
@@ -492,6 +493,74 @@ const App = {
             document.getElementById('filter-busca').value = '';
             callback();
         });
+    },
+
+    openMobileFilterModal: () => {
+        const modal = document.getElementById('modal-filter-mobile');
+        if (!modal) return;
+        const selMes = document.getElementById('mobile-filter-mes');
+        const selAno = document.getElementById('mobile-filter-ano');
+        const inBusca = document.getElementById('mobile-filter-busca');
+        if (selMes) selMes.value = App.globalFilters.mes || '';
+        if (selAno) selAno.value = App.globalFilters.ano || '';
+        if (inBusca) inBusca.value = App.globalFilters.busca || '';
+        modal.style.display = 'flex';
+    },
+
+    closeMobileFilterModal: () => {
+        const modal = document.getElementById('modal-filter-mobile');
+        if (modal) modal.style.display = 'none';
+    },
+
+    applyMobileFilterModal: () => {
+        const selMes = document.getElementById('mobile-filter-mes');
+        const selAno = document.getElementById('mobile-filter-ano');
+        const inBusca = document.getElementById('mobile-filter-busca');
+        App.globalFilters.mes = selMes ? selMes.value : '';
+        App.globalFilters.ano = selAno ? selAno.value : '';
+        App.globalFilters.busca = inBusca ? inBusca.value.toLowerCase().trim() : '';
+
+        // Sincroniza campos desktop se existirem no DOM
+        const dMes = document.getElementById('filter-mes');
+        const dAno = document.getElementById('filter-ano');
+        const dBusca = document.getElementById('filter-busca');
+        if (dMes) dMes.value = App.globalFilters.mes;
+        if (dAno) dAno.value = App.globalFilters.ano;
+        if (dBusca) dBusca.value = App.globalFilters.busca;
+
+        App.closeMobileFilterModal();
+        if (typeof App.currentFilterCallback === 'function') {
+            App.currentFilterCallback();
+        } else {
+            App.loadView(App.currentView);
+        }
+    },
+
+    clearMobileFilters: () => {
+        App.globalFilters.mes = '';
+        App.globalFilters.ano = '';
+        App.globalFilters.busca = '';
+
+        const selMes = document.getElementById('mobile-filter-mes');
+        const selAno = document.getElementById('mobile-filter-ano');
+        const inBusca = document.getElementById('mobile-filter-busca');
+        if (selMes) selMes.value = '';
+        if (selAno) selAno.value = '';
+        if (inBusca) inBusca.value = '';
+
+        const dMes = document.getElementById('filter-mes');
+        const dAno = document.getElementById('filter-ano');
+        const dBusca = document.getElementById('filter-busca');
+        if (dMes) dMes.value = '';
+        if (dAno) dAno.value = '';
+        if (dBusca) dBusca.value = '';
+
+        App.closeMobileFilterModal();
+        if (typeof App.currentFilterCallback === 'function') {
+            App.currentFilterCallback();
+        } else {
+            App.loadView(App.currentView);
+        }
     },
     
     applyFilters: (items, dateField = 'data', textFields = ['descricao', 'categoria']) => {

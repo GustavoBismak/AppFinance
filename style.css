@@ -1497,10 +1497,9 @@ span.flatpickr-weekday {
         font-size: 15px !important;
     }
 
-    /* Barra de filtros organizada em coluna no celular */
+    /* Ocultar a caixa pesada de filtros no celular para manter o visual limpo de App de Banco */
     .filter-card {
-        padding: 14px !important;
-        margin-bottom: 16px !important;
+        display: none !important;
     }
 
     .filter-grid {
@@ -3371,7 +3370,8 @@ html.has-active-session #login-screen {
     }
     .desktop-dashboard,
     .desktop-lancamentos-card,
-    .desktop-lancamentos-table {
+    .desktop-lancamentos-table,
+    .filter-card {
         display: block;
     }
 }
@@ -3379,7 +3379,8 @@ html.has-active-session #login-screen {
 @media (max-width: 768px) {
     .desktop-dashboard,
     .desktop-lancamentos-card,
-    .desktop-lancamentos-table {
+    .desktop-lancamentos-table,
+    .filter-card {
         display: none !important;
     }
     .mobile-dashboard,
@@ -3593,6 +3594,116 @@ html.has-active-session #login-screen {
         color: #f5cb5c;
         border-color: rgba(245, 203, 92, 0.3);
         background: rgba(245, 203, 92, 0.08);
+    }
+
+    .btn-icon-circle.has-filter-active {
+        color: var(--primary) !important;
+        border-color: rgba(10, 147, 150, 0.4) !important;
+        background: rgba(10, 147, 150, 0.12) !important;
+        position: relative !important;
+    }
+
+    .filter-badge-dot {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--primary);
+        box-shadow: 0 0 6px rgba(10, 147, 150, 0.8);
+    }
+
+    /* Barra de Filtro Ativo Mobile */
+    .mobile-active-filter-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .mobile-filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(10, 147, 150, 0.12);
+        border: 1px solid rgba(10, 147, 150, 0.35);
+        color: var(--primary);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .mobile-filter-chip:active {
+        transform: scale(0.95);
+        background: rgba(10, 147, 150, 0.2);
+    }
+
+    body.light-mode .mobile-filter-chip {
+        background: rgba(10, 147, 150, 0.1);
+        border-color: rgba(10, 147, 150, 0.3);
+    }
+
+    .btn-clear-mobile-filter {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: rgba(230, 57, 70, 0.1);
+        border: 1px solid rgba(230, 57, 70, 0.3);
+        color: var(--danger);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-clear-mobile-filter:active {
+        transform: scale(0.9);
+        background: rgba(230, 57, 70, 0.2);
+    }
+
+    /* Botão de Filtro no Header de Lançamentos Mobile */
+    .btn-filter-action-mobile {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        font-size: 11.5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        white-space: nowrap;
+    }
+
+    .btn-filter-action-mobile.active {
+        background: rgba(10, 147, 150, 0.15);
+        border-color: rgba(10, 147, 150, 0.4);
+        color: var(--primary);
+    }
+
+    .btn-filter-action-mobile:active {
+        transform: scale(0.95);
+    }
+
+    body.light-mode .btn-filter-action-mobile {
+        background: #f0f2f5;
+        border-color: rgba(0, 0, 0, 0.1);
+        color: var(--text-main);
+    }
+
+    body.light-mode .btn-filter-action-mobile.active {
+        background: rgba(10, 147, 150, 0.12);
+        border-color: rgba(10, 147, 150, 0.4);
+        color: var(--primary);
     }
 
     /* Hero Balance Card Mobile */

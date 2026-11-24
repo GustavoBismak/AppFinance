@@ -5,12 +5,12 @@ window.Views.lancamentos = {
             Store.get(KEYS.CATEGORIAS) || [],
             Store.get(KEYS.CARTOES) || []
         ]);
-        
+
         // Opções de cartão para o select
         const cartaoOptions = cartoes.length > 0
             ? cartoes.map(c => `<option value="${c.id}" data-nome="${c.nome}">${c.nome}</option>`).join('')
             : '<option value="">Nenhum cartão cadastrado</option>';
-        
+
         let categoriasOptions = '<option value="">Selecione...</option>';
         if (categoriasDB.length > 0) {
             categoriasOptions += categoriasDB.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
@@ -18,7 +18,17 @@ window.Views.lancamentos = {
             const defaults = ['Alimentação', 'Moradia', 'Transporte', 'Lazer', 'Saúde', 'Renda', 'Carro', 'Outros'];
             categoriasOptions += defaults.map(c => `<option value="${c}">${c}</option>`).join('');
         }
-        
+
+        let filterParts = [];
+        if (App.globalFilters.mes) {
+            const mesesNomes = {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'};
+            filterParts.push(mesesNomes[App.globalFilters.mes] || App.globalFilters.mes);
+        }
+        if (App.globalFilters.ano) filterParts.push(App.globalFilters.ano);
+        if (App.globalFilters.busca) filterParts.push(`"${App.globalFilters.busca}"`);
+        const filterLabel = filterParts.join(' • ');
+        const hasFilterActive = filterParts.length > 0;
+
         let html = `
             ${App.getFilterHTML()}
             
@@ -120,6 +130,10 @@ window.Views.lancamentos = {
                         <button type="button" class="btn-filter-pill" data-type="despesa" onclick="window._setMobileTxFilter('despesa')">Despesas</button>
                         <button type="button" class="btn-filter-pill" data-type="receita" onclick="window._setMobileTxFilter('receita')">Receitas</button>
                     </div>
+                    <button type="button" class="btn-filter-action-mobile ${hasFilterActive ? 'active' : ''}" onclick="App.openMobileFilterModal()" title="Filtrar Período">
+                        <i class="ph ${hasFilterActive ? 'ph-funnel-simple-fill' : 'ph-funnel-simple'}"></i>
+                        <span>${hasFilterActive ? filterLabel : 'Filtro'}</span>
+                    </button>
                 </div>
                 <div id="lancamentos-mobile-list" class="mobile-tx-list">
                     <!-- Renderizado dinamicamente via JS -->
@@ -134,7 +148,7 @@ window.Views.lancamentos = {
                 </div>
             </div>
         `;
-        
+
         container.innerHTML = html;
 
         // Mostrar/ocultar seletor de cartão
@@ -152,7 +166,7 @@ window.Views.lancamentos = {
             });
             renderTable();
         };
-        
+
         const renderTable = () => {
             const filtered = App.applyFilters(lancamentos, 'data', ['descricao', 'categoria', 'forma']);
             const tbody = document.getElementById('lancamentos-tbody');
@@ -170,10 +184,10 @@ window.Views.lancamentos = {
                         const tipoLabel = l.tipo === 'receita' ? 'Receita' : 'Despesa';
                         const colorClass = l.tipo === 'receita' ? 'text-success' : 'text-danger';
                         const cartaoNome = l.cartao_nome ? ` (${l.cartao_nome})` : '';
-                        const openFinanceBadge = (l.is_open_finance || l.bank_transaction_id) 
-                            ? `<span class="badge" style="background: rgba(10,147,150,0.15); color: var(--primary); font-size: 10px; margin-left: 6px;" title="Importado via Open Finance"><i class="ph ph-bank"></i> Open Finance</span>` 
+                        const openFinanceBadge = (l.is_open_finance || l.bank_transaction_id)
+                            ? `<span class="badge" style="background: rgba(10,147,150,0.15); color: var(--primary); font-size: 10px; margin-left: 6px;" title="Importado via Open Finance"><i class="ph ph-bank"></i> Open Finance</span>`
                             : '';
-                        
+
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td>${dataFormatada}</td>
@@ -231,16 +245,16 @@ window.Views.lancamentos = {
                     }).join('');
                 }
             }
-            
+
             // Re-bind delete actions
             document.querySelectorAll('.btn-del').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     if (!confirm('Deseja realmente apagar este lançamento?')) return;
-                    
+
                     const id = e.currentTarget.dataset.id;
                     const tr = e.currentTarget.closest('tr');
                     if (tr) tr.style.opacity = '0.4';
-                    
+
                     // Restaurar limite do cartão, se aplicável
                     const l = lancamentos.find(x => x.id == id);
                     if (l && l.forma === 'Cartão de Crédito' && l.cartao_id && l.tipo === 'despesa') {
@@ -262,14 +276,14 @@ window.Views.lancamentos = {
         App.bindFilters(renderTable);
         // Initial render
         renderTable();
-        
+
         // Form submit logic
         document.getElementById('form-lancamento').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button');
             btn.disabled = true;
             btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Salvando...';
-            
+
             const forma = document.getElementById('lanc-forma').value;
             const isCartao = forma === 'Cartão de Crédito' || forma === 'Cartão de Débito';
             const tipo = document.getElementById('lanc-tipo').value;
@@ -294,7 +308,7 @@ window.Views.lancamentos = {
                 cartao_id: cartaoId,
                 cartao_nome: cartaoNome
             };
-            
+
             try {
                 await Store.insert(KEYS.LANCAMENTOS, novo);
 

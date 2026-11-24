@@ -137,6 +137,17 @@ window.Views.dashboard = {
                 ? window.getUserDisplayName()
                 : (user?.user_metadata?.full_name || user?.user_metadata?.nome || 'Usuário');
 
+            // Detecção de Filtro Ativo para UI Mobile
+            let filterParts = [];
+            if (App.globalFilters.mes) {
+                const mesesNomes = {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'};
+                filterParts.push(mesesNomes[App.globalFilters.mes] || App.globalFilters.mes);
+            }
+            if (App.globalFilters.ano) filterParts.push(App.globalFilters.ano);
+            if (App.globalFilters.busca) filterParts.push(`"${App.globalFilters.busca}"`);
+            const filterLabel = filterParts.join(' • ');
+            const hasFilterActive = filterParts.length > 0;
+
             // Mobile Bank Breakdown
             const mobileBancosBreakdown = (bankConnections && bankConnections.length > 0) ? `
                 <div class="mobile-bancos-section mb-4">
@@ -363,13 +374,17 @@ window.Views.dashboard = {
 
                 <!-- Nova Interface Mobile First (Exclusiva para Celulares) -->
                 <div class="mobile-dashboard">
-                    <!-- Top User Header Mobile -->
+                    <!-- Top User Header Mobile (Visual Limpo Estilo App de Banco) -->
                     <div class="mobile-user-header mb-3">
                         <div class="mobile-user-info">
                             <span class="mobile-user-greeting">Olá, ${userName}</span>
                             <span class="mobile-user-status"><span class="dot-online"></span> FinApp Conectado</span>
                         </div>
                         <div class="mobile-user-actions">
+                            <button class="btn-icon-circle ${hasFilterActive ? 'has-filter-active' : ''}" onclick="App.openMobileFilterModal()" title="Filtrar Período">
+                                <i class="ph ${hasFilterActive ? 'ph-funnel-simple-fill' : 'ph-funnel-simple'}"></i>
+                                ${hasFilterActive ? '<span class="filter-badge-dot"></span>' : ''}
+                            </button>
                             <button class="btn-icon-circle" onclick="App.toggleMaskValues()" title="${isMasked ? 'Mostrar Valores' : 'Ocultar Valores'}">
                                 <i class="ph ${isMasked ? 'ph-eye' : 'ph-eye-slash'}"></i>
                             </button>
@@ -378,6 +393,19 @@ window.Views.dashboard = {
                             </button>
                         </div>
                     </div>
+
+                    ${hasFilterActive ? `
+                        <div class="mobile-active-filter-row mb-3">
+                            <span class="mobile-filter-chip" onclick="App.openMobileFilterModal()">
+                                <i class="ph-bold ph-calendar"></i>
+                                <span>${filterLabel}</span>
+                                <i class="ph ph-caret-down"></i>
+                            </span>
+                            <button class="btn-clear-mobile-filter" onclick="App.clearMobileFilters()" title="Remover filtro">
+                                <i class="ph ph-x"></i>
+                            </button>
+                        </div>
+                    ` : ''}
 
                     <!-- Hero Balance Card Mobile -->
                     <div class="mobile-hero-card mb-4">

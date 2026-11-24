@@ -91,7 +91,7 @@
     </script>
     
     <!-- CSS -->
-    <link rel="stylesheet" href="/style.css?v=4.1">
+    <link rel="stylesheet" href="/style.css?v=4.2">
 </head>
 <body>
     <!-- Splash & Money Loading Animation (Entrada Financeira) -->
@@ -566,11 +566,71 @@
         </div>
     </div>
 
+    <!-- Bottom Sheet de Filtros Mobile (Experiência App de Banco) -->
+    <div id="modal-filter-mobile" class="modal-quick-add-overlay" style="display: none;">
+        <div class="modal-quick-add-backdrop" onclick="App.closeMobileFilterModal()"></div>
+        <div class="modal-quick-add-sheet">
+            <div class="sheet-drag-handle"></div>
+            <div class="sheet-header">
+                <h4><i class="ph ph-funnel"></i> Filtrar Período</h4>
+                <button type="button" class="btn-close-sheet" onclick="App.closeMobileFilterModal()"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="sheet-body">
+                <form id="form-filter-mobile" onsubmit="event.preventDefault(); App.applyMobileFilterModal();">
+                    <div class="form-group mb-3">
+                        <label class="mobile-label">Mês</label>
+                        <select id="mobile-filter-mes" class="input-control">
+                            <option value="">Todos os Meses</option>
+                            <option value="01">Janeiro</option>
+                            <option value="02">Fevereiro</option>
+                            <option value="03">Março</option>
+                            <option value="04">Abril</option>
+                            <option value="05">Maio</option>
+                            <option value="06">Junho</option>
+                            <option value="07">Julho</option>
+                            <option value="08">Agosto</option>
+                            <option value="09">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="mobile-label">Ano</label>
+                        <select id="mobile-filter-ano" class="input-control">
+                            <option value="">Todos os Anos</option>
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label class="mobile-label">Buscar por Palavra-chave</label>
+                        <input type="text" id="mobile-filter-busca" class="input-control" placeholder="Ex: Mercado, Uber, Salário, Pix...">
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button type="button" class="btn btn-outline flex-1" onclick="App.clearMobileFilters()" style="min-height: 48px; justify-content: center;">
+                            <i class="ph ph-eraser"></i> Limpar
+                        </button>
+                        <button type="submit" class="btn btn-primary flex-1" style="min-height: 48px; justify-content: center;">
+                            <i class="ph ph-check"></i> Aplicar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts (a ordem importa!) -->
     <script src="/js/supabase.js"></script>
     <script src="/js/store.js"></script>
     <script src="/js/theme.js?v=1.0"></script>
-    <script src="/js/main.js?v=3.2"></script>
+    <script src="/js/main.js?v=3.3"></script>
     <script src="/js/custom-select.js?v=2.7"></script>
     <script src="/js/onboarding.js"></script>
     <script src="/js/subscription.js?v=2.9"></script>
@@ -578,8 +638,8 @@
     <!-- SDK Oficial Pluggy Connect (Open Finance) -->
     <script src="https://cdn.jsdelivr.net/npm/pluggy-connect-sdk@latest/dist/main.js"></script>
     <script src="/js/open-finance.js?v=4.0"></script>
-    <script src="/js/views/dashboard.js?v=4.2"></script>
-    <script src="/js/views/lancamentos.js?v=4.1"></script>
+    <script src="/js/views/dashboard.js?v=4.3"></script>
+    <script src="/js/views/lancamentos.js?v=4.2"></script>
     <script src="/js/views/conexoes.js?v=4.3"></script>
     <script src="/js/views/contas.js"></script>
     <script src="/js/views/cartoes.js?v=4.4"></script>
