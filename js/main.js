@@ -505,11 +505,18 @@ const App = {
         if (selAno) selAno.value = App.globalFilters.ano || '';
         if (inBusca) inBusca.value = App.globalFilters.busca || '';
         modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.add('is-open');
+        }, 10);
     },
 
     closeMobileFilterModal: () => {
         const modal = document.getElementById('modal-filter-mobile');
-        if (modal) modal.style.display = 'none';
+        if (!modal) return;
+        modal.classList.remove('is-open');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 250);
     },
 
     applyMobileFilterModal: () => {
