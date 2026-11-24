@@ -131,152 +131,338 @@ window.Views.dashboard = {
             const catColors = ['#0a9396', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51', '#e63946', '#457b9d', '#a8dadc'];
 
             const semDados = lancamentos.length === 0;
+            const isMasked = App.isValuesMasked ? App.isValuesMasked() : false;
+            const user = window.Auth ? Auth.user : null;
+            const userName = (typeof window.getUserDisplayName === 'function')
+                ? window.getUserDisplayName()
+                : (user?.user_metadata?.full_name || user?.user_metadata?.nome || 'Usuário');
+
+            // Mobile Bank Breakdown
+            const mobileBancosBreakdown = (bankConnections && bankConnections.length > 0) ? `
+                <div class="mobile-bancos-section mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Bancos Conectados</span>
+                        <button class="btn-link-action" onclick="App.loadView('conexoes')">Gerenciar</button>
+                    </div>
+                    <div class="mobile-bancos-scroll">
+                        ${bankConnections.map(conn => {
+                            const connAccs = bankAccounts.filter(a => a.bank_connection_id === conn.id);
+                            const cashAccs = connAccs.filter(a => !isCreditCardAccount(a));
+                            const cardAccs = connAccs.filter(a => isCreditCardAccount(a));
+                            let connSaldo = 0;
+                            let connFatura = 0;
+                            cashAccs.forEach(a => connSaldo += (parseFloat(a.balance_available) || parseFloat(a.balance_current) || 0));
+                            cardAccs.forEach(a => connFatura += (parseFloat(a.balance_available) || parseFloat(a.balance_current) || 0));
+
+                            return `
+                                <div class="mobile-banco-card">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        ${conn.institution_logo ? `<img src="${conn.institution_logo}" alt="${conn.institution_name}" class="banco-logo-sm">` : '<i class="ph ph-bank text-primary"></i>'}
+                                        <strong style="font-size: 13px;">${conn.institution_name}</strong>
+                                    </div>
+                                    <div class="banco-card-balance">
+                                        <span class="text-muted" style="font-size: 11px;">Disponível</span>
+                                        <span class="banco-balance-val ${connSaldo >= 0 ? 'text-success' : 'text-danger'}">${App.formatCurrency(connSaldo, true)}</span>
+                                    </div>
+                                    ${connFatura > 0 ? `
+                                        <div class="banco-card-fatura mt-1">
+                                            <span style="font-size: 10px; color: #e9c46a;"><i class="ph ph-credit-card"></i> Fatura: ${App.formatCurrency(connFatura, true)}</span>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            ` : '';
+
+            // Mobile Recent Transactions
+            const ordenadosRecentes = [...lancamentos].sort((a, b) => new Date(b.data + 'T00:00:00') - new Date(a.data + 'T00:00:00')).slice(0, 10);
+            const mobileTxItemsHtml = ordenadosRecentes.length === 0
+                ? `<div class="card text-center" style="padding: 24px; color: var(--text-muted); font-size: 13px;">Nenhuma movimentação no período.</div>`
+                : ordenadosRecentes.map(l => {
+                    const dt = l.data ? new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+                    const isRec = l.tipo === 'receita';
+                    const isTransfer = l.categoria === 'Transferência Interna';
+                    const sign = isTransfer ? '' : (isRec ? '+' : '-');
+                    const colorClass = isTransfer ? 'text-primary' : (isRec ? 'text-success' : 'text-danger');
+                    const catStyle = App.getCategoryIcon(l.categoria);
+                    const ofBadge = (l.is_open_finance || l.bank_transaction_id) ? `<span class="badge-of-mini"><i class="ph ph-bank"></i></span>` : '';
+
+                    return `
+                        <div class="mobile-tx-item" onclick="App.openTxDetailModal('${l.id}')">
+                            <div class="tx-item-icon" style="background: ${catStyle.bg}; color: ${catStyle.color};">
+                                <i class="ph ${catStyle.icon}"></i>
+                            </div>
+                            <div class="tx-item-content">
+                                <div class="tx-item-title-row">
+                                    <span class="tx-item-title">${l.descricao} ${ofBadge}</span>
+                                    <span class="tx-item-val ${colorClass}">
+                                        ${sign} ${App.formatCurrency(l.valor, true)}
+                                    </span>
+                                </div>
+                                <div class="tx-item-meta-row">
+                                    <span class="tx-item-meta">${dt} • ${l.categoria || 'Geral'}</span>
+                                    <span class="tx-item-forma">${l.forma || 'Pix'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
 
             content.innerHTML = `
-                <div class="grid grid-4 mb-4">
-                    <div class="card">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-muted" style="font-size: 13px;">${temBancosConectados ? 'Saldo Bancário Consolidado' : 'Saldo Atual'}</span>
-                            <i class="ph ${temBancosConectados ? 'ph-vault' : 'ph-wallet'} text-primary" style="font-size: 24px"></i>
-                        </div>
-                        <h2 class="${saldoConsolidado >= 0 ? 'text-success' : 'text-danger'}" style="font-size: 28px">${App.formatCurrency(saldoConsolidado)}</h2>
-                        ${temBancosConectados ? `
-                            <span class="text-muted" style="font-size: 12px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
-                                <i class="ph ph-bank text-primary"></i> ${contasCorrentesConectadas.length} ${contasCorrentesConectadas.length === 1 ? 'conta em banco' : 'contas em bancos'}
-                            </span>
-                            ${totalFaturasCartoes > 0 ? `
-                                <span style="font-size: 11px; color: #e9c46a; margin-top: 2px; display: flex; align-items: center; gap: 4px;" title="Total em aberto nos cartões de crédito Open Finance">
-                                    <i class="ph ph-credit-card"></i> Faturas: ${App.formatCurrency(totalFaturasCartoes)}
+                <!-- Versão Desktop (Preservada integralmente) -->
+                <div class="desktop-dashboard">
+                    <div class="grid grid-4 mb-4">
+                        <div class="card">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-muted" style="font-size: 13px;">${temBancosConectados ? 'Saldo Bancário Consolidado' : 'Saldo Atual'}</span>
+                                <i class="ph ${temBancosConectados ? 'ph-vault' : 'ph-wallet'} text-primary" style="font-size: 24px"></i>
+                            </div>
+                            <h2 class="${saldoConsolidado >= 0 ? 'text-success' : 'text-danger'}" style="font-size: 28px">${App.formatCurrency(saldoConsolidado)}</h2>
+                            ${temBancosConectados ? `
+                                <span class="text-muted" style="font-size: 12px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                                    <i class="ph ph-bank text-primary"></i> ${contasCorrentesConectadas.length} ${contasCorrentesConectadas.length === 1 ? 'conta em banco' : 'contas em bancos'}
                                 </span>
+                                ${totalFaturasCartoes > 0 ? `
+                                    <span style="font-size: 11px; color: #e9c46a; margin-top: 2px; display: flex; align-items: center; gap: 4px;" title="Total em aberto nos cartões de crédito Open Finance">
+                                        <i class="ph ph-credit-card"></i> Faturas: ${App.formatCurrency(totalFaturasCartoes)}
+                                    </span>
+                                ` : ''}
                             ` : ''}
-                        ` : ''}
-                    </div>
-
-                    <div class="card">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-muted" style="font-size: 13px;">Total de Receitas</span>
-                            <i class="ph ph-arrow-circle-up text-success" style="font-size: 24px"></i>
                         </div>
-                        <h2 style="font-size: 28px">${App.formatCurrency(receitas)}</h2>
-                        <span class="text-muted" style="font-size: 12px; margin-top: 4px; display: block;">
-                            ${qtdLancamentosOF > 0 ? 'Bancos conectados + manuais' : 'Entradas no período'}
-                        </span>
-                    </div>
 
-                    <div class="card">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-muted" style="font-size: 13px;">Total de Despesas</span>
-                            <i class="ph ph-arrow-circle-down text-danger" style="font-size: 24px"></i>
-                        </div>
-                        <h2 style="font-size: 28px">${App.formatCurrency(despesas)}</h2>
-                        <span class="text-muted" style="font-size: 12px; margin-top: 4px; display: block;">
-                            ${qtdLancamentosOF > 0 ? 'Bancos conectados + manuais' : 'Saídas no período'}
-                        </span>
-                    </div>
-
-                    <div class="card">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-muted" style="font-size: 13px;">Taxa de Economia</span>
-                            <i class="ph ph-chart-line-up text-primary" style="font-size: 24px"></i>
-                        </div>
-                        <h2 style="font-size: 28px">${economia}%</h2>
-                        <span class="text-muted" style="font-size: 12px; margin-top: 4px; display: block;">
-                            ${receitas >= despesas ? 'Economia positiva' : 'Despesas superam receitas'}
-                        </span>
-                    </div>
-                </div>
-
-                ${bancosBreakdown}
-
-                <div class="grid grid-2">
-                    <div class="card">
-                        <h3 class="mb-4">Evolução Mensal</h3>
-                        ${semDados
-                            ? `<div style="text-align:center; padding: 40px 0; color: var(--text-muted)">
-                                   <i class="ph ph-chart-bar" style="font-size: 48px; opacity: 0.3"></i>
-                                   <p style="margin-top: 12px">Nenhum lançamento encontrado para os filtros atuais.</p>
-                               </div>`
-                            : `<canvas id="chartEvolucao"></canvas>`
-                        }
-                    </div>
-                    <div class="card">
-                        <h3 class="mb-4">Despesas por Categoria</h3>
-                        ${catLabels.length === 0
-                            ? `<div style="text-align:center; padding: 40px 0; color: var(--text-muted)">
-                                   <i class="ph ph-chart-pie" style="font-size: 48px; opacity: 0.3"></i>
-                                   <p style="margin-top: 12px">Nenhuma despesa encontrada para os filtros atuais.</p>
-                               </div>`
-                            : `<canvas id="chartDespesas"></canvas>`
-                        }
-                    </div>
-                </div>
-
-                <!-- Tabela de Movimentações na Dashboard Principal -->
-                <div class="card mt-4">
-                    <div class="flex justify-between items-center mb-4 flex-wrap" style="gap: 12px;">
-                        <div>
-                            <h3 style="font-size: 18px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
-                                <i class="ph ph-receipt text-primary"></i> Movimentações Recentes & Valores
-                            </h3>
-                            <p class="text-muted" style="font-size: 13px; margin: 2px 0 0 0;">
-                                Extrato consolidado de receitas, despesas e lançamentos do Open Finance
-                            </p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="badge" style="background: rgba(10,147,150,0.15); color: var(--primary);">
-                                ${lancamentos.length} movimentações no período
+                        <div class="card">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-muted" style="font-size: 13px;">Total de Receitas</span>
+                                <i class="ph ph-arrow-circle-up text-success" style="font-size: 24px"></i>
+                            </div>
+                            <h2 style="font-size: 28px">${App.formatCurrency(receitas)}</h2>
+                            <span class="text-muted" style="font-size: 12px; margin-top: 4px; display: block;">
+                                ${qtdLancamentosOF > 0 ? 'Bancos conectados + manuais' : 'Entradas no período'}
                             </span>
-                            <button class="btn btn-sm btn-outline" onclick="App.loadView('lancamentos')" style="font-size: 12px; display: flex; align-items: center; gap: 6px;">
-                                <span>Ver Todos</span> <i class="ph ph-arrow-right"></i>
+                        </div>
+
+                        <div class="card">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-muted" style="font-size: 13px;">Total de Despesas</span>
+                                <i class="ph ph-arrow-circle-down text-danger" style="font-size: 24px"></i>
+                            </div>
+                            <h2 style="font-size: 28px">${App.formatCurrency(despesas)}</h2>
+                            <span class="text-muted" style="font-size: 12px; margin-top: 4px; display: block;">
+                                ${qtdLancamentosOF > 0 ? 'Bancos conectados + manuais' : 'Saídas no período'}
+                            </span>
+                        </div>
+
+                        <div class="card">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-muted" style="font-size: 13px;">Taxa de Economia</span>
+                                <i class="ph ph-chart-line-up text-primary" style="font-size: 24px"></i>
+                            </div>
+                            <h2 style="font-size: 28px">${economia}%</h2>
+                            <span class="text-muted" style="font-size: 12px; margin-top: 4px; display: block;">
+                                ${receitas >= despesas ? 'Economia positiva' : 'Despesas superam receitas'}
+                            </span>
+                        </div>
+                    </div>
+
+                    ${bancosBreakdown}
+
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h3 class="mb-4">Evolução Mensal</h3>
+                            ${semDados
+                                ? `<div style="text-align:center; padding: 40px 0; color: var(--text-muted)">
+                                       <i class="ph ph-chart-bar" style="font-size: 48px; opacity: 0.3"></i>
+                                       <p style="margin-top: 12px">Nenhum lançamento encontrado para os filtros atuais.</p>
+                                   </div>`
+                                : `<canvas id="chartEvolucao"></canvas>`
+                            }
+                        </div>
+                        <div class="card">
+                            <h3 class="mb-4">Despesas por Categoria</h3>
+                            ${catLabels.length === 0
+                                ? `<div style="text-align:center; padding: 40px 0; color: var(--text-muted)">
+                                       <i class="ph ph-chart-pie" style="font-size: 48px; opacity: 0.3"></i>
+                                       <p style="margin-top: 12px">Nenhuma despesa encontrada para os filtros atuais.</p>
+                                   </div>`
+                                : `<canvas id="chartDespesas"></canvas>`
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Tabela de Movimentações na Dashboard Principal -->
+                    <div class="card mt-4">
+                        <div class="flex justify-between items-center mb-4 flex-wrap" style="gap: 12px;">
+                            <div>
+                                <h3 style="font-size: 18px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+                                    <i class="ph ph-receipt text-primary"></i> Movimentações Recentes & Valores
+                                </h3>
+                                <p class="text-muted" style="font-size: 13px; margin: 2px 0 0 0;">
+                                    Extrato consolidado de receitas, despesas e lançamentos do Open Finance
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="badge" style="background: rgba(10,147,150,0.15); color: var(--primary);">
+                                    ${lancamentos.length} movimentações no período
+                                </span>
+                                <button class="btn btn-sm btn-outline" onclick="App.loadView('lancamentos')" style="font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                                    <span>Ver Todos</span> <i class="ph ph-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Descrição</th>
+                                        <th>Categoria</th>
+                                        <th>Forma de Pagamento</th>
+                                        <th>Tipo</th>
+                                        <th style="text-align: right;">Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${(() => {
+                                        if (lancamentos.length === 0) {
+                                            return `<tr><td colspan="6" style="text-align: center; padding: 32px 0;" class="text-muted">Nenhuma movimentação encontrada para os filtros atuais.</td></tr>`;
+                                        }
+                                        const ordenados = [...lancamentos].sort((a, b) => new Date(b.data + 'T00:00:00') - new Date(a.data + 'T00:00:00')).slice(0, 25);
+                                        return ordenados.map(l => {
+                                            const dataFormatada = new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR');
+                                            const isCredit = l.tipo === 'receita';
+                                            const isTransfer = l.categoria === 'Transferência Interna';
+                                            const badgeClass = isTransfer ? 'badge' : (isCredit ? 'badge-success' : 'badge-danger');
+                                            const colorClass = isTransfer ? 'text-primary' : (isCredit ? 'text-success' : 'text-danger');
+                                            const tipoLabel = isTransfer ? 'Transferência' : (isCredit ? 'Receita' : 'Despesa');
+                                            const styleBadge = isTransfer ? 'style="background: rgba(10,147,150,0.2); color: var(--primary);"' : '';
+                                            const ofBadge = (l.is_open_finance || l.bank_transaction_id) 
+                                                ? `<span class="badge" style="background: rgba(10,147,150,0.15); color: var(--primary); font-size: 10px; margin-left: 6px;" title="Importado via Open Finance"><i class="ph ph-bank"></i> Open Finance</span>` 
+                                                : '';
+                                            const cartaoNome = l.cartao_nome ? ` (${l.cartao_nome})` : '';
+
+                                            return `
+                                                <tr>
+                                                    <td style="white-space: nowrap;">${dataFormatada}</td>
+                                                    <td><strong>${l.descricao}</strong> ${ofBadge}</td>
+                                                    <td><span class="badge" style="background: rgba(255,255,255,0.05); color: var(--text-main);">${l.categoria || 'Geral'}</span></td>
+                                                    <td>${l.forma || 'Outro'}${cartaoNome}</td>
+                                                    <td><span class="badge ${badgeClass}" ${styleBadge}>${tipoLabel}</span></td>
+                                                    <td style="text-align: right;" class="${colorClass}"><strong>${App.formatCurrency(l.valor)}</strong></td>
+                                                </tr>
+                                            `;
+                                        }).join('');
+                                    })()}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nova Interface Mobile First (Exclusiva para Celulares) -->
+                <div class="mobile-dashboard">
+                    <!-- Top User Header Mobile -->
+                    <div class="mobile-user-header mb-3">
+                        <div class="mobile-user-info">
+                            <span class="mobile-user-greeting">Olá, ${userName}</span>
+                            <span class="mobile-user-status"><span class="dot-online"></span> FinApp Conectado</span>
+                        </div>
+                        <div class="mobile-user-actions">
+                            <button class="btn-icon-circle" onclick="App.toggleMaskValues()" title="${isMasked ? 'Mostrar Valores' : 'Ocultar Valores'}">
+                                <i class="ph ${isMasked ? 'ph-eye' : 'ph-eye-slash'}"></i>
+                            </button>
+                            <button class="btn-icon-circle highlight-sparkle" onclick="App.loadView('intelligence')" title="FinApp Intelligence">
+                                <i class="ph-fill ph-sparkle"></i>
                             </button>
                         </div>
                     </div>
 
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Descrição</th>
-                                    <th>Categoria</th>
-                                    <th>Forma de Pagamento</th>
-                                    <th>Tipo</th>
-                                    <th style="text-align: right;">Valor</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${(() => {
-                                    if (lancamentos.length === 0) {
-                                        return `<tr><td colspan="6" style="text-align: center; padding: 32px 0;" class="text-muted">Nenhuma movimentação encontrada para os filtros atuais.</td></tr>`;
-                                    }
-                                    const ordenados = [...lancamentos].sort((a, b) => new Date(b.data + 'T00:00:00') - new Date(a.data + 'T00:00:00')).slice(0, 25);
-                                    return ordenados.map(l => {
-                                        const dataFormatada = new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR');
-                                        const isCredit = l.tipo === 'receita';
-                                        const isTransfer = l.categoria === 'Transferência Interna';
-                                        const badgeClass = isTransfer ? 'badge' : (isCredit ? 'badge-success' : 'badge-danger');
-                                        const colorClass = isTransfer ? 'text-primary' : (isCredit ? 'text-success' : 'text-danger');
-                                        const tipoLabel = isTransfer ? 'Transferência' : (isCredit ? 'Receita' : 'Despesa');
-                                        const styleBadge = isTransfer ? 'style="background: rgba(10,147,150,0.2); color: var(--primary);"' : '';
-                                        const ofBadge = (l.is_open_finance || l.bank_transaction_id) 
-                                            ? `<span class="badge" style="background: rgba(10,147,150,0.15); color: var(--primary); font-size: 10px; margin-left: 6px;" title="Importado via Open Finance"><i class="ph ph-bank"></i> Open Finance</span>` 
-                                            : '';
-                                        const cartaoNome = l.cartao_nome ? ` (${l.cartao_nome})` : '';
+                    <!-- Hero Balance Card Mobile -->
+                    <div class="mobile-hero-card mb-4">
+                        <div class="hero-top-row">
+                            <span class="hero-label">${temBancosConectados ? 'Saldo Consolidado' : 'Saldo Disponível'}</span>
+                            <span class="hero-badge ${saldoConsolidado >= 0 ? 'badge-pos' : 'badge-neg'}">
+                                ${economia}% economia
+                            </span>
+                        </div>
+                        <div class="hero-main-balance">
+                            <h1 class="${saldoConsolidado >= 0 ? 'text-success' : 'text-danger'}">
+                                ${App.formatCurrency(saldoConsolidado, true)}
+                            </h1>
+                        </div>
+                        <div class="hero-sub-stats">
+                            <div class="hero-stat-col">
+                                <div class="stat-icon-wrap stat-inc">
+                                    <i class="ph-bold ph-arrow-up-right"></i>
+                                </div>
+                                <div>
+                                    <span class="stat-label">Receitas</span>
+                                    <strong class="stat-val text-success">${App.formatCurrency(receitas, true)}</strong>
+                                </div>
+                            </div>
+                            <div class="hero-stat-divider"></div>
+                            <div class="hero-stat-col">
+                                <div class="stat-icon-wrap stat-exp">
+                                    <i class="ph-bold ph-arrow-down-right"></i>
+                                </div>
+                                <div>
+                                    <span class="stat-label">Despesas</span>
+                                    <strong class="stat-val text-danger">${App.formatCurrency(despesas, true)}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                                        return `
-                                            <tr>
-                                                <td style="white-space: nowrap;">${dataFormatada}</td>
-                                                <td><strong>${l.descricao}</strong> ${ofBadge}</td>
-                                                <td><span class="badge" style="background: rgba(255,255,255,0.05); color: var(--text-main);">${l.categoria || 'Geral'}</span></td>
-                                                <td>${l.forma || 'Outro'}${cartaoNome}</td>
-                                                <td><span class="badge ${badgeClass}" ${styleBadge}>${tipoLabel}</span></td>
-                                                <td style="text-align: right;" class="${colorClass}"><strong>${App.formatCurrency(l.valor)}</strong></td>
-                                            </tr>
-                                        `;
-                                    }).join('');
-                                })()}
-                            </tbody>
-                        </table>
+                    <!-- Quick Action Shortcuts Mobile -->
+                    <div class="mobile-quick-actions mb-4">
+                        <button class="mobile-action-pill pill-despesa" onclick="App.openQuickAddModal('despesa')">
+                            <div class="action-icon-circle icon-despesa"><i class="ph-bold ph-minus"></i></div>
+                            <span>Despesa</span>
+                        </button>
+                        <button class="mobile-action-pill pill-receita" onclick="App.openQuickAddModal('receita')">
+                            <div class="action-icon-circle icon-receita"><i class="ph-bold ph-plus"></i></div>
+                            <span>Receita</span>
+                        </button>
+                        <button class="mobile-action-pill" onclick="App.loadView('intelligence')">
+                            <div class="action-icon-circle icon-ia"><i class="ph-fill ph-sparkle"></i></div>
+                            <span>Assistente</span>
+                        </button>
+                        <button class="mobile-action-pill" onclick="App.loadView('contas')">
+                            <div class="action-icon-circle icon-contas"><i class="ph-bold ph-receipt"></i></div>
+                            <span>Contas</span>
+                        </button>
+                        <button class="mobile-action-pill" onclick="App.loadView('cartoes')">
+                            <div class="action-icon-circle icon-cartoes"><i class="ph-bold ph-credit-card"></i></div>
+                            <span>Cartões</span>
+                        </button>
+                    </div>
+
+                    <!-- Instituições Conectadas Mobile -->
+                    ${mobileBancosBreakdown}
+
+                    <!-- Gráfico de Categorias Mobile -->
+                    <div class="card mb-4 mobile-chart-box">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 style="font-size: 15px; margin: 0; font-weight: 700;">Despesas por Categoria</h3>
+                            <button class="btn-link-action" onclick="App.loadView('relatorios')">Ver Análises</button>
+                        </div>
+                        ${catLabels.length === 0
+                            ? `<p class="text-muted text-center" style="padding: 24px 0; font-size: 13px;">Nenhuma despesa registrada.</p>`
+                            : `<div style="height: 220px; position: relative;"><canvas id="chartDespesasMobile"></canvas></div>`
+                        }
+                    </div>
+
+                    <!-- Lista de Movimentações Mobile (Cards Nativos) -->
+                    <div class="mobile-tx-section mb-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 style="font-size: 15px; margin: 0; font-weight: 700;">Últimas Movimentações</h3>
+                            <button class="btn-link-action" onclick="App.loadView('lancamentos')">Ver todas <i class="ph ph-caret-right"></i></button>
+                        </div>
+                        <div class="mobile-tx-list">
+                            ${mobileTxItemsHtml}
+                        </div>
                     </div>
                 </div>
             `;
@@ -324,6 +510,36 @@ window.Views.dashboard = {
                         options: {
                             responsive: true,
                             plugins: { legend: { position: 'right', labels: { color: chartTextColor } } },
+                            animation: { duration: 300 }
+                        }
+                    });
+                }
+
+                if (catLabels.length > 0 && document.getElementById('chartDespesasMobile')) {
+                    new Chart(document.getElementById('chartDespesasMobile'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: catLabels,
+                            datasets: [{
+                                data: catData,
+                                backgroundColor: catColors.slice(0, catLabels.length),
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        color: chartTextColor,
+                                        boxWidth: 10,
+                                        padding: 8,
+                                        font: { size: 10 }
+                                    }
+                                }
+                            },
                             animation: { duration: 300 }
                         }
                     });

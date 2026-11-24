@@ -327,7 +327,13 @@ window.FinAppIntelligence = (() => {
             }
 
             // 3. Saudações e ajuda
-            if (/^(oi|ola|hey|bom dia|boa tarde|boa noite|ola assistente|oi finapp|ajuda|menu|comecar)$/i.test(normText)) {
+            if (
+                /^(oi|ola|hey|bom dia|boa tarde|boa noite|ola assistente|oi finapp|ajuda|menu|comecar|quem sou eu|qual meu nome|como me chamo|meu nome)$/i.test(normText) ||
+                normText.includes('qual e o meu nome') ||
+                normText.includes('qual meu nome') ||
+                normText.includes('quem sou eu') ||
+                normText.includes('como me chamo')
+            ) {
                 return INTENCOES.SAUDACAO;
             }
 
@@ -1288,6 +1294,38 @@ window.FinAppIntelligence = (() => {
         }
     };
 
+    // Helper para recuperar nome do usuário com máxima fidelidade ao Perfil (sem usar e-mail)
+    const getUserName = (user) => {
+        if (typeof window !== 'undefined' && typeof window.getUserDisplayName === 'function') {
+            const dName = window.getUserDisplayName();
+            if (dName && dName !== 'Usuário') return dName;
+        }
+        if (typeof Auth !== 'undefined' && typeof Auth.getUserDisplayName === 'function') {
+            const dName = Auth.getUserDisplayName();
+            if (dName && dName !== 'Usuário') return dName;
+        }
+        const meta = user?.user_metadata;
+        const metaName = meta?.full_name || meta?.name || meta?.nome || meta?.display_name;
+        if (metaName && typeof metaName === 'string' && metaName.trim() && !metaName.includes('@')) {
+            return metaName.trim();
+        }
+        try {
+            if (typeof localStorage !== 'undefined') {
+                const cached = localStorage.getItem('finapp_user_display_name') || localStorage.getItem('finapp_user_name');
+                if (cached && cached.trim() && !cached.includes('@')) return cached.trim();
+            }
+        } catch (e) {}
+        try {
+            if (typeof document !== 'undefined') {
+                const domInput = document.getElementById('nome-usuario');
+                if (domInput && domInput.value && domInput.value.trim() && !domInput.value.includes('@')) {
+                    return domInput.value.trim();
+                }
+            }
+        } catch (e) {}
+        return 'Usuário';
+    };
+
     // ======================================================================
     // 10. ORQUESTRADOR CENTRAL: processarPergunta
     // ======================================================================
@@ -1317,7 +1355,7 @@ window.FinAppIntelligence = (() => {
 
         // Saudação
         if (intencao === INTENCOES.SAUDACAO) {
-            const userName = user?.user_metadata?.full_name || user?.user_metadata?.nome || user?.email?.split('@')[0] || 'Usuário';
+            const userName = getUserName(user);
             return responseValidator.sanitizeOutput(responseGenerator.saudacao(userName));
         }
 

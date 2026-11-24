@@ -93,7 +93,9 @@ window.Views.intelligence = {
 
         // Renderiza mensagem de boas-vindas se não houver histórico
         const renderWelcomeScreen = async () => {
-            const userName = user?.user_metadata?.full_name || user?.user_metadata?.nome || user?.email?.split('@')[0] || 'Usuário';
+            const userName = (typeof window.getUserDisplayName === 'function')
+                ? window.getUserDisplayName()
+                : (user?.user_metadata?.full_name || user?.user_metadata?.nome || 'Usuário');
             messagesContainer.innerHTML = `
                 <div class="intelligence-welcome-card">
                     <div class="welcome-icon-box">

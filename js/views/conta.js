@@ -4,6 +4,12 @@ window.Views.conta = {
         if (!user) return;
         
         const dataCadastro = new Date(user.created_at).toLocaleDateString('pt-BR');
+
+        // Nome de exibição: prioriza full_name do metadata, sem nunca usar e-mail
+        const displayName = (typeof window.getUserDisplayName === 'function')
+            ? window.getUserDisplayName()
+            : (user.user_metadata?.full_name || user.user_metadata?.nome || 'Usuário FinApp');
+        const avatarInitial = encodeURIComponent(displayName.charAt(0).toUpperCase());
         
         // Carregando dados reais do plano e assinatura
         const plano = window.Subscription?.getPlanName ? window.Subscription.getPlanName() : (window.Subscription?.current?.plans?.name || 'FINAPP FREE');
@@ -24,10 +30,10 @@ window.Views.conta = {
                 <div class="card" style="display: flex; flex-direction: column; gap: 24px;">
                     <div style="display: flex; align-items: center; gap: 16px;">
                         <div class="user-profile" style="width: 64px; height: 64px; font-size: 24px; display: flex; justify-content: center; align-items: center; border-radius: 50%; overflow: hidden;">
-                            <img src="https://ui-avatars.com/api/?name=${user.email.charAt(0)}&background=0a9396&color=fff&size=64" alt="Perfil" style="width: 100%; height: 100%;">
+                            <img src="https://ui-avatars.com/api/?name=${avatarInitial}&background=0a9396&color=fff&size=64" alt="Perfil" style="width: 100%; height: 100%;">
                         </div>
                         <div>
-                            <h3 style="margin: 0;">${user.user_metadata?.full_name || 'Usuário FinApp'}</h3>
+                            <h3 style="margin: 0;">${displayName}</h3>
                             <p class="text-muted" style="margin: 4px 0 0 0;">${user.email}</p>
                         </div>
                     </div>
@@ -60,7 +66,7 @@ window.Views.conta = {
                     <form id="form-alterar-nome" class="mb-4">
                         <div class="form-group mb-4">
                             <label>Nome de Exibição</label>
-                            <input type="text" id="nome-usuario" class="input-control" value="${user.user_metadata?.full_name || ''}" placeholder="Seu nome" required>
+                            <input type="text" id="nome-usuario" class="input-control" value="${displayName !== 'Usuário FinApp' ? displayName : (user.user_metadata?.full_name || '')}" placeholder="Seu nome" required>
                         </div>
                         <button type="submit" class="btn btn-primary" id="btn-salvar-nome">
                             Salvar Nome
@@ -118,6 +124,8 @@ window.Views.conta = {
                 if (error) throw error;
                 
                 Auth.user = data.user;
+                // Cache do nome para uso imediato em todos os módulos (dashboard, intelligence, etc.)
+                try { localStorage.setItem('finapp_user_display_name', newName); } catch (e) {}
                 Toast.success('Nome atualizado com sucesso!');
                 App.loadView('conta'); // Recarrega a view para mostrar o novo nome no perfil
             } catch (error) {

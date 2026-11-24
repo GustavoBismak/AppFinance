@@ -460,36 +460,117 @@
             </div>
         </main>
 
-        <!-- Bottom Navigation Bar (Celular / Mobile Web) -->
+        <!-- Bottom Navigation Bar (Celular / Mobile First) -->
         <nav class="bottom-nav" id="bottom-nav">
-            <button class="bottom-nav-item active" data-view="dashboard">
-                <i class="ph ph-squares-four"></i>
+            <button class="bottom-nav-item active" data-view="dashboard" title="Início">
+                <i class="ph ph-house"></i>
                 <span>Início</span>
             </button>
-            <button class="bottom-nav-item" data-view="lancamentos">
-                <i class="ph ph-list-dashes"></i>
-                <span>Lançamentos</span>
+            <button class="bottom-nav-item" data-view="lancamentos" title="Movimentações">
+                <i class="ph ph-arrows-left-right"></i>
+                <span>Movimentações</span>
             </button>
-            <button class="bottom-nav-item" data-view="cartoes">
-                <i class="ph ph-credit-card"></i>
-                <span>Cartões</span>
+            <button class="bottom-nav-item bottom-nav-fab" id="btn-bottom-quick-add" type="button" title="Novo Lançamento" onclick="App.openQuickAddModal()">
+                <div class="fab-circle">
+                    <i class="ph ph-plus-bold"></i>
+                </div>
+                <span>Adicionar</span>
             </button>
-            <button class="bottom-nav-item" data-view="metas">
-                <i class="ph ph-target"></i>
-                <span>Metas</span>
+            <button class="bottom-nav-item" data-view="relatorios" title="Análises">
+                <i class="ph ph-chart-donut"></i>
+                <span>Análises</span>
             </button>
-            <button class="bottom-nav-item" id="btn-bottom-menu">
-                <i class="ph ph-dots-three-outline"></i>
-                <span>Menu</span>
+            <button class="bottom-nav-item" data-view="conta" title="Perfil">
+                <i class="ph ph-user"></i>
+                <span>Perfil</span>
             </button>
         </nav>
+    </div>
+
+    <!-- Modal / Bottom Sheet Rápido de Novo Lançamento Mobile -->
+    <div id="modal-quick-add-mobile" class="modal-quick-add-overlay" style="display: none;">
+        <div class="modal-quick-add-backdrop" onclick="App.closeQuickAddModal()"></div>
+        <div class="modal-quick-add-sheet">
+            <div class="sheet-drag-handle"></div>
+            <div class="sheet-header">
+                <h4 id="quick-add-title">Novo Lançamento</h4>
+                <button type="button" class="btn-close-sheet" onclick="App.closeQuickAddModal()"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="sheet-body">
+                <!-- Segmented Tipo Selector -->
+                <div class="mobile-type-selector">
+                    <button type="button" class="btn-type-opt active-despesa" id="btn-type-despesa" onclick="App.setQuickAddType('despesa')">
+                        <i class="ph ph-arrow-circle-down"></i> Despesa
+                    </button>
+                    <button type="button" class="btn-type-opt" id="btn-type-receita" onclick="App.setQuickAddType('receita')">
+                        <i class="ph ph-arrow-circle-up"></i> Receita
+                    </button>
+                </div>
+
+                <form id="form-quick-add-mobile" onsubmit="event.preventDefault(); App.handleQuickAddSubmit();">
+                    <div class="form-group mb-3">
+                        <label class="mobile-label">Valor (R$)</label>
+                        <div class="mobile-value-wrapper">
+                            <span class="currency-prefix">R$</span>
+                            <input type="number" step="0.01" inputmode="decimal" id="quick-add-valor" class="input-control mobile-value-input" placeholder="0,00" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="mobile-label">Descrição</label>
+                        <input type="text" id="quick-add-desc" class="input-control" placeholder="Ex: Supermercado, Aluguel, Salário..." required>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="mobile-label">Categoria</label>
+                        <select id="quick-add-cat" class="input-control" required>
+                            <!-- Preenchido dinamicamente -->
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="mobile-label">Forma de Pagamento</label>
+                        <select id="quick-add-forma" class="input-control" required>
+                            <option value="Pix">Pix</option>
+                            <option value="Cartão de Crédito">Cartão de Crédito</option>
+                            <option value="Cartão de Débito">Cartão de Débito</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label class="mobile-label">Data</label>
+                        <input type="date" id="quick-add-data" class="input-control" required>
+                    </div>
+
+                    <button type="submit" id="btn-quick-add-submit" class="btn btn-primary btn-block btn-lg mobile-submit-btn">
+                        <i class="ph ph-check-bold"></i> Salvar Lançamento
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Sheet de Detalhes da Movimentação Mobile -->
+    <div id="modal-tx-detail-mobile" class="modal-quick-add-overlay" style="display: none;">
+        <div class="modal-quick-add-backdrop" onclick="App.closeTxDetailModal()"></div>
+        <div class="modal-quick-add-sheet">
+            <div class="sheet-drag-handle"></div>
+            <div class="sheet-header">
+                <h4>Detalhes do Lançamento</h4>
+                <button type="button" class="btn-close-sheet" onclick="App.closeTxDetailModal()"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="sheet-body" id="tx-detail-body">
+                <!-- Injetado dinamicamente via JS -->
+            </div>
+        </div>
     </div>
 
     <!-- Scripts (a ordem importa!) -->
     <script src="/js/supabase.js"></script>
     <script src="/js/store.js"></script>
     <script src="/js/theme.js?v=1.0"></script>
-    <script src="/js/main.js?v=3.0"></script>
+    <script src="/js/main.js?v=3.1"></script>
     <script src="/js/custom-select.js?v=2.7"></script>
     <script src="/js/onboarding.js"></script>
     <script src="/js/subscription.js?v=2.9"></script>
@@ -497,7 +578,7 @@
     <!-- SDK Oficial Pluggy Connect (Open Finance) -->
     <script src="https://cdn.jsdelivr.net/npm/pluggy-connect-sdk@latest/dist/main.js"></script>
     <script src="/js/open-finance.js?v=4.0"></script>
-    <script src="/js/views/dashboard.js?v=4.0"></script>
+    <script src="/js/views/dashboard.js?v=4.1"></script>
     <script src="/js/views/lancamentos.js?v=4.0"></script>
     <script src="/js/views/conexoes.js?v=4.3"></script>
     <script src="/js/views/contas.js"></script>
@@ -506,16 +587,16 @@
     <script src="/js/views/investimentos.js"></script>
     <script src="/js/views/metas.js?v=3.9"></script>
     <script src="/js/views/relatorios.js?v=3.9"></script>
-    <script src="/js/views/conta.js?v=3.7"></script>
+    <script src="/js/views/conta.js?v=3.8"></script>
     <script src="/js/views/configuracoes.js?v=3.7"></script>
     <script src="/js/views/admin.js"></script>
     <!-- FinApp Intelligence Expert: Motor NLP e Interface -->
-    <script src="/js/intelligence-engine.js?v=2.0"></script>
-    <script src="/js/views/intelligence.js?v=2.0"></script>
+    <script src="/js/intelligence-engine.js?v=2.1"></script>
+    <script src="/js/views/intelligence.js?v=2.1"></script>
     <!-- splash.js: Animação de Entrada e Carregamento Financeiro -->
     <script src="/js/splash.js?v=3.9"></script>
     <!-- auth.js SEMPRE por último: depende de App, Store, Views e Splash -->
-    <script src="/js/auth.js?v=3.9"></script>
+    <script src="/js/auth.js?v=4.0"></script>
 
     <!-- PWA Service Worker & Install Handler -->
     <script>

@@ -3247,3 +3247,789 @@ html.has-active-session #login-screen {
     }
 }
 
+/* ==========================================================================
+   FINAPP MOBILE FIRST — EXPERIÊNCIA VISUAL EXCLUSIVA PARA CELULARES
+   Breakpoints: <= 768px (Mobile) / > 768px (Desktop)
+   ========================================================================== */
+
+/* Regras de Exibição Desktop vs Mobile */
+@media (min-width: 769px) {
+    .mobile-dashboard,
+    .mobile-lancamentos-container,
+    .modal-quick-add-overlay {
+        display: none !important;
+    }
+    .desktop-dashboard,
+    .desktop-lancamentos-card,
+    .desktop-lancamentos-table {
+        display: block;
+    }
+}
+
+@media (max-width: 768px) {
+    .desktop-dashboard,
+    .desktop-lancamentos-card,
+    .desktop-lancamentos-table {
+        display: none !important;
+    }
+    .mobile-dashboard,
+    .mobile-lancamentos-container {
+        display: block;
+    }
+
+    /* Espaçamento Seguro no Conteúdo para a Barra Inferior Fixa */
+    .view-container {
+        padding: 14px 14px calc(85px + env(safe-area-inset-bottom)) 14px !important;
+    }
+
+    /* Barra Inferior Fixa com FAB Central */
+    .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: calc(64px + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
+        background: var(--bg-panel);
+        border-top: 1px solid var(--border);
+        z-index: 1000;
+        justify-content: space-around;
+        align-items: center;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .bottom-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-size: 11px;
+        font-weight: 500;
+        cursor: pointer;
+        padding: 6px 10px;
+        position: relative;
+        transition: var(--transition);
+        flex: 1;
+        max-width: 80px;
+    }
+
+    .bottom-nav-item i {
+        font-size: 22px;
+        transition: transform 0.15s, color 0.2s;
+    }
+
+    .bottom-nav-item.active {
+        color: var(--primary);
+    }
+
+    .bottom-nav-item.active i {
+        color: var(--primary);
+        transform: translateY(-1px);
+    }
+
+    /* Botão Central FAB (Adicionar) */
+    .bottom-nav-fab {
+        position: relative;
+        top: -12px;
+        z-index: 1001;
+    }
+
+    .fab-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0a9396 0%, #2a9d8f 100%);
+        border: 3px solid var(--bg-dark);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-size: 24px;
+        box-shadow: 0 4px 18px rgba(10, 147, 150, 0.45);
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .bottom-nav-fab:active .fab-circle {
+        transform: scale(0.92);
+    }
+
+    .bottom-nav-fab span {
+        margin-top: 2px;
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    /* Top User Header Mobile */
+    .mobile-user-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 0;
+    }
+
+    .mobile-user-greeting {
+        display: block;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-main);
+        letter-spacing: -0.01em;
+    }
+
+    .mobile-user-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11.5px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    .mobile-user-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-icon-circle {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-icon-circle:active {
+        transform: scale(0.92);
+        background: rgba(10, 147, 150, 0.15);
+        color: var(--primary);
+    }
+
+    .btn-icon-circle.highlight-sparkle {
+        color: #f5cb5c;
+        border-color: rgba(245, 203, 92, 0.3);
+        background: rgba(245, 203, 92, 0.08);
+    }
+
+    /* Hero Balance Card Mobile */
+    .mobile-hero-card {
+        background: linear-gradient(135deg, rgba(21, 26, 36, 0.95) 0%, rgba(15, 19, 26, 0.98) 100%);
+        border: 1px solid rgba(10, 147, 150, 0.25);
+        border-radius: 18px;
+        padding: 18px 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .mobile-hero-card::after {
+        content: '';
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 120px;
+        height: 120px;
+        background: radial-gradient(circle, rgba(10, 147, 150, 0.2) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .hero-top-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+    }
+
+    .hero-label {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+    }
+
+    .hero-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 99px;
+    }
+
+    .hero-badge.badge-pos {
+        background: rgba(42, 157, 143, 0.15);
+        color: #2a9d8f;
+        border: 1px solid rgba(42, 157, 143, 0.3);
+    }
+
+    .hero-badge.badge-neg {
+        background: rgba(230, 57, 70, 0.15);
+        color: #e63946;
+        border: 1px solid rgba(230, 57, 70, 0.3);
+    }
+
+    .hero-main-balance h1 {
+        font-size: 32px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin: 4px 0 16px 0;
+    }
+
+    .hero-sub-stats {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: 12px;
+        padding: 10px 14px;
+        border: 1px solid var(--border);
+    }
+
+    .hero-stat-col {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+    }
+
+    .hero-stat-divider {
+        width: 1px;
+        height: 28px;
+        background: var(--border);
+        margin: 0 12px;
+    }
+
+    .stat-icon-wrap {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+
+    .stat-icon-wrap.stat-inc {
+        background: rgba(42, 157, 143, 0.15);
+        color: #2a9d8f;
+    }
+
+    .stat-icon-wrap.stat-exp {
+        background: rgba(230, 57, 70, 0.15);
+        color: #e63946;
+    }
+
+    .stat-label {
+        display: block;
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+
+    .stat-val {
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    /* Quick Action Shortcuts Mobile */
+    .mobile-quick-actions {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 2px 0 6px 0;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .mobile-quick-actions::-webkit-scrollbar {
+        display: none;
+    }
+
+    .mobile-action-pill {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        min-width: 68px;
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 10px 6px;
+        color: var(--text-main);
+        font-size: 11px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .mobile-action-pill:active {
+        transform: scale(0.94);
+        background: rgba(10, 147, 150, 0.12);
+    }
+
+    .action-icon-circle {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+
+    .icon-despesa {
+        background: rgba(230, 57, 70, 0.15);
+        color: #ff6b6b;
+    }
+
+    .icon-receita {
+        background: rgba(42, 157, 143, 0.15);
+        color: #2ecc71;
+    }
+
+    .icon-ia {
+        background: linear-gradient(135deg, rgba(10, 147, 150, 0.2) 0%, rgba(245, 203, 92, 0.2) 100%);
+        color: #f5cb5c;
+    }
+
+    .icon-contas {
+        background: rgba(233, 196, 106, 0.15);
+        color: #e9c46a;
+    }
+
+    .icon-cartoes {
+        background: rgba(69, 123, 157, 0.15);
+        color: #457b9d;
+    }
+
+    /* Bancos Conectados Mobile */
+    .mobile-bancos-scroll {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .mobile-bancos-scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    .mobile-banco-card {
+        min-width: 175px;
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px 14px;
+        flex-shrink: 0;
+    }
+
+    .banco-logo-sm {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        object-fit: contain;
+    }
+
+    .banco-balance-val {
+        display: block;
+        font-size: 15px;
+        font-weight: 700;
+        margin-top: 2px;
+    }
+
+    /* Lista de Movimentações Mobile (Cards Nativos) */
+    .mobile-tx-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .mobile-tx-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px 14px;
+        cursor: pointer;
+        transition: transform 0.15s, background 0.2s;
+    }
+
+    .mobile-tx-item:active {
+        transform: scale(0.98);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tx-item-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .tx-item-content {
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .tx-item-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .tx-item-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-main);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .tx-item-val {
+        font-size: 14.5px;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .tx-item-meta-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 2px;
+        font-size: 11.5px;
+        color: var(--text-muted);
+    }
+
+    .tx-item-meta {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .tx-item-forma {
+        flex-shrink: 0;
+        opacity: 0.8;
+    }
+
+    .badge-of-mini {
+        font-size: 10px;
+        color: var(--primary);
+        margin-left: 4px;
+    }
+
+    .btn-link-action {
+        background: transparent;
+        border: none;
+        color: var(--primary);
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /* Filtro de Tipo em Movimentações Mobile */
+    .mobile-tx-type-filter {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+    }
+
+    .btn-filter-pill {
+        padding: 6px 14px;
+        border-radius: 99px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        white-space: nowrap;
+    }
+
+    .btn-filter-pill.active {
+        background: rgba(10, 147, 150, 0.2);
+        border-color: var(--primary);
+        color: var(--primary-light);
+    }
+
+    /* Modal / Bottom Sheet Rápido Mobile */
+    .modal-quick-add-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+    }
+
+    .modal-quick-add-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+
+    .modal-quick-add-sheet {
+        position: relative;
+        width: 100%;
+        max-width: 520px;
+        background: var(--bg-panel);
+        border-top: 1px solid var(--border);
+        border-radius: 22px 22px 0 0;
+        padding: 12px 18px calc(24px + env(safe-area-inset-bottom)) 18px;
+        max-height: 90vh;
+        max-height: 90dvh;
+        overflow-y: auto;
+        transform: translateY(100%);
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-quick-add-overlay.is-open .modal-quick-add-sheet {
+        transform: translateY(0);
+    }
+
+    .sheet-drag-handle {
+        width: 40px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 99px;
+        margin: 4px auto 14px auto;
+    }
+
+    .sheet-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+
+    .sheet-header h4 {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .btn-close-sheet {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--border);
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .mobile-type-selector {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 4px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+    }
+
+    .btn-type-opt {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 13.5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-type-opt.active-despesa {
+        background: rgba(230, 57, 70, 0.15);
+        color: #ff6b6b;
+        border-color: rgba(230, 57, 70, 0.35);
+    }
+
+    .btn-type-opt.active-receita {
+        background: rgba(42, 157, 143, 0.15);
+        color: #2ecc71;
+        border-color: rgba(42, 157, 143, 0.35);
+    }
+
+    .mobile-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+    }
+
+    .mobile-value-wrapper {
+        display: flex;
+        align-items: center;
+        background: var(--bg-dark);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 4px 14px;
+        transition: var(--transition);
+    }
+
+    .mobile-value-wrapper:focus-within {
+        border-color: var(--primary);
+        box-shadow: 0 0 12px rgba(10, 147, 150, 0.25);
+    }
+
+    .currency-prefix {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--primary);
+        margin-right: 8px;
+    }
+
+    .mobile-value-input {
+        flex: 1;
+        background: transparent !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--text-main);
+        padding: 8px 0 !important;
+    }
+
+    .mobile-submit-btn {
+        padding: 14px;
+        font-size: 15px;
+        font-weight: 700;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    /* Detalhes da Movimentação Mobile */
+    .tx-detail-hero {
+        text-align: center;
+        padding: 12px 0 16px 0;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 16px;
+    }
+
+    .tx-detail-badge {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin: 0 auto;
+    }
+
+    .tx-detail-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .tx-detail-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13.5px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .tx-detail-row span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+}
+
+/* Light Mode Overrides para Componentes Mobile */
+body.light-mode .mobile-hero-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f4f6f8 100%);
+    border-color: rgba(10, 147, 150, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .hero-sub-stats {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .mobile-action-pill {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .mobile-tx-item {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .modal-quick-add-sheet {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .sheet-drag-handle {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+body.light-mode .mobile-value-wrapper {
+    background: #f0f2f5;
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .mobile-type-selector {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .fab-circle {
+    border-color: #ffffff;
+}
+

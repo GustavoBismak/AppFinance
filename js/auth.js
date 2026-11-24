@@ -94,14 +94,19 @@ window.Auth = {
         const appContainer = document.getElementById('app-container');
         if (appContainer) appContainer.style.display = 'flex';
 
-        // Atualiza avatar do header com a inicial do e-mail do usuário logado
+        // Atualiza avatar do header com a inicial do nome do usuário logado (nunca o e-mail)
         try {
             const user = Auth.user;
             if (user) {
                 const avatarEl = document.getElementById('header-avatar');
                 if (avatarEl) {
-                    const name = user.user_metadata?.full_name || user.email || 'U';
-                    avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name.charAt(0).toUpperCase())}&background=0a9396&color=fff&size=64`;
+                    const metaName = user.user_metadata?.full_name || user.user_metadata?.nome || user.user_metadata?.name;
+                    // Cache do nome de exibição (garantir que getUserDisplayName() o encontre)
+                    if (metaName && !metaName.includes('@')) {
+                        try { localStorage.setItem('finapp_user_display_name', metaName.trim()); } catch (e) {}
+                    }
+                    const displayChar = metaName ? metaName.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : 'U');
+                    avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayChar)}&background=0a9396&color=fff&size=64`;
                 }
             }
         } catch (e) {
