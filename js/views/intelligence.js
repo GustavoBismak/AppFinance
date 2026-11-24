@@ -63,7 +63,7 @@ window.Views.intelligence = {
                                 type="text" 
                                 id="intelligence-input" 
                                 class="intelligence-input" 
-                                placeholder="Pergunte sobre seus gastos, saldo livre, contas a pagar, economia..." 
+                                placeholder="Pergunte sobre gastos, saldo, contas, economia..." 
                                 autocomplete="off"
                                 maxlength="300"
                             />

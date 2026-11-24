@@ -1464,7 +1464,7 @@ span.flatpickr-weekday {
 
     .form-actions button,
     .form-actions .btn,
-    form button[type="submit"],
+    form:not(.intelligence-input-form) button[type="submit"]:not(.intelligence-send-btn),
     form button.btn,
     .btn-submit-form {
         width: 100% !important;
@@ -3197,53 +3197,162 @@ html.has-active-session #login-screen {
     color: #f5cb5c !important;
 }
 
-/* Mobile responsiveness */
+/* Mobile responsiveness para o FinApp Intelligence */
 @media (max-width: 768px) {
+    .view-container.view-intelligence,
+    .view-container:has(.intelligence-wrapper) {
+        padding: 0 0 calc(64px + env(safe-area-inset-bottom)) 0 !important;
+        overflow: hidden !important;
+        height: calc(100dvh - 60px) !important;
+        max-height: calc(100dvh - 60px) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        box-sizing: border-box !important;
+    }
+
+    .view-container.view-intelligence .intelligence-wrapper,
+    .view-container:has(.intelligence-wrapper) .intelligence-wrapper,
     .intelligence-wrapper {
-        height: calc(100vh - 140px);
-        height: calc(100dvh - 140px);
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
+        height: 100% !important;
+        max-height: 100% !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        overflow: hidden !important;
+        background: var(--bg-main) !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
     }
 
     .intelligence-header {
-        padding: 12px 14px;
+        padding: 10px 14px !important;
+        flex-shrink: 0 !important;
     }
 
     .intelligence-avatar {
-        width: 36px;
-        height: 36px;
-        font-size: 18px;
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 18px !important;
     }
 
     .intelligence-title-row h2 {
-        font-size: 15.5px;
+        font-size: 15.5px !important;
     }
 
     .intelligence-chat-body {
-        padding: 16px 12px;
+        padding: 14px 12px !important;
+        flex: 1 1 auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
     }
 
     .user-bubble {
-        max-width: 88%;
+        max-width: 88% !important;
     }
 
     .bot-bubble {
-        max-width: 95%;
-        padding: 12px 14px;
+        max-width: 95% !important;
+        padding: 12px 14px !important;
     }
 
     .welcome-chips-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
     }
 
+    /* Barra inferior de digitação no celular (fixada acima da bottom-nav) */
     .intelligence-footer {
-        padding: 10px 12px;
+        padding: 8px 12px !important;
+        flex-shrink: 0 !important;
+        background: var(--bg-panel) !important;
+        border-top: 1px solid var(--border) !important;
+        box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.08) !important;
+        z-index: 50 !important;
+    }
+
+    body.light-mode .intelligence-footer {
+        background: #ffffff !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+        box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    .intelligence-input-form {
+        width: 100% !important;
+        margin: 0 !important;
+        display: block !important;
+    }
+
+    .intelligence-input-wrapper {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 4px 6px 4px 14px !important;
+        border-radius: 20px !important;
+        background: rgba(15, 17, 21, 0.8) !important;
+        border: 1px solid var(--border) !important;
+    }
+
+    body.light-mode .intelligence-input-wrapper {
+        background: #f4f6f8 !important;
+        border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    }
+
+    .intelligence-input {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        height: 42px !important;
+        font-size: 16px !important; /* Previne auto-zoom no iOS Safari */
+        background: transparent !important;
+        border: none !important;
+        color: var(--text-main) !important;
+        outline: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    body.light-mode .intelligence-input {
+        color: #1a1a1a !important;
+    }
+
+    .intelligence-input::placeholder {
+        color: var(--text-muted) !important;
+        font-size: 13.5px !important;
+        opacity: 0.85 !important;
+    }
+
+    .intelligence-send-btn,
+    button#intelligence-btn-send,
+    form.intelligence-input-form button[type="submit"] {
+        width: 42px !important;
+        min-width: 42px !important;
+        max-width: 42px !important;
+        height: 42px !important;
+        min-height: 42px !important;
+        max-height: 42px !important;
+        flex: 0 0 42px !important;
+        border-radius: 12px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 18px !important;
+        background: var(--primary) !important;
+        color: #ffffff !important;
+        border: none !important;
+        cursor: pointer !important;
     }
 
     .intelligence-disclaimer {
-        display: none;
+        display: none !important;
     }
 }
 

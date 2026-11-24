@@ -134,8 +134,11 @@ const App = {
         if (title) title.textContent = App.titulos[viewName] || viewName;
         App.closeMobileMenu();
 
-        // Rola conteúdo para o topo
-        if (container) container.scrollTop = 0;
+        // Rola conteúdo para o topo e atualiza classe da view ativa
+        if (container) {
+            container.className = 'view-container view-' + viewName;
+            container.scrollTop = 0;
+        }
 
         // Estado de carregamento — centralizado na tela
         container.innerHTML = `

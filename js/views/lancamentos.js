@@ -22,7 +22,7 @@ window.Views.lancamentos = {
         let html = `
             ${App.getFilterHTML()}
             
-            <div class="card mb-4">
+            <div class="card mb-4 desktop-lancamentos-card">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
                     <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(10,147,150,0.15); display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 20px;">
                         <i class="ph ph-plus-circle"></i>
@@ -46,7 +46,7 @@ window.Views.lancamentos = {
 
                     <div class="form-group">
                         <label for="lanc-valor"><i class="ph ph-currency-dollar"></i> Valor (R$)</label>
-                        <input type="number" step="0.01" id="lanc-valor" class="input-control" placeholder="0,00" required>
+                        <input type="number" step="0.01" inputmode="decimal" id="lanc-valor" class="input-control" placeholder="0,00" required>
                     </div>
 
                     <div class="form-group">
@@ -90,7 +90,8 @@ window.Views.lancamentos = {
                 </form>
             </div>
             
-            <div class="card">
+            <!-- Versão Desktop: Tabela de Lançamentos -->
+            <div class="card desktop-lancamentos-table">
                 <h3 class="mb-4">Histórico de Lançamentos</h3>
                 <div class="table-container">
                     <table>
@@ -110,6 +111,20 @@ window.Views.lancamentos = {
                     </table>
                 </div>
             </div>
+
+            <!-- Versão Mobile First: Cartões de Movimentação -->
+            <div class="mobile-lancamentos-container">
+                <div class="mobile-lancamentos-header mb-3">
+                    <div class="mobile-tx-type-filter">
+                        <button type="button" class="btn-filter-pill active" data-type="todos" onclick="window._setMobileTxFilter('todos')">Todos</button>
+                        <button type="button" class="btn-filter-pill" data-type="despesa" onclick="window._setMobileTxFilter('despesa')">Despesas</button>
+                        <button type="button" class="btn-filter-pill" data-type="receita" onclick="window._setMobileTxFilter('receita')">Receitas</button>
+                    </div>
+                </div>
+                <div id="lancamentos-mobile-list" class="mobile-tx-list">
+                    <!-- Renderizado dinamicamente via JS -->
+                </div>
+            </div>
         `;
         
         container.innerHTML = html;
@@ -120,40 +135,94 @@ window.Views.lancamentos = {
             const isCartao = v === 'Cartão de Crédito' || v === 'Cartão de Débito';
             document.getElementById('grupo-cartao').style.display = isCartao ? 'block' : 'none';
         });
+
+        let currentMobileType = 'todos';
+        window._setMobileTxFilter = (type) => {
+            currentMobileType = type;
+            document.querySelectorAll('.btn-filter-pill').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === type);
+            });
+            renderTable();
+        };
         
         const renderTable = () => {
             const filtered = App.applyFilters(lancamentos, 'data', ['descricao', 'categoria', 'forma']);
             const tbody = document.getElementById('lancamentos-tbody');
-            tbody.innerHTML = '';
-            
-            if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center" class="text-muted">Nenhum lançamento encontrado para estes filtros.</td></tr>';
-                return;
+            const mobileList = document.getElementById('lancamentos-mobile-list');
+
+            if (tbody) {
+                tbody.innerHTML = '';
+                if (filtered.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center" class="text-muted">Nenhum lançamento encontrado para estes filtros.</td></tr>';
+                } else {
+                    filtered.forEach(l => {
+                        const dataFormatada = new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR');
+                        const valorFormatado = App.formatCurrency(l.valor);
+                        const badgeClass = l.tipo === 'receita' ? 'badge-success' : 'badge-danger';
+                        const tipoLabel = l.tipo === 'receita' ? 'Receita' : 'Despesa';
+                        const colorClass = l.tipo === 'receita' ? 'text-success' : 'text-danger';
+                        const cartaoNome = l.cartao_nome ? ` (${l.cartao_nome})` : '';
+                        const openFinanceBadge = (l.is_open_finance || l.bank_transaction_id) 
+                            ? `<span class="badge" style="background: rgba(10,147,150,0.15); color: var(--primary); font-size: 10px; margin-left: 6px;" title="Importado via Open Finance"><i class="ph ph-bank"></i> Open Finance</span>` 
+                            : '';
+                        
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${dataFormatada}</td>
+                            <td>${l.descricao} ${openFinanceBadge}</td>
+                            <td>${l.categoria}</td>
+                            <td>${l.forma}${cartaoNome}</td>
+                            <td class="${colorClass}">${valorFormatado}</td>
+                            <td><span class="badge ${badgeClass}">${tipoLabel}</span></td>
+                            <td><button class="btn btn-del" data-id="${l.id}" style="padding: 4px; background: transparent; color: var(--danger)"><i class="ph ph-trash"></i></button></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
             }
-            
-            filtered.forEach(l => {
-                const dataFormatada = new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR');
-                const valorFormatado = App.formatCurrency(l.valor);
-                const badgeClass = l.tipo === 'receita' ? 'badge-success' : 'badge-danger';
-                const tipoLabel = l.tipo === 'receita' ? 'Receita' : 'Despesa';
-                const colorClass = l.tipo === 'receita' ? 'text-success' : 'text-danger';
-                const cartaoNome = l.cartao_nome ? ` (${l.cartao_nome})` : '';
-                const openFinanceBadge = (l.is_open_finance || l.bank_transaction_id) 
-                    ? `<span class="badge" style="background: rgba(10,147,150,0.15); color: var(--primary); font-size: 10px; margin-left: 6px;" title="Importado via Open Finance"><i class="ph ph-bank"></i> Open Finance</span>` 
-                    : '';
-                
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${dataFormatada}</td>
-                    <td>${l.descricao} ${openFinanceBadge}</td>
-                    <td>${l.categoria}</td>
-                    <td>${l.forma}${cartaoNome}</td>
-                    <td class="${colorClass}">${valorFormatado}</td>
-                    <td><span class="badge ${badgeClass}">${tipoLabel}</span></td>
-                    <td><button class="btn btn-del" data-id="${l.id}" style="padding: 4px; background: transparent; color: var(--danger)"><i class="ph ph-trash"></i></button></td>
-                `;
-                tbody.appendChild(tr);
-            });
+
+            if (mobileList) {
+                let mobileFiltered = filtered;
+                if (currentMobileType === 'despesa') {
+                    mobileFiltered = filtered.filter(x => x.tipo === 'despesa');
+                } else if (currentMobileType === 'receita') {
+                    mobileFiltered = filtered.filter(x => x.tipo === 'receita');
+                }
+
+                if (mobileFiltered.length === 0) {
+                    mobileList.innerHTML = `<div class="card text-center" style="padding: 32px 16px; color: var(--text-muted); font-size: 13.5px;"><i class="ph ph-magnifying-glass" style="font-size: 32px; opacity: 0.4; display: block; margin-bottom: 8px;"></i>Nenhum lançamento encontrado para estes filtros.</div>`;
+                } else {
+                    mobileList.innerHTML = mobileFiltered.map(l => {
+                        const dataFormatada = l.data ? new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+                        const isRec = l.tipo === 'receita';
+                        const isTransfer = l.categoria === 'Transferência Interna';
+                        const sign = isTransfer ? '' : (isRec ? '+' : '-');
+                        const colorClass = isTransfer ? 'text-primary' : (isRec ? 'text-success' : 'text-danger');
+                        const catStyle = App.getCategoryIcon(l.categoria);
+                        const ofBadge = (l.is_open_finance || l.bank_transaction_id) ? `<span class="badge-of-mini"><i class="ph ph-bank"></i></span>` : '';
+
+                        return `
+                            <div class="mobile-tx-item" onclick="App.openTxDetailModal('${l.id}')">
+                                <div class="tx-item-icon" style="background: ${catStyle.bg}; color: ${catStyle.color};">
+                                    <i class="ph ${catStyle.icon}"></i>
+                                </div>
+                                <div class="tx-item-content">
+                                    <div class="tx-item-title-row">
+                                        <span class="tx-item-title">${l.descricao} ${ofBadge}</span>
+                                        <span class="tx-item-val ${colorClass}">
+                                            ${sign} ${App.formatCurrency(l.valor, true)}
+                                        </span>
+                                    </div>
+                                    <div class="tx-item-meta-row">
+                                        <span class="tx-item-meta">${dataFormatada} • ${l.categoria || 'Geral'}</span>
+                                        <span class="tx-item-forma">${l.forma || 'Pix'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
             
             // Re-bind delete actions
             document.querySelectorAll('.btn-del').forEach(btn => {
