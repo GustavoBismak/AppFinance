@@ -94,19 +94,26 @@ window.Auth = {
         const appContainer = document.getElementById('app-container');
         if (appContainer) appContainer.style.display = 'flex';
 
-        // Atualiza avatar do header com a inicial do nome do usuário logado (nunca o e-mail)
+        // Atualiza avatar do header com a foto de perfil ou inicial do nome do usuário logado
         try {
             const user = Auth.user;
             if (user) {
-                const avatarEl = document.getElementById('header-avatar');
-                if (avatarEl) {
-                    const metaName = user.user_metadata?.full_name || user.user_metadata?.nome || user.user_metadata?.name;
-                    // Cache do nome de exibição (garantir que getUserDisplayName() o encontre)
-                    if (metaName && !metaName.includes('@')) {
-                        try { localStorage.setItem('finapp_user_display_name', metaName.trim()); } catch (e) {}
+                const metaName = user.user_metadata?.full_name || user.user_metadata?.nome || user.user_metadata?.name;
+                // Cache do nome de exibição (garantir que getUserDisplayName() o encontre)
+                if (metaName && !metaName.includes('@')) {
+                    try { localStorage.setItem('finapp_user_display_name', metaName.trim()); } catch (e) {}
+                }
+                if (user.user_metadata?.avatar_url && user.id) {
+                    try { localStorage.setItem(`finapp_user_avatar_${user.id}`, user.user_metadata.avatar_url); } catch (e) {}
+                }
+                if (typeof window.updateHeaderAvatar === 'function') {
+                    window.updateHeaderAvatar();
+                } else {
+                    const avatarEl = document.getElementById('header-avatar');
+                    if (avatarEl) {
+                        const displayChar = metaName ? metaName.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : 'U');
+                        avatarEl.src = user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayChar)}&background=0a9396&color=fff&size=64`;
                     }
-                    const displayChar = metaName ? metaName.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : 'U');
-                    avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayChar)}&background=0a9396&color=fff&size=64`;
                 }
             }
         } catch (e) {

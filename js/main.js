@@ -23,6 +23,36 @@ window.getUserDisplayName = () => {
     return 'Usuário';
 };
 
+window.getUserAvatarUrl = () => {
+    const user = window.Auth?.user;
+    const metaAvatar = user?.user_metadata?.avatar_url;
+    if (metaAvatar && typeof metaAvatar === 'string' && metaAvatar.trim()) {
+        return metaAvatar.trim();
+    }
+
+    if (user?.id) {
+        try {
+            const cachedAvatar = localStorage.getItem(`finapp_user_avatar_${user.id}`);
+            if (cachedAvatar && cachedAvatar.trim()) {
+                return cachedAvatar.trim();
+            }
+        } catch (e) {}
+    }
+
+    const displayName = window.getUserDisplayName();
+    const initial = (displayName && displayName !== 'Usuário')
+        ? displayName.charAt(0).toUpperCase()
+        : (user?.email ? user.email.charAt(0).toUpperCase() : 'U');
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(initial)}&background=0a9396&color=fff&size=128`;
+};
+
+window.updateHeaderAvatar = () => {
+    const avatarEl = document.getElementById('header-avatar');
+    if (avatarEl) {
+        avatarEl.src = window.getUserAvatarUrl();
+    }
+};
+
 const App = {
     currentView: 'dashboard',
 
