@@ -464,6 +464,14 @@ window.Views.dashboard = {
                             ${mobileTxItemsHtml}
                         </div>
                     </div>
+
+                    <!-- Rodapé Mobile Informativo com Espaço Seguro -->
+                    <div class="mobile-app-footer">
+                        <div class="mobile-footer-pill">
+                            <i class="ph-fill ph-wallet" style="color: var(--primary);"></i>
+                            <span>FinApp • Seu império financeiro sob controle</span>
+                        </div>
+                    </div>
                 </div>
             `;
 

@@ -124,6 +124,14 @@ window.Views.lancamentos = {
                 <div id="lancamentos-mobile-list" class="mobile-tx-list">
                     <!-- Renderizado dinamicamente via JS -->
                 </div>
+
+                <!-- Rodapé Mobile Informativo com Espaço Seguro -->
+                <div class="mobile-app-footer">
+                    <div class="mobile-footer-pill">
+                        <i class="ph-fill ph-shield-check" style="color: var(--primary);"></i>
+                        <span>FinApp • Histórico de lançamentos seguro</span>
+                    </div>
+                </div>
             </div>
         `;
         
