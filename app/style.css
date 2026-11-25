@@ -3521,7 +3521,9 @@ html.has-active-session #login-screen {
 @media (min-width: 769px) {
     .mobile-dashboard,
     .mobile-lancamentos-container,
-    .modal-quick-add-overlay {
+    .mobile-import-actions-bar,
+    /* quick-add modal: oculto no desktop (apenas o modal de lançamento mobile) */
+    #modal-quick-add-mobile {
         display: none !important;
     }
     .desktop-dashboard,
@@ -3529,6 +3531,10 @@ html.has-active-session #login-screen {
     .desktop-lancamentos-table,
     .filter-card {
         display: block;
+    }
+    /* Modal de importação: visível no desktop como dialog central */
+    .modal-import-overlay {
+        z-index: 9999;
     }
 }
 
