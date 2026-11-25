@@ -270,14 +270,17 @@ const App = {
         const btnDesp = document.getElementById('btn-type-despesa');
         const btnRec = document.getElementById('btn-type-receita');
         const title = document.getElementById('quick-add-title');
+        const notaWrap = document.getElementById('quick-add-nota-wrap');
         if (type === 'despesa') {
             btnDesp?.classList.add('active-despesa');
             btnRec?.classList.remove('active-receita');
             if (title) title.textContent = 'Nova Despesa';
+            if (notaWrap) notaWrap.style.display = 'block';
         } else {
             btnRec?.classList.add('active-receita');
             btnDesp?.classList.remove('active-despesa');
             if (title) title.textContent = 'Nova Receita';
+            if (notaWrap) notaWrap.style.display = 'none';
         }
     },
 
@@ -322,6 +325,35 @@ const App = {
         setTimeout(() => {
             modal.style.display = 'none';
         }, 250);
+    },
+
+    triggerMobileImport: (mode) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.style.display = 'none';
+        if (mode === 'nota') {
+            input.accept = 'image/*';
+            input.setAttribute('capture', 'environment');
+        } else {
+            input.accept = '.ofx,.qfx,.csv,.txt';
+        }
+        document.body.appendChild(input);
+        input.addEventListener('change', async (e) => {
+            const file = e.target.files?.[0];
+            input.remove();
+            if (!file) return;
+
+            App.closeQuickAddModal();
+            if (App.currentView !== 'lancamentos') {
+                await App.loadView('lancamentos');
+            }
+            if (mode === 'nota' && typeof window._processScanNotaFile === 'function') {
+                window._processScanNotaFile(file);
+            } else if (typeof window._processImportExtratoFile === 'function') {
+                window._processImportExtratoFile(file);
+            }
+        });
+        input.click();
     },
 
     handleQuickAddSubmit: async () => {

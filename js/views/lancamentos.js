@@ -173,7 +173,7 @@ window.Views.lancamentos = {
             </div>
 
             <!-- Modal/Bottom Sheet: Importação de Extrato e Leitura de Nota -->
-            <div id="modal-import-lancamentos" class="modal-quick-add-overlay" style="display: none;" onclick="if(event.target === this) window._closeImportModal()">
+            <div id="modal-import-lancamentos" class="modal-import-overlay" style="display: none;" onclick="if(event.target === this) window._closeImportModal()">
                 <div class="modal-quick-add-sheet import-modal-sheet">
                     <div class="sheet-drag-handle"></div>
                     <div class="sheet-header">
@@ -394,253 +394,259 @@ window.Views.lancamentos = {
         };
 
         // Handler: Importar Extrato (OFX / CSV / TXT)
-        const inputExtrato = document.getElementById('input-import-extrato');
-        if (inputExtrato) {
-            inputExtrato.addEventListener('change', async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                inputExtrato.value = '';
+        window._processImportExtratoFile = async (file) => {
+            if (!file) return;
+            if (!window.ImportadorLancamentos) {
+                Toast.error('Módulo importador não carregado.');
+                return;
+            }
 
-                if (!window.ImportadorLancamentos) {
-                    Toast.error('Módulo importador não carregado.');
-                    return;
-                }
+            openImportModal('<i class="ph ph-file-arrow-up" style="color: var(--primary);"></i> Revisar Extrato');
+            modalBody.innerHTML = `
+                <div class="import-loading-box">
+                    <i class="ph ph-spinner ph-spin" style="font-size: 32px; color: var(--primary);"></i>
+                    <p>Analisando extrato e categorizando...</p>
+                </div>
+            `;
 
-                openImportModal('<i class="ph ph-file-arrow-up" style="color: var(--primary);"></i> Revisar Extrato');
-                modalBody.innerHTML = `
-                    <div class="import-loading-box">
-                        <i class="ph ph-spinner ph-spin" style="font-size: 32px; color: var(--primary);"></i>
-                        <p>Analisando extrato e categorizando...</p>
-                    </div>
-                `;
-
-                try {
-                    const parsed = await window.ImportadorLancamentos.parseFile(file, availableCategories, lancamentos);
-                    if (!parsed || parsed.length === 0) {
-                        modalBody.innerHTML = `
-                            <div class="import-loading-box">
-                                <i class="ph ph-warning-circle" style="font-size: 36px; color: var(--warning);"></i>
-                                <p>Nenhuma movimentação encontrada neste arquivo.<br><span class="text-muted" style="font-size:12px;">Use arquivos .OFX ou .CSV com colunas de Data, Descrição e Valor.</span></p>
-                                <button type="button" class="btn btn-primary mt-3" onclick="window._closeImportModal()">Fechar</button>
-                            </div>
-                        `;
-                        return;
-                    }
-
-                    const totalRec = parsed.filter(t => t.tipo === 'receita').reduce((s, t) => s + t.valor, 0);
-                    const totalDesp = parsed.filter(t => t.tipo === 'despesa').reduce((s, t) => s + t.valor, 0);
-
-                    modalBody.innerHTML = `
-                        <div class="import-summary-bar">
-                            <div>
-                                <strong>${parsed.length} lançamentos</strong> encontrados
-                                <div class="import-summary-values">
-                                    <span class="text-success">+ ${App.formatCurrency(totalRec)}</span>
-                                    <span class="text-danger">- ${App.formatCurrency(totalDesp)}</span>
-                                </div>
-                            </div>
-                            <button type="button" class="btn-toggle-all-import" id="btn-toggle-all-import">Desmarcar todos</button>
-                        </div>
-
-                        <div class="import-items-list" id="import-items-list">
-                            ${parsed.map((tx, idx) => `
-                                <div class="import-tx-row ${tx.isDuplicate ? 'is-duplicate' : ''}" data-idx="${idx}">
-                                    <label class="import-tx-check">
-                                        <input type="checkbox" class="import-item-cb" data-idx="${idx}" ${tx.isDuplicate ? '' : 'checked'}>
-                                    </label>
-                                    <div class="import-tx-fields">
-                                        <div class="import-tx-top">
-                                            <input type="text" class="import-desc-input" data-idx="${idx}" value="${tx.descricao.replace(/"/g, '&quot;')}">
-                                            <span class="import-tx-amount ${tx.tipo === 'receita' ? 'text-success' : 'text-danger'}">
-                                                ${tx.tipo === 'receita' ? '+' : '-'} ${App.formatCurrency(tx.valor)}
-                                            </span>
-                                        </div>
-                                        <div class="import-tx-bottom">
-                                            <span class="import-tx-date">${new Date(tx.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                                            <select class="import-cat-select" data-idx="${idx}">
-                                                ${catOptionsHtml(tx.categoria)}
-                                            </select>
-                                            ${tx.isDuplicate ? '<span class="import-dup-badge">Possível duplicata</span>' : ''}
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-
-                        <div class="import-footer-actions">
-                            <button type="button" class="btn btn-primary btn-block" id="btn-confirm-import-extrato">
-                                <i class="ph ph-check-circle"></i> Importar Selecionados
-                            </button>
-                        </div>
-                    `;
-
-                    let allChecked = true;
-                    document.getElementById('btn-toggle-all-import')?.addEventListener('click', (ev) => {
-                        allChecked = !allChecked;
-                        document.querySelectorAll('.import-item-cb').forEach(cb => { cb.checked = allChecked; });
-                        ev.currentTarget.textContent = allChecked ? 'Desmarcar todos' : 'Marcar todos';
-                    });
-
-                    document.getElementById('btn-confirm-import-extrato')?.addEventListener('click', async (ev) => {
-                        const btnConfirm = ev.currentTarget;
-                        const selected = [];
-                        document.querySelectorAll('.import-item-cb:checked').forEach(cb => {
-                            const idx = parseInt(cb.dataset.idx, 10);
-                            const base = parsed[idx];
-                            if (!base) return;
-                            const descInput = modalBody.querySelector(`.import-desc-input[data-idx="${idx}"]`);
-                            const catSelect = modalBody.querySelector(`.import-cat-select[data-idx="${idx}"]`);
-                            selected.push({
-                                user_id: Auth.user.id,
-                                data: base.data,
-                                descricao: (descInput?.value || base.descricao).trim(),
-                                categoria: catSelect?.value || base.categoria,
-                                tipo: base.tipo,
-                                valor: base.valor,
-                                forma: base.forma || 'Pix'
-                            });
-                        });
-
-                        if (selected.length === 0) {
-                            Toast.warning('Selecione pelo menos um lançamento para importar.');
-                            return;
-                        }
-
-                        btnConfirm.disabled = true;
-                        btnConfirm.innerHTML = `<i class="ph ph-spinner ph-spin"></i> Importando ${selected.length}...`;
-
-                        try {
-                            const { error } = await supabaseClient.from(KEYS.LANCAMENTOS).insert(selected);
-                            if (error) throw error;
-                            Toast.success(`${selected.length} lançamento(s) importado(s) com sucesso!`);
-                            window._closeImportModal();
-                            App.loadView('lancamentos');
-                        } catch (err) {
-                            Toast.error('Erro ao importar: ' + err.message);
-                            btnConfirm.disabled = false;
-                            btnConfirm.innerHTML = '<i class="ph ph-check-circle"></i> Importar Selecionados';
-                        }
-                    });
-                } catch (err) {
+            try {
+                const parsed = await window.ImportadorLancamentos.parseFile(file, availableCategories, lancamentos);
+                if (!parsed || parsed.length === 0) {
                     modalBody.innerHTML = `
                         <div class="import-loading-box">
-                            <i class="ph ph-warning-circle" style="font-size: 36px; color: var(--danger);"></i>
-                            <p>Erro ao ler arquivo: ${err.message}</p>
+                            <i class="ph ph-warning-circle" style="font-size: 36px; color: var(--warning);"></i>
+                            <p>Nenhuma movimentação encontrada neste arquivo.<br><span class="text-muted" style="font-size:12px;">Use arquivos .OFX ou .CSV com colunas de Data, Descrição e Valor.</span></p>
                             <button type="button" class="btn btn-primary mt-3" onclick="window._closeImportModal()">Fechar</button>
                         </div>
                     `;
+                    return;
                 }
+
+                const totalRec = parsed.filter(t => t.tipo === 'receita').reduce((s, t) => s + t.valor, 0);
+                const totalDesp = parsed.filter(t => t.tipo === 'despesa').reduce((s, t) => s + t.valor, 0);
+
+                modalBody.innerHTML = `
+                    <div class="import-summary-bar">
+                        <div>
+                            <strong>${parsed.length} lançamentos</strong> encontrados
+                            <div class="import-summary-values">
+                                <span class="text-success">+ ${App.formatCurrency(totalRec)}</span>
+                                <span class="text-danger">- ${App.formatCurrency(totalDesp)}</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-toggle-all-import" id="btn-toggle-all-import">Desmarcar todos</button>
+                    </div>
+
+                    <div class="import-items-list" id="import-items-list">
+                        ${parsed.map((tx, idx) => `
+                            <div class="import-tx-row ${tx.isDuplicate ? 'is-duplicate' : ''}" data-idx="${idx}">
+                                <label class="import-tx-check">
+                                    <input type="checkbox" class="import-item-cb" data-idx="${idx}" ${tx.isDuplicate ? '' : 'checked'}>
+                                </label>
+                                <div class="import-tx-fields">
+                                    <div class="import-tx-top">
+                                        <input type="text" class="import-desc-input" data-idx="${idx}" value="${tx.descricao.replace(/"/g, '&quot;')}">
+                                        <span class="import-tx-amount ${tx.tipo === 'receita' ? 'text-success' : 'text-danger'}">
+                                            ${tx.tipo === 'receita' ? '+' : '-'} ${App.formatCurrency(tx.valor)}
+                                        </span>
+                                    </div>
+                                    <div class="import-tx-bottom">
+                                        <span class="import-tx-date">${new Date(tx.data + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                                        <select class="import-cat-select" data-idx="${idx}">
+                                            ${catOptionsHtml(tx.categoria)}
+                                        </select>
+                                        ${tx.isDuplicate ? '<span class="import-dup-badge">Possível duplicata</span>' : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="import-footer-actions">
+                        <button type="button" class="btn btn-primary btn-block" id="btn-confirm-import-extrato">
+                            <i class="ph ph-check-circle"></i> Importar Selecionados
+                        </button>
+                    </div>
+                `;
+
+                let allChecked = true;
+                document.getElementById('btn-toggle-all-import')?.addEventListener('click', (ev) => {
+                    allChecked = !allChecked;
+                    document.querySelectorAll('.import-item-cb').forEach(cb => { cb.checked = allChecked; });
+                    ev.currentTarget.textContent = allChecked ? 'Desmarcar todos' : 'Marcar todos';
+                });
+
+                document.getElementById('btn-confirm-import-extrato')?.addEventListener('click', async (ev) => {
+                    const btnConfirm = ev.currentTarget;
+                    const selected = [];
+                    document.querySelectorAll('.import-item-cb:checked').forEach(cb => {
+                        const idx = parseInt(cb.dataset.idx, 10);
+                        const base = parsed[idx];
+                        if (!base) return;
+                        const descInput = modalBody.querySelector(`.import-desc-input[data-idx="${idx}"]`);
+                        const catSelect = modalBody.querySelector(`.import-cat-select[data-idx="${idx}"]`);
+                        selected.push({
+                            user_id: Auth.user.id,
+                            data: base.data,
+                            descricao: (descInput?.value || base.descricao).trim(),
+                            categoria: catSelect?.value || base.categoria,
+                            tipo: base.tipo,
+                            valor: base.valor,
+                            forma: base.forma || 'Pix'
+                        });
+                    });
+
+                    if (selected.length === 0) {
+                        Toast.warning('Selecione pelo menos um lançamento para importar.');
+                        return;
+                    }
+
+                    btnConfirm.disabled = true;
+                    btnConfirm.innerHTML = `<i class="ph ph-spinner ph-spin"></i> Importando ${selected.length}...`;
+
+                    try {
+                        const { error } = await supabaseClient.from(KEYS.LANCAMENTOS).insert(selected);
+                        if (error) throw error;
+                        Toast.success(`${selected.length} lançamento(s) importado(s) com sucesso!`);
+                        window._closeImportModal();
+                        App.loadView('lancamentos');
+                    } catch (err) {
+                        Toast.error('Erro ao importar: ' + err.message);
+                        btnConfirm.disabled = false;
+                        btnConfirm.innerHTML = '<i class="ph ph-check-circle"></i> Importar Selecionados';
+                    }
+                });
+            } catch (err) {
+                modalBody.innerHTML = `
+                    <div class="import-loading-box">
+                        <i class="ph ph-warning-circle" style="font-size: 36px; color: var(--danger);"></i>
+                        <p>Erro ao ler arquivo: ${err.message}</p>
+                        <button type="button" class="btn btn-primary mt-3" onclick="window._closeImportModal()">Fechar</button>
+                    </div>
+                `;
+            }
+        };
+
+        const inputExtrato = document.getElementById('input-import-extrato');
+        if (inputExtrato) {
+            inputExtrato.addEventListener('change', (e) => {
+                const file = e.target.files?.[0];
+                inputExtrato.value = '';
+                if (file) window._processImportExtratoFile(file);
             });
         }
 
         // Handler: Foto da Nota (Câmera / Galeria + OCR)
-        const inputNota = document.getElementById('input-scan-nota');
-        if (inputNota) {
-            inputNota.addEventListener('change', async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                inputNota.value = '';
+        window._processScanNotaFile = async (file) => {
+            if (!file) return;
+            if (!window.ImportadorLancamentos) {
+                Toast.error('Módulo leitor de nota não carregado.');
+                return;
+            }
 
-                if (!window.ImportadorLancamentos) {
-                    Toast.error('Módulo leitor de nota não carregado.');
-                    return;
-                }
+            openImportModal('<i class="ph ph-camera" style="color: var(--primary);"></i> Leitura da Nota');
+            modalBody.innerHTML = `
+                <div class="import-loading-box">
+                    <i class="ph ph-scan" style="font-size: 36px; color: var(--primary);"></i>
+                    <p id="ocr-status-text">Lendo dados da nota fiscal... 0%</p>
+                    <div class="ocr-progress-bar"><div id="ocr-progress-fill" style="width: 5%;"></div></div>
+                </div>
+            `;
 
-                openImportModal('<i class="ph ph-camera" style="color: var(--primary);"></i> Leitura da Nota');
+            try {
+                const result = await window.ImportadorLancamentos.scanReceiptImage(file, availableCategories, (pct) => {
+                    const statusEl = document.getElementById('ocr-status-text');
+                    const fillEl = document.getElementById('ocr-progress-fill');
+                    if (statusEl) statusEl.textContent = `Lendo dados da nota fiscal... ${pct}%`;
+                    if (fillEl) fillEl.style.width = `${Math.max(8, pct)}%`;
+                });
+
                 modalBody.innerHTML = `
-                    <div class="import-loading-box">
-                        <i class="ph ph-scan" style="font-size: 36px; color: var(--primary);"></i>
-                        <p id="ocr-status-text">Lendo dados da nota fiscal... 0%</p>
-                        <div class="ocr-progress-bar"><div id="ocr-progress-fill" style="width: 5%;"></div></div>
-                    </div>
+                    <form id="form-confirm-nota" class="import-nota-form">
+                        ${result.previewUrl ? `
+                        <div class="nota-preview-wrap">
+                            <img src="${result.previewUrl}" alt="Foto da Nota">
+                        </div>` : ''}
+                        <div class="form-group">
+                            <label>Estabelecimento / Descrição</label>
+                            <input type="text" id="nota-desc" class="input-control" value="${(result.descricao || '').replace(/"/g, '&quot;')}" required>
+                        </div>
+                        <div class="import-nota-grid">
+                            <div class="form-group">
+                                <label>Valor (R$)</label>
+                                <input type="number" step="0.01" inputmode="decimal" id="nota-valor" class="input-control" value="${result.valor || ''}" placeholder="0.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Data</label>
+                                <input type="date" id="nota-data" class="input-control" value="${result.data}" required>
+                            </div>
+                        </div>
+                        <div class="import-nota-grid">
+                            <div class="form-group">
+                                <label>Categoria</label>
+                                <select id="nota-cat" class="input-control" required>
+                                    ${catOptionsHtml(result.categoria)}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Pagamento</label>
+                                <select id="nota-forma" class="input-control">
+                                    <option value="Pix" ${result.forma === 'Pix' ? 'selected' : ''}>Pix</option>
+                                    <option value="Cartão de Crédito" ${result.forma === 'Cartão de Crédito' ? 'selected' : ''}>Cartão de Crédito</option>
+                                    <option value="Cartão de Débito" ${result.forma === 'Cartão de Débito' ? 'selected' : ''}>Cartão de Débito</option>
+                                    <option value="Dinheiro" ${result.forma === 'Dinheiro' ? 'selected' : ''}>Dinheiro</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block mt-2" id="btn-salvar-nota">
+                            <i class="ph ph-check-circle"></i> Confirmar e Lançar
+                        </button>
+                    </form>
                 `;
 
-                try {
-                    const result = await window.ImportadorLancamentos.scanReceiptImage(file, availableCategories, (pct) => {
-                        const statusEl = document.getElementById('ocr-status-text');
-                        const fillEl = document.getElementById('ocr-progress-fill');
-                        if (statusEl) statusEl.textContent = `Lendo dados da nota fiscal... ${pct}%`;
-                        if (fillEl) fillEl.style.width = `${Math.max(8, pct)}%`;
-                    });
+                document.getElementById('form-confirm-nota')?.addEventListener('submit', async (ev) => {
+                    ev.preventDefault();
+                    const btnSave = document.getElementById('btn-salvar-nota');
+                    btnSave.disabled = true;
+                    btnSave.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Salvando...';
 
-                    modalBody.innerHTML = `
-                        <form id="form-confirm-nota" class="import-nota-form">
-                            ${result.previewUrl ? `
-                            <div class="nota-preview-wrap">
-                                <img src="${result.previewUrl}" alt="Foto da Nota">
-                            </div>` : ''}
-                            <div class="form-group">
-                                <label>Estabelecimento / Descrição</label>
-                                <input type="text" id="nota-desc" class="input-control" value="${(result.descricao || '').replace(/"/g, '&quot;')}" required>
-                            </div>
-                            <div class="import-nota-grid">
-                                <div class="form-group">
-                                    <label>Valor (R$)</label>
-                                    <input type="number" step="0.01" inputmode="decimal" id="nota-valor" class="input-control" value="${result.valor || ''}" placeholder="0.00" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Data</label>
-                                    <input type="date" id="nota-data" class="input-control" value="${result.data}" required>
-                                </div>
-                            </div>
-                            <div class="import-nota-grid">
-                                <div class="form-group">
-                                    <label>Categoria</label>
-                                    <select id="nota-cat" class="input-control" required>
-                                        ${catOptionsHtml(result.categoria)}
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Pagamento</label>
-                                    <select id="nota-forma" class="input-control">
-                                        <option value="Pix" ${result.forma === 'Pix' ? 'selected' : ''}>Pix</option>
-                                        <option value="Cartão de Crédito" ${result.forma === 'Cartão de Crédito' ? 'selected' : ''}>Cartão de Crédito</option>
-                                        <option value="Cartão de Débito" ${result.forma === 'Cartão de Débito' ? 'selected' : ''}>Cartão de Débito</option>
-                                        <option value="Dinheiro" ${result.forma === 'Dinheiro' ? 'selected' : ''}>Dinheiro</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-block mt-2" id="btn-salvar-nota">
-                                <i class="ph ph-check-circle"></i> Confirmar e Lançar
-                            </button>
-                        </form>
-                    `;
+                    const payload = {
+                        data: document.getElementById('nota-data').value,
+                        descricao: document.getElementById('nota-desc').value.trim(),
+                        categoria: document.getElementById('nota-cat').value,
+                        tipo: 'despesa',
+                        valor: parseFloat(document.getElementById('nota-valor').value),
+                        forma: document.getElementById('nota-forma').value
+                    };
 
-                    document.getElementById('form-confirm-nota')?.addEventListener('submit', async (ev) => {
-                        ev.preventDefault();
-                        const btnSave = document.getElementById('btn-salvar-nota');
-                        btnSave.disabled = true;
-                        btnSave.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Salvando...';
+                    try {
+                        await Store.insert(KEYS.LANCAMENTOS, payload);
+                        Toast.success('Nota lançada com sucesso!');
+                        window._closeImportModal();
+                        App.loadView('lancamentos');
+                    } catch (err) {
+                        Toast.error('Erro ao salvar nota: ' + err.message);
+                        btnSave.disabled = false;
+                        btnSave.innerHTML = '<i class="ph ph-check-circle"></i> Confirmar e Lançar';
+                    }
+                });
+            } catch (err) {
+                modalBody.innerHTML = `
+                    <div class="import-loading-box">
+                        <i class="ph ph-warning-circle" style="font-size: 36px; color: var(--danger);"></i>
+                        <p>${err.message || 'Não foi possível ler a nota.'}</p>
+                        <button type="button" class="btn btn-primary mt-3" onclick="window._closeImportModal()">Fechar</button>
+                    </div>
+                `;
+            }
+        };
 
-                        const payload = {
-                            data: document.getElementById('nota-data').value,
-                            descricao: document.getElementById('nota-desc').value.trim(),
-                            categoria: document.getElementById('nota-cat').value,
-                            tipo: 'despesa',
-                            valor: parseFloat(document.getElementById('nota-valor').value),
-                            forma: document.getElementById('nota-forma').value
-                        };
-
-                        try {
-                            await Store.insert(KEYS.LANCAMENTOS, payload);
-                            Toast.success('Nota lançada com sucesso!');
-                            window._closeImportModal();
-                            App.loadView('lancamentos');
-                        } catch (err) {
-                            Toast.error('Erro ao salvar nota: ' + err.message);
-                            btnSave.disabled = false;
-                            btnSave.innerHTML = '<i class="ph ph-check-circle"></i> Confirmar e Lançar';
-                        }
-                    });
-                } catch (err) {
-                    modalBody.innerHTML = `
-                        <div class="import-loading-box">
-                            <i class="ph ph-warning-circle" style="font-size: 36px; color: var(--danger);"></i>
-                            <p>${err.message || 'Não foi possível ler a nota.'}</p>
-                            <button type="button" class="btn btn-primary mt-3" onclick="window._closeImportModal()">Fechar</button>
-                        </div>
-                    `;
-                }
+        const inputNota = document.getElementById('input-scan-nota');
+        if (inputNota) {
+            inputNota.addEventListener('change', (e) => {
+                const file = e.target.files?.[0];
+                inputNota.value = '';
+                if (file) window._processScanNotaFile(file);
             });
         }
     }
