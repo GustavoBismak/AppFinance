@@ -4470,3 +4470,278 @@ body.light-mode .fab-circle {
     border-color: #ffffff;
 }
 
+/* ==========================================
+   IMPORTADOR DE EXTRATO & FOTO DA NOTA
+   ========================================== */
+.btn-import-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: rgba(10, 147, 150, 0.14);
+    color: var(--primary);
+    border: 1px solid rgba(10, 147, 150, 0.3);
+    transition: var(--transition);
+}
+
+.btn-import-action:hover {
+    background: rgba(10, 147, 150, 0.24);
+}
+
+.btn-import-camera {
+    background: rgba(255, 215, 0, 0.12);
+    color: #ffd700;
+    border-color: rgba(255, 215, 0, 0.3);
+}
+
+.btn-import-camera:hover {
+    background: rgba(255, 215, 0, 0.22);
+}
+
+body.light-mode .btn-import-camera {
+    color: #b45309;
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.35);
+}
+
+.mobile-import-actions-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.btn-mobile-import {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: rgba(10, 147, 150, 0.14);
+    color: var(--primary);
+    border: 1px solid rgba(10, 147, 150, 0.28);
+}
+
+.btn-mobile-camera {
+    background: rgba(255, 215, 0, 0.12);
+    color: #ffd700;
+    border-color: rgba(255, 215, 0, 0.28);
+}
+
+body.light-mode .btn-mobile-camera {
+    color: #b45309;
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.35);
+}
+
+.import-modal-sheet {
+    max-width: 640px;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.import-modal-body {
+    overflow-y: auto;
+    flex: 1;
+    padding-bottom: 8px;
+}
+
+.import-loading-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 12px;
+    padding: 32px 16px;
+}
+
+.ocr-progress-bar {
+    width: 100%;
+    max-width: 280px;
+    height: 8px;
+    background: var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.ocr-progress-bar > div {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 8px;
+    transition: width 0.2s ease;
+}
+
+.import-summary-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+    font-size: 13px;
+}
+
+.import-summary-values {
+    display: flex;
+    gap: 12px;
+    margin-top: 2px;
+    font-weight: 600;
+    font-size: 12.5px;
+}
+
+.btn-toggle-all-import {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.import-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 46vh;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.import-tx-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+}
+
+.import-tx-row.is-duplicate {
+    opacity: 0.72;
+    border-color: rgba(245, 158, 11, 0.35);
+}
+
+.import-tx-check {
+    padding-top: 4px;
+    cursor: pointer;
+}
+
+.import-tx-check input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+}
+
+.import-tx-fields {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.import-tx-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.import-desc-input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed var(--border);
+    color: var(--text-main);
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 2px 4px;
+}
+
+.import-tx-amount {
+    font-size: 13.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.import-tx-bottom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.import-tx-date {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.import-cat-select {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    border-radius: 6px;
+    font-size: 12px;
+    padding: 3px 8px;
+}
+
+.import-dup-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+.import-footer-actions {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.import-nota-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.nota-preview-wrap {
+    width: 100%;
+    max-height: 160px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: #000;
+    display: flex;
+    justify-content: center;
+}
+
+.nota-preview-wrap img {
+    max-height: 160px;
+    width: auto;
+    object-fit: contain;
+}
+
+.import-nota-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+
