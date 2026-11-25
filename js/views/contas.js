@@ -1,6 +1,103 @@
 window.Views.contas = {
+    isContaFixa: (conta) => {
+        return typeof conta?.obs === 'string' && conta.obs.includes('[FIXA]');
+    },
+
+    cleanObs: (obs) => {
+        if (!obs || typeof obs !== 'string') return '';
+        return obs.replace(/\[FIXA\]\s*/g, '').trim();
+    },
+
+    buildObs: (obs, isFixa) => {
+        const clean = window.Views.contas.cleanObs(obs);
+        if (!isFixa) return clean;
+        return clean ? `[FIXA] ${clean}` : '[FIXA]';
+    },
+
+    getNextMonthDueDate: (dateStr) => {
+        const [yearStr, monthStr, dayStr] = String(dateStr).split('-');
+        let year = parseInt(yearStr, 10);
+        let month = parseInt(monthStr, 10); // 1-12
+        const day = parseInt(dayStr, 10);
+
+        month += 1;
+        if (month > 12) {
+            month = 1;
+            year += 1;
+        }
+
+        // Último dia do mês destino (evita pular fevereiro/meses de 30 dias)
+        const lastDayOfTargetMonth = new Date(year, month, 0).getDate();
+        const safeDay = Math.min(day, lastDayOfTargetMonth);
+        return `${year}-${String(month).padStart(2, '0')}-${String(safeDay).padStart(2, '0')}`;
+    },
+
+    ensureNextFixedBill: async (conta, allContas) => {
+        if (!window.Views.contas.isContaFixa(conta)) return null;
+        const nextVenc = window.Views.contas.getNextMonthDueDate(conta.vencimento);
+        const targetMonthPrefix = nextVenc.slice(0, 7); // YYYY-MM
+        const normalizedName = (conta.nome || '').trim().toLowerCase();
+
+        const alreadyExists = allContas.some(c =>
+            (c.nome || '').trim().toLowerCase() === normalizedName &&
+            String(c.vencimento || '').startsWith(targetMonthPrefix)
+        );
+        if (alreadyExists) return null;
+
+        const nextConta = {
+            nome: conta.nome,
+            valor: parseFloat(conta.valor),
+            vencimento: nextVenc,
+            obs: window.Views.contas.buildObs(conta.obs, true),
+            pago: false,
+            data_pagamento: null
+        };
+        const inserted = await Store.insert(KEYS.CONTAS, nextConta);
+        if (inserted) {
+            allContas.push(inserted);
+        }
+        return inserted;
+    },
+
+    syncContasFixas: async (contas) => {
+        const fixas = contas.filter(c => window.Views.contas.isContaFixa(c));
+        if (fixas.length === 0) return false;
+
+        const now = new Date();
+        const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+        // Agrupa pelo nome para pegar a última ocorrência de cada conta fixa
+        const latestByName = new Map();
+        fixas.forEach(c => {
+            const key = (c.nome || '').trim().toLowerCase();
+            const existing = latestByName.get(key);
+            if (!existing || String(c.vencimento) > String(existing.vencimento)) {
+                latestByName.set(key, c);
+            }
+        });
+
+        let createdAny = false;
+        for (const latest of latestByName.values()) {
+            const latestMonthPrefix = String(latest.vencimento || '').slice(0, 7);
+            // Se a última conta fixa é de um mês anterior ao atual ou já foi paga, garante o próximo mês
+            if (latestMonthPrefix < currentMonthPrefix || latest.pago) {
+                const nextVenc = window.Views.contas.getNextMonthDueDate(latest.vencimento);
+                const nextMonthPrefix = nextVenc.slice(0, 7);
+                if (nextMonthPrefix <= currentMonthPrefix || latest.pago) {
+                    const created = await window.Views.contas.ensureNextFixedBill(latest, contas);
+                    if (created) createdAny = true;
+                }
+            }
+        }
+        return createdAny;
+    },
+
     render: async (container) => {
-        const contas = await Store.get(KEYS.CONTAS) || [];
+        let contas = await Store.get(KEYS.CONTAS) || [];
+        const createdFixed = await window.Views.contas.syncContasFixas(contas);
+        if (createdFixed) {
+            contas = await Store.get(KEYS.CONTAS) || [];
+        }
         
         let html = `
             ${App.getFilterHTML()}
@@ -27,6 +124,13 @@ window.Views.contas = {
                     <div class="form-group form-checkbox-group">
                         <input type="checkbox" id="conta-pago">
                         <label for="conta-pago">Já está paga?</label>
+                    </div>
+                    <div class="form-group form-checkbox-group">
+                        <input type="checkbox" id="conta-fixa" style="display: none;">
+                        <button type="button" id="btn-conta-fixa" class="btn-boolean-toggle" role="switch" aria-checked="false" data-active="false">
+                            <span class="boolean-switch-track"><span class="boolean-switch-thumb"></span></span>
+                            <span class="boolean-label"><i class="ph ph-repeat"></i> Conta Fixa</span>
+                        </button>
                     </div>
                     <div class="form-group form-actions" style="grid-column: span 3;">
                         <button type="submit" class="btn btn-primary"><i class="ph ph-plus"></i> Adicionar Conta</button>
@@ -85,18 +189,26 @@ window.Views.contas = {
                     statusBadge = '<span class="badge" style="background: var(--border); color: var(--text-main);">Pendente</span>';
                 }
                 
+                const isFixa = window.Views.contas.isContaFixa(c);
+                const cleanObsText = window.Views.contas.cleanObs(c.obs);
+                const dataPgto = c.data_pagamento || c.dataPagamento;
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${statusBadge}</td>
                     <td>
-                        <div style="font-weight: 500">${c.nome}</div>
-                        <div class="text-muted" style="font-size: 12px">${c.obs || ''}</div>
+                        <div style="font-weight: 500; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span>${c.nome}</span>
+                            ${isFixa ? '<span class="badge badge-fixa"><i class="ph ph-repeat"></i> Fixa</span>' : ''}
+                        </div>
+                        ${cleanObsText ? `<div class="text-muted" style="font-size: 12px">${cleanObsText}</div>` : ''}
                     </td>
                     <td style="font-weight: 600">${App.formatCurrency(c.valor)}</td>
                     <td>${vencimento.toLocaleDateString('pt-BR')}</td>
-                    <td>${c.pago && c.dataPagamento ? new Date(c.dataPagamento + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
-                    <td>
+                    <td>${c.pago && dataPgto ? new Date(dataPgto + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+                    <td style="white-space: nowrap;">
                         ${!c.pago ? `<button class="btn btn-marcar-pago" data-id="${c.id}" style="padding: 6px 12px; background: rgba(42, 157, 143, 0.15); color: var(--success);"><i class="ph ph-check"></i> Pagar</button>` : ''}
+                        <button class="btn btn-toggle-fixa" data-id="${c.id}" title="${isFixa ? 'Desativar conta fixa' : 'Tornar conta fixa'}" style="padding: 6px 8px; background: ${isFixa ? 'rgba(10, 147, 150, 0.15)' : 'transparent'}; color: ${isFixa ? 'var(--primary)' : 'var(--text-muted)'};"><i class="ph ph-repeat"></i></button>
                         <button class="btn btn-del" data-id="${c.id}" style="padding: 6px; background: transparent; color: var(--danger)"><i class="ph ph-trash"></i></button>
                     </td>
                 `;
@@ -115,6 +227,30 @@ window.Views.contas = {
                         pago: true,
                         data_pagamento: new Date().toISOString().split('T')[0]
                     });
+
+                    const contaPaga = contas.find(c => String(c.id) === String(id));
+                    if (contaPaga && window.Views.contas.isContaFixa(contaPaga)) {
+                        const created = await window.Views.contas.ensureNextFixedBill(contaPaga, contas);
+                        if (created) {
+                            Toast.success('Conta paga! Próximo vencimento fixo criado.');
+                        }
+                    }
+
+                    App.loadView('contas');
+                });
+            });
+
+            // Toggle conta fixa action
+            document.querySelectorAll('.btn-toggle-fixa').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.currentTarget.dataset.id;
+                    const conta = contas.find(c => String(c.id) === String(id));
+                    if (!conta) return;
+                    const willBeFixa = !window.Views.contas.isContaFixa(conta);
+                    const updatedObs = window.Views.contas.buildObs(conta.obs, willBeFixa);
+
+                    await Store.update(KEYS.CONTAS, id, { obs: updatedObs });
+                    Toast.success(willBeFixa ? 'Conta marcada como fixa mensal.' : 'Recorrência fixa desativada.');
                     App.loadView('contas');
                 });
             });
@@ -137,26 +273,44 @@ window.Views.contas = {
         // Initial render
         renderTable();
         
+        // Toggle button booleano "Conta Fixa"
+        const btnFixa = document.getElementById('btn-conta-fixa');
+        const checkFixa = document.getElementById('conta-fixa');
+        if (btnFixa && checkFixa) {
+            btnFixa.addEventListener('click', () => {
+                const nextState = !checkFixa.checked;
+                checkFixa.checked = nextState;
+                btnFixa.setAttribute('aria-checked', String(nextState));
+                btnFixa.setAttribute('data-active', String(nextState));
+                btnFixa.classList.toggle('is-active', nextState);
+            });
+        }
+
         // Form submit
         document.getElementById('form-conta').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = e.target.querySelector('button');
+            const btn = e.target.querySelector('button[type="submit"]');
             btn.disabled = true;
             btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Aguarde...';
             
             const isPago = document.getElementById('conta-pago').checked;
+            const isFixa = document.getElementById('conta-fixa')?.checked || false;
+            const obsRaw = document.getElementById('conta-obs').value;
             
             const nova = {
                 nome: document.getElementById('conta-nome').value,
                 valor: parseFloat(document.getElementById('conta-valor').value),
                 vencimento: document.getElementById('conta-venc').value,
-                obs: document.getElementById('conta-obs').value,
+                obs: window.Views.contas.buildObs(obsRaw, isFixa),
                 pago: isPago,
                 data_pagamento: isPago ? new Date().toISOString().split('T')[0] : null
             };
             
-            await Store.insert(KEYS.CONTAS, nova);
-            Toast.success('Conta adicionada com sucesso!');
+            const inserted = await Store.insert(KEYS.CONTAS, nova);
+            if (inserted && isFixa && isPago) {
+                await window.Views.contas.ensureNextFixedBill(inserted, contas);
+            }
+            Toast.success(isFixa ? 'Conta fixa adicionada com sucesso!' : 'Conta adicionada com sucesso!');
             App.loadView('contas');
         });
     }
