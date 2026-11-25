@@ -490,11 +490,14 @@ const App = {
         }
     },
 
-    globalFilters: {
-        mes: '',
-        ano: '',
-        busca: ''
-    },
+    globalFilters: (() => {
+        const now = new Date();
+        return {
+            mes: String(now.getMonth() + 1).padStart(2, '0'),
+            ano: String(now.getFullYear()),
+            busca: ''
+        };
+    })(),
 
     getFilterHTML: () => {
         const anos = [2024, 2025, 2026, 2027, 2028];
