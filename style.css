@@ -1390,12 +1390,16 @@ span.flatpickr-weekday {
         left: 0;
         bottom: 0;
         z-index: 2500;
-        transform: translateX(-100%);
+        transform: translateX(-110%);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 8px 0 40px rgba(0, 0, 0, 0.5);
         padding: 24px 12px;
         padding-top: calc(24px + env(safe-area-inset-top));
         overflow-y: auto;
+        /* Arredondamento no lado direito do drawer */
+        border-radius: 0 32px 32px 0;
+        /* Largura um pouco menor para o drawer não encostar na borda direita */
+        width: min(var(--sidebar-width), 80vw);
     }
 
     .sidebar.open {
