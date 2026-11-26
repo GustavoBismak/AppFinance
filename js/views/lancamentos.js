@@ -591,11 +591,28 @@ window.Views.lancamentos = {
                                 </select>
                             </div>
                         </div>
+                        <div class="form-group" id="grupo-cartao-nota" style="${result.forma === 'Cartão de Crédito' || result.forma === 'Cartão de Débito' ? 'display: block;' : 'display: none;'}">
+                            <label for="nota-cartao-id"><i class="ph ph-credit-card"></i> Qual cartão? <span style="color:var(--primary); font-size:12px; font-weight:normal;">(atualiza a fatura)</span></label>
+                            <select id="nota-cartao-id" class="input-control">
+                                ${cartaoOptions}
+                            </select>
+                        </div>
                         <button type="submit" class="btn btn-primary btn-block mt-2" id="btn-salvar-nota">
                             <i class="ph ph-check-circle"></i> Confirmar e Lançar
                         </button>
                     </form>
                 `;
+
+                // Listener para exibir/ocultar seleção de cartão na nota
+                const selNotaForma = document.getElementById('nota-forma');
+                const grupoCartaoNota = document.getElementById('grupo-cartao-nota');
+                if (selNotaForma && grupoCartaoNota) {
+                    selNotaForma.addEventListener('change', (e) => {
+                        const val = e.target.value;
+                        const isCartao = val === 'Cartão de Crédito' || val === 'Cartão de Débito';
+                        grupoCartaoNota.style.display = isCartao ? 'block' : 'none';
+                    });
+                }
 
                 document.getElementById('form-confirm-nota')?.addEventListener('submit', async (ev) => {
                     ev.preventDefault();
@@ -603,17 +620,43 @@ window.Views.lancamentos = {
                     btnSave.disabled = true;
                     btnSave.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Salvando...';
 
+                    const formaEscolhida = document.getElementById('nota-forma').value;
+                    const isCartao = formaEscolhida === 'Cartão de Crédito' || formaEscolhida === 'Cartão de Débito';
+                    const valorNota = parseFloat(document.getElementById('nota-valor').value);
+
+                    let cartaoId = null;
+                    let cartaoNome = null;
+                    if (isCartao) {
+                        const selCard = document.getElementById('nota-cartao-id');
+                        if (selCard && selCard.value) {
+                            cartaoId = selCard.value;
+                            cartaoNome = selCard.options[selCard.selectedIndex]?.dataset.nome || '';
+                        }
+                    }
+
                     const payload = {
                         data: document.getElementById('nota-data').value,
                         descricao: document.getElementById('nota-desc').value.trim(),
                         categoria: document.getElementById('nota-cat').value,
                         tipo: 'despesa',
-                        valor: parseFloat(document.getElementById('nota-valor').value),
-                        forma: document.getElementById('nota-forma').value
+                        valor: valorNota,
+                        forma: formaEscolhida,
+                        cartao_id: cartaoId,
+                        cartao_nome: cartaoNome
                     };
 
                     try {
                         await Store.insert(KEYS.LANCAMENTOS, payload);
+
+                        // Atualiza fatura/utilizado do cartão se foi despesa no cartão de crédito
+                        if (isCartao && cartaoId && formaEscolhida === 'Cartão de Crédito') {
+                            const cartao = cartoes.find(c => String(c.id) === String(cartaoId));
+                            if (cartao) {
+                                const novoUtilizado = (parseFloat(cartao.utilizado) || 0) + valorNota;
+                                await Store.update(KEYS.CARTOES, cartaoId, { utilizado: novoUtilizado });
+                            }
+                        }
+
                         Toast.success('Nota lançada com sucesso!');
                         window._closeImportModal();
                         App.loadView('lancamentos');
