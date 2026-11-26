@@ -1,5 +1,5 @@
 // FinApp - Service Worker PWA
-const CACHE_NAME = 'finapp-pwa-v6.8';
+const CACHE_NAME = 'finapp-pwa-v6.9';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -86,7 +86,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     // Apenas requisições GET locais/estáticas
     if (event.request.method !== 'GET') return;
-    
+
     // Ignorar requisições externas do Supabase e APIs
     const url = new URL(event.request.url);
     if (url.origin !== self.location.origin) {

@@ -4609,9 +4609,6 @@ body.light-mode .btn-mobile-camera {
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.72);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
     padding: 0;
 }
 
@@ -4644,14 +4641,19 @@ body.light-mode .btn-mobile-camera {
 .import-modal-sheet {
     max-width: 640px;
     max-height: 88vh;
+    max-height: 88dvh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    touch-action: pan-y;
 }
 
 .import-modal-body {
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     flex: 1;
-    padding-bottom: 8px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    touch-action: pan-y;
 }
 
 .import-loading-box {
@@ -4819,6 +4821,7 @@ body.light-mode .btn-mobile-camera {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding-bottom: 24px;
 }
 
 .nota-preview-wrap {
@@ -4830,6 +4833,7 @@ body.light-mode .btn-mobile-camera {
     background: #000;
     display: flex;
     justify-content: center;
+    touch-action: pan-y;
 }
 
 .nota-preview-wrap img {

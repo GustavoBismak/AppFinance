@@ -171,20 +171,6 @@ window.Views.lancamentos = {
                     </div>
                 </div>
             </div>
-
-            <!-- Modal/Bottom Sheet: Importação de Extrato e Leitura de Nota -->
-            <div id="modal-import-lancamentos" class="modal-import-overlay" style="display: none;" onclick="if(event.target === this) window._closeImportModal()">
-                <div class="modal-quick-add-sheet import-modal-sheet">
-                    <div class="sheet-drag-handle"></div>
-                    <div class="sheet-header">
-                        <h3 id="import-modal-title"><i class="ph ph-file-arrow-up" style="color: var(--primary);"></i> Importar Lançamentos</h3>
-                        <button type="button" class="btn-close-sheet" onclick="window._closeImportModal()" aria-label="Fechar">
-                            <i class="ph ph-x"></i>
-                        </button>
-                    </div>
-                    <div id="import-modal-body" class="import-modal-body"></div>
-                </div>
-            </div>
         `;
 
         container.innerHTML = html;
@@ -378,12 +364,14 @@ window.Views.lancamentos = {
             if (!modalImport) return;
             if (modalTitle) modalTitle.innerHTML = titleHtml;
             modalImport.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
             setTimeout(() => modalImport.classList.add('is-open'), 10);
         };
 
         window._closeImportModal = () => {
             if (!modalImport) return;
             modalImport.classList.remove('is-open');
+            document.body.style.overflow = '';
             setTimeout(() => { modalImport.style.display = 'none'; }, 250);
         };
 
