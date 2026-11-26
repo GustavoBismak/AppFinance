@@ -91,7 +91,7 @@
     </script>
     
     <!-- CSS -->
-    <link rel="stylesheet" href="/style.css?v=4.9">
+    <link rel="stylesheet" href="/style.css?v=5.0">
 </head>
 <body>
     <!-- Splash & Money Loading Animation (Entrada Financeira) -->
@@ -634,6 +634,20 @@
         </div>
     </div>
 
+    <!-- Modal Global: Importação de Extrato e Leitura de Nota Fiscal -->
+    <div id="modal-import-lancamentos" class="modal-import-overlay" style="display: none;" onclick="if(event.target === this) window._closeImportModal()">
+        <div class="modal-quick-add-sheet import-modal-sheet">
+            <div class="sheet-drag-handle"></div>
+            <div class="sheet-header">
+                <h3 id="import-modal-title"><i class="ph ph-file-arrow-up" style="color: var(--primary);"></i> Importar Lançamentos</h3>
+                <button type="button" class="btn-close-sheet" onclick="window._closeImportModal()" aria-label="Fechar">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+            <div id="import-modal-body" class="import-modal-body"></div>
+        </div>
+    </div>
+
     <!-- Scripts (a ordem importa!) -->
     <script src="/js/supabase.js"></script>
     <script src="/js/store.js"></script>
@@ -647,8 +661,8 @@
     <script src="https://cdn.jsdelivr.net/npm/pluggy-connect-sdk@latest/dist/main.js"></script>
     <script src="/js/open-finance.js?v=4.0"></script>
     <script src="/js/views/dashboard.js?v=4.3"></script>
-    <script src="/js/import-lancamentos.js?v=1.0"></script>
-    <script src="/js/views/lancamentos.js?v=4.4"></script>
+    <script src="/js/import-lancamentos.js?v=1.1"></script>
+    <script src="/js/views/lancamentos.js?v=4.5"></script>
     <script src="/js/views/conexoes.js?v=4.3"></script>
     <script src="/js/views/contas.js?v=2.0"></script>
     <script src="/js/views/cartoes.js?v=4.4"></script>

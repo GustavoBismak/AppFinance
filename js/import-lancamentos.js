@@ -439,20 +439,44 @@ window.ImportadorLancamentos = {
     },
 
     scanReceiptImage: async (file, availableCategories, onProgress) => {
-        const [{ ocrDataUrl, previewUrl }, Tesseract] = await Promise.all([
-            window.ImportadorLancamentos.preprocessReceiptImage(file),
-            window.ImportadorLancamentos.loadTesseract()
-        ]);
+        try {
+            const [{ ocrDataUrl, previewUrl }, Tesseract] = await Promise.all([
+                window.ImportadorLancamentos.preprocessReceiptImage(file),
+                window.ImportadorLancamentos.loadTesseract()
+            ]);
 
-        const result = await Tesseract.recognize(ocrDataUrl, 'por', {
-            logger: (m) => {
-                if (m.status === 'recognizing text' && typeof onProgress === 'function') {
-                    onProgress(Math.round((m.progress || 0) * 100));
-                }
+            let result = null;
+            try {
+                result = await Tesseract.recognize(ocrDataUrl, 'por', {
+                    logger: (m) => {
+                        if (m.status === 'recognizing text' && typeof onProgress === 'function') {
+                            onProgress(Math.round((m.progress || 0) * 100));
+                        }
+                    }
+                });
+            } catch (ocrErr) {
+                console.warn('[OCR por falhou, tentando fallback eng]', ocrErr);
+                result = await Tesseract.recognize(ocrDataUrl, 'eng');
             }
-        });
 
-        const extracted = window.ImportadorLancamentos.extractReceiptData(result?.data?.text || '', availableCategories);
-        return { ...extracted, previewUrl };
+            const rawText = result?.data?.text || '';
+            const extracted = window.ImportadorLancamentos.extractReceiptData(rawText, availableCategories);
+            return { ...extracted, previewUrl };
+        } catch (err) {
+            console.error('[OCR Error]', err);
+            // Em caso de qualquer falha no OCR, ainda retorna os dados para permitir preenchimento com a foto visível!
+            let previewUrl = '';
+            try { previewUrl = URL.createObjectURL(file); } catch (_) {}
+            return {
+                data: new Date().toISOString().split('T')[0],
+                descricao: 'Compra em Nota Fiscal',
+                valor: '',
+                tipo: 'despesa',
+                categoria: availableCategories[0] || 'Alimentação',
+                forma: 'Pix',
+                previewUrl,
+                ocrWarning: 'Não conseguimos ler todos os dados automaticamente da foto. Confira e complete os campos abaixo:'
+            };
+        }
     }
 };

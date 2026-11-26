@@ -563,6 +563,11 @@ window.Views.lancamentos = {
 
                 modalBody.innerHTML = `
                     <form id="form-confirm-nota" class="import-nota-form">
+                        ${result.ocrWarning ? `
+                        <div class="alert alert-warning" style="padding: 10px 12px; font-size: 12.5px; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">
+                            <i class="ph ph-info"></i>
+                            <span>${result.ocrWarning}</span>
+                        </div>` : ''}
                         ${result.previewUrl ? `
                         <div class="nota-preview-wrap">
                             <img src="${result.previewUrl}" alt="Foto da Nota">
