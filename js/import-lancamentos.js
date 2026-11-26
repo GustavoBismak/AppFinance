@@ -364,10 +364,11 @@ window.ImportadorLancamentos = {
     },
 
     extractReceiptData: (ocrText, availableCategories) => {
-        const lines = String(ocrText || '')
+        const fullText = String(ocrText || '');
+        const lines = fullText
             .split('\n')
             .map(l => l.trim())
-            .filter(l => l.length > 1);
+            .filter(l => l.length > 0);
 
         // 1. Extrair Data
         let data = new Date().toISOString().split('T')[0];
@@ -384,41 +385,120 @@ window.ImportadorLancamentos = {
             }
         }
 
-        // 2. Extrair Valor Total
+        // 2. Extrair Valor Total com Regras Aprimoradas
         let valor = '';
-        const priorityRegex = /(?:valor\s*total|total\s*a\s*pagar|total\s*geral|valor\s*pago|total\s*r\$|total)\D{0,15}(\d{1,3}(?:\.\d{3})*,\d{2}|\d+[.,]\d{2})/i;
-        for (const line of lines) {
-            const m = line.match(priorityRegex);
-            if (m) {
-                const parsed = window.ImportadorLancamentos.parseMoneyValue(m[1]);
-                if (!isNaN(parsed) && parsed > 0) {
-                    valor = parsed.toFixed(2);
-                    break;
+        const normFullText = window.ImportadorLancamentos.normalizeText(fullText);
+
+        // Palavras-chave de TOTAL no cupom fiscal (ordem de prioridade)
+        const totalKeywords = [
+            'total a pagar',
+            'valor a pagar',
+            'total geral',
+            'valor total',
+            'total pago',
+            'total r$',
+            'vlr total',
+            'tot a pagar',
+            'tot geral',
+            'total liquido',
+            'valor liquido',
+            'total',
+            'subtotal'
+        ];
+
+        // Regex para capturar valores em formato brasileiro: R$ 123,45 ou 123,45 ou 1.234,56
+        const moneyRegex = /(?:r\$\s*)?(\d{1,4}(?:\.\d{3})*,\d{2}|\d+[.,]\d{2})/gi;
+
+        // Estratégia A: Buscar linha que contenha palavra de TOTAL e valor na mesma linha ou na linha imediatamente seguinte
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const normLine = window.ImportadorLancamentos.normalizeText(line);
+
+            // Ignora linhas de tributos/descontos/itens intermediários que contenham "total de tributos" ou "base de calculo"
+            if (normLine.includes('tribut') || normLine.includes('base') || normLine.includes('icms') || normLine.includes('desconto')) {
+                continue;
+            }
+
+            const hasTotalKeyword = totalKeywords.some(kw => normLine.includes(kw));
+            if (hasTotalKeyword) {
+                // Tenta extrair valor na própria linha
+                const matchesOnLine = [...line.matchAll(moneyRegex)];
+                if (matchesOnLine.length > 0) {
+                    // Pega o último valor da linha de total (geralmente é o valor final)
+                    const lastMatch = matchesOnLine[matchesOnLine.length - 1][1];
+                    const parsed = window.ImportadorLancamentos.parseMoneyValue(lastMatch);
+                    if (!isNaN(parsed) && parsed > 0 && parsed < 200000) {
+                        valor = parsed.toFixed(2);
+                        break;
+                    }
+                }
+
+                // Se a palavra de total está sozinha na linha (muito comum em cupom SAT/NFC-e), olha a próxima linha
+                if (!valor && i + 1 < lines.length) {
+                    const nextLine = lines[i + 1];
+                    const nextMatches = [...nextLine.matchAll(moneyRegex)];
+                    if (nextMatches.length > 0) {
+                        const parsed = window.ImportadorLancamentos.parseMoneyValue(nextMatches[0][1]);
+                        if (!isNaN(parsed) && parsed > 0 && parsed < 200000) {
+                            valor = parsed.toFixed(2);
+                            break;
+                        }
+                    }
                 }
             }
         }
 
-        // Fallback: maior valor monetário com 2 casas decimais encontrado na nota
+        // Estratégia B: Se não achou por palavra de total, busca linha com forma de pagamento (ex: CARTAO, DINHEIRO, PIX) seguido de valor
         if (!valor) {
-            let maxVal = 0;
-            const moneyMatches = String(ocrText || '').match(/\d{1,3}(?:\.\d{3})*,\d{2}/g) || [];
-            for (const rawM of moneyMatches) {
-                const parsed = window.ImportadorLancamentos.parseMoneyValue(rawM);
-                if (!isNaN(parsed) && parsed > maxVal && parsed < 100000) {
-                    maxVal = parsed;
+            const payKeywords = ['cartao', 'debito', 'credito', 'dinheiro', 'pix', 'visa', 'master', 'elo', 'pagamento'];
+            for (const line of lines) {
+                const normLine = window.ImportadorLancamentos.normalizeText(line);
+                if (payKeywords.some(kw => normLine.includes(kw))) {
+                    const matches = [...line.matchAll(moneyRegex)];
+                    if (matches.length > 0) {
+                        const parsed = window.ImportadorLancamentos.parseMoneyValue(matches[matches.length - 1][1]);
+                        if (!isNaN(parsed) && parsed > 0 && parsed < 200000) {
+                            valor = parsed.toFixed(2);
+                            break;
+                        }
+                    }
                 }
             }
-            if (maxVal > 0) valor = maxVal.toFixed(2);
+        }
+
+        // Estratégia C (Fallback Inteligente): Filtra valores monetários excluindo CNPJ, Códigos de Barra e pega o valor mais plausível
+        if (!valor) {
+            let candidateValues = [];
+            for (const line of lines) {
+                const norm = window.ImportadorLancamentos.normalizeText(line);
+                // Ignora linhas de documentos e tributos
+                if (norm.includes('cnpj') || norm.includes('cpf') || norm.includes('tribut') || norm.includes('chave') || norm.includes('serie')) {
+                    continue;
+                }
+                const matches = [...line.matchAll(moneyRegex)];
+                for (const m of matches) {
+                    const parsed = window.ImportadorLancamentos.parseMoneyValue(m[1]);
+                    // Filtra valores inválidos ou números gigantes (ex: códigos)
+                    if (!isNaN(parsed) && parsed > 0.50 && parsed < 50000) {
+                        candidateValues.push(parsed);
+                    }
+                }
+            }
+            if (candidateValues.length > 0) {
+                // Em cupom fiscal, o maior valor do documento geralmente é o total geral da compra
+                const maxVal = Math.max(...candidateValues);
+                valor = maxVal.toFixed(2);
+            }
         }
 
         // 3. Extrair Nome do Estabelecimento
-        const ignoreWords = ['cupom', 'fiscal', 'danfe', 'nfce', 'nfc-e', 'documento auxiliar', 'cnpj', 'ie:', 'extrato', 'comprovante', 'sat', 'via cliente'];
+        const ignoreWords = ['cupom', 'fiscal', 'danfe', 'nfce', 'nfc-e', 'documento auxiliar', 'cnpj', 'ie:', 'extrato', 'comprovante', 'sat', 'via cliente', 'consumidor'];
         let descricao = 'Compra em Nota Fiscal';
-        for (const line of lines.slice(0, 8)) {
+        for (const line of lines.slice(0, 10)) {
             const norm = window.ImportadorLancamentos.normalizeText(line);
             const hasLetters = /[a-z]{3,}/.test(norm);
             const isIgnored = ignoreWords.some(w => norm.includes(w));
-            if (hasLetters && !isIgnored && line.length >= 4 && line.length <= 60) {
+            if (hasLetters && !isIgnored && line.length >= 3 && line.length <= 60) {
                 descricao = line.replace(/[^a-zA-Z0-9À-ÿ\s&.\-]/g, '').trim();
                 if (descricao.length >= 3) break;
             }
